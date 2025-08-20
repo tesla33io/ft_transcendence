@@ -1,0 +1,47 @@
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway-service
+    networks:
+      - pong-network
+    volumes:
+      - ./frontend:/app
+
+  gateway-service:
+    build:
+      context: ./services/gateway-service
+      dockerfile: Dockerfile
+    container_name: gateway-service
+    ports:
+      - "3000:3000"
+    depends_on:
+      - game-service
+    networks:
+      - pong-network
+    volumes:
+      - ./services/gateway-service:/gateway-service
+
+  game-service:
+    build:
+      context: ./services/game-service
+      dockerfile: Dockerfile
+    container_name: game-service
+    ports:
+      - "5002:5000"
+      - "5001:5001"
+    networks:
+      - pong-network
+    volumes:
+      - ./services/game-service:/game-service
+      - /app/node_modules
+
+networks:
+  pong-network:
+
