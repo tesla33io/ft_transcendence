@@ -1,0 +1,21 @@
+version: "3.8"
+services:
+  authsvc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: db-microservice
+    environment:
+      - DATABASE_FILE=/data/db.sqlite
+      - INIT_SQL=/app/db/init_db.sql
+      - JWT_SECRET='~M2c9X5NtlA£C$B\"45]?oe_4_T'
+      - ENCRYPTION_KEY='oVqhjsexISpXUXRCMZANtahj2P+LKiF9/uxyj14kwN4='
+      - ACCESS_TOKEN_EXPIRE_MINUTES=15
+      - REFRESH_TOKEN_EXPIRE_DAYS=30
+      # - ADMIN_KEY=
+    volumes:
+      - ./data:/data         # persist sqlite database on host
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+

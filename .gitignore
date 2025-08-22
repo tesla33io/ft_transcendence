@@ -1,3 +1,9 @@
+# Misc
+compile_commands.json
+
+# Database
+data/*.sqlite*
+
 # Logs
 logs
 *.log

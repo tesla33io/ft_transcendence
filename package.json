@@ -1,0 +1,19 @@
+{
+  "name": "db-microservice",
+  "version": "0.0.1",
+  "description": "SQLite-based microservice",
+  "main": "db.js",
+  "scripts": {
+    "start": "../server.js",
+    "dev": "NODE_ENV=development node ../server.js"
+  },
+  "dependencies": {
+    "argon2": "^0.44.0",
+    "better-sqlite3": "^12.2.0",
+    "fastify": "^5.5.0",
+    "@fastify/jwt": "^10.0.0",
+    "uuid": "^11.1.0",
+    "dotenv": "^17.2.1"
+  }
+}
+
