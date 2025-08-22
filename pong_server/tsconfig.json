@@ -8,6 +8,6 @@
     "lib": ["ES2020", "DOM"],
     "skipLibCheck": true
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "server.js"],
   "exclude": ["node_modules"]
 }
