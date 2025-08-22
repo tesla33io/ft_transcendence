@@ -46,6 +46,19 @@ CREATE TABLE recovery_tokens (
         used BOOLEAN DEFAULT 0
         );
 
+-- Friends and friend requests
+CREATE TABLE friends (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id_from INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        user_id_to INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        status TEXT NOT NULL DEFAULT 'pending',                   -- 'pending', 'accepted', 'blocked'
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        accepted_at DATETIME NULL,
+        version INTEGER DEFAULT 1,
+        CONSTRAINT unique_friend_pair UNIQUE (user_id_from, user_id_to),
+        CHECK (user_id_from != user_id_to)
+        );
+
 -- internal logging (successful/failed login, etc.)
 CREATE TABLE audit_events (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,20 +106,30 @@ CREATE TABLE tournament_rounds (
 CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_last_login ON users(last_login);
 CREATE INDEX idx_users_locked_until ON users(locked_until);
+
 CREATE INDEX idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 CREATE INDEX idx_refresh_tokens_expires_at ON refresh_tokens(expires_at);
 CREATE INDEX idx_refresh_tokens_revoked ON refresh_tokens(revoked);
+
 CREATE INDEX idx_recovery_tokens_user_id ON recovery_tokens(user_id);
 CREATE INDEX idx_recovery_tokens_expires_at ON recovery_tokens(expires_at);
 CREATE INDEX idx_recovery_tokens_used ON recovery_tokens(used);
+
+CREATE INDEX idx_friends_user_id_from ON friends(user_id_from);
+CREATE INDEX idx_friends_user_id_to ON friends(user_id_to);
+CREATE INDEX idx_friends_status ON friends(status);
+
 CREATE INDEX idx_audit_events_user_id ON audit_events(user_id);
 CREATE INDEX idx_audit_events_event_type ON audit_events(event_type);
 CREATE INDEX idx_audit_events_created_at ON audit_events(created_at);
+
 CREATE INDEX idx_games_created_by ON games(created_by);
 CREATE INDEX idx_games_started_at ON games(started_at);
 CREATE INDEX idx_games_mode ON games(mode);
+
 CREATE INDEX idx_game_players_game_id ON game_players(game_id);
 CREATE INDEX idx_game_players_user_id ON game_players(user_id);
+
 CREATE INDEX idx_tournaments_created_by ON tournaments(created_by);
 CREATE INDEX idx_tournament_rounds_tournament_id ON tournament_rounds(tournament_id);
 ```
@@ -187,6 +210,28 @@ CREATE INDEX idx_tournament_rounds_tournament_id ON tournament_rounds(tournament
     - Body: `{ password }` or `{ otp }` (if 2FA enabled)
     - Response: `204`
     - Actions: verify credentials, soft-delete user account, revoke all tokens
+
+### Friends (authenticated)
+
+- `POST /api/v1/friends/request`
+    - Body: `{ usernameTo }`
+    - Response: `201 { message: "Friend request sent" }`
+    - Actions: create a new entry in friends table with status='pending'
+
+- `POST /api/v1/friends/accept`
+    - Body: `{ usernameFrom }`
+    - Response: `200 { message: "Friend request accepted" }`
+    - Actions: update the friends table entry from pending to accepted for the correct user pair
+
+- `DELETE /api/v1/friends`
+    - Body: `{ username }`
+    - Response: `204`
+    - Actions: delete the friendship entry (for accepted friends or pending requests)
+
+- `GET /api/v1/users/me/friends`
+    - Query params: `?status=pending` (to get requests) or `?status=accepted` (to get friends list)
+    - Response: `200 { users: [...] }`
+    - Actions: return a list of user profiles where the authenticated user is either the user_id_from or user_id_to with the specified status.
 
 ### Stats (authenticated)
 
@@ -307,14 +352,17 @@ Recommended scheduled cleanup tasks:
 
 ```sql
 -- Clean up expired refresh tokens (daily)
-DELETE FROM refresh_tokens WHERE expires_at < datetime('now');
+    DELETE FROM refresh_tokens WHERE expires_at < datetime('now');
 
 -- Clean up used/expired recovery tokens (daily)
-DELETE FROM recovery_tokens WHERE (used = 1 OR expires_at < datetime('now'));
+    DELETE FROM recovery_tokens WHERE (used = 1 OR expires_at < datetime('now'));
+
+-- Clean up old, rejected friend requests (weekly, keep 30 days)
+    DELETE FROM friends WHERE status = 'pending' AND created_at < datetime('now', '-30 days');
 
 -- Archive old audit events (weekly, keep 1 year)
-DELETE FROM audit_events WHERE created_at < datetime('now', '-1 year');
+    DELETE FROM audit_events WHERE created_at < datetime('now', '-1 year');
 
 -- Clean up old games (monthly, configurable retention)
-DELETE FROM games WHERE ended_at < datetime('now', '-6 months');
+    DELETE FROM games WHERE ended_at < datetime('now', '-6 months');
 ```
