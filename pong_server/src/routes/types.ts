@@ -1,15 +1,24 @@
 import { WebSocketServer, WebSocket } from "ws";
 
 export interface Player {
-		id: string;
-		name: string;
+		id: string
+		name: string
+		paddleY: number
+		score: number
+}
+
+export interface Ball {
+	x: number
+	y: number
+	vx: number
+	vy: number
 }
 
 export interface Game {
-		id: string;
-		player1: Player;
-		player2: Player;
-		status: 'waiting' | 'playing' | 'finished';
+		id: string
+		status: 'waiting' | 'playing' | 'finished'
+		player1: Player
+		player2: Player
 }
 
 export class GameWebSocketServer{
@@ -39,19 +48,28 @@ export class GameWebSocketServer{
 		})
 	}
 
-	public notifyGameMatched(player1Id: string, player2Id: string, gameData: any){
-		const player1Ws = this.connectedClients.get(player1Id)
-		const player2Ws = this.connectedClients.get(player2Id)
+	public sendToPlayer(playerId: string, message: any){
+		const ws = this.connectedClients.get(playerId)
+		if (ws && ws.readyState === WebSocket.OPEN){
+			ws.send(JSON.stringify(message))
+			return true
+		}
+		return false
+	}
+
+	public notifyGameMatched(gameData: Game){
+		const player1Ws = this.connectedClients.get(gameData.player1.id)
+		const player2Ws = this.connectedClients.get(gameData.player2.id)
 
 		const messagePlayer1 = JSON.stringify({
-			type: 'game_matched',
+			type: 'playing',
 			...gameData
 		})
 
 		const messagePlayer2 = JSON.stringify({
-			type: 'game_matched',
-			status: 'matched',
-			gameId: gameData.gameId,
+			type: 'playing',
+			status: 'playing',
+			id: gameData.id,
 			player1: gameData.player2,
 			player2: gameData.player1
 		})
@@ -59,12 +77,16 @@ export class GameWebSocketServer{
 		console.log(gameData)
 		if (player1Ws) {
 			player1Ws.send(messagePlayer1)
-			console.log(`Sent game_matched to player1: ${player1Id}`)
+			console.log(`Sent game_matched to player1: ${gameData.player1.id}`)
 		}
 		if (player2Ws) {
 			player2Ws.send(messagePlayer2)
-			console.log(`Sent game_matched to player2: ${player2Id}`)
+			console.log(`Sent game_matched to player2: ${gameData.player2.id}`)
 		}
+	}
+
+	public sendGameState(gameState: Game){
+
 	}
 }
 

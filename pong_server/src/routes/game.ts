@@ -19,35 +19,30 @@ export async function joinGameHandler(req:any, reply:any) {
 
 		const player: Player = {
 			id: generateId(),
-			name: playerName
+			name: playerName,
+			score: 0,
+			paddleY: 0
 		};
 
 		console.log(waitingPlayers)
-
 
 		if (waitingPlayers.length > 0){
 			const opponent = waitingPlayers.shift()!
 			const game: Game = {
 				id: generateId(),
-				player1: opponent,  // opponent was waiting (player1)
-				player2: player,    // current player just joined (player2)
-				status: 'playing'
+				status: 'playing',
+				player1: opponent,
+				player2: player,
 			};
 			activeGame.push(game)
 
-			let gameData = {
-            status: 'matched',
-            gameId: game.id,
-            player1: opponent,
-            player2: player
-       		}
 			setTimeout(() => {
-				wsServer.notifyGameMatched(opponent.id, player.id, gameData)
+				wsServer.notifyGameMatched(game)
 			}, 100)
 
 			return {
 				status: 'connecting',
-				playerId: player.id,  // ADD THIS - second client needs their ID
+				playerId: player.id,
 				gameId: game.id,
 				message: 'Connecting to game...'
 			};

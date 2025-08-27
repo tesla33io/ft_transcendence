@@ -99,7 +99,7 @@ class PongGame {
             const data = JSON.parse(event.data)
             console.log('WebSocket message received:', data)
 
-            if (data.type === 'game_matched') {
+            if (data.type === 'playing') {
                 this.showGameMatched(data)
             }
         }
@@ -140,13 +140,13 @@ class PongGame {
             <div class="game-info">
                 <h3>🎮 PLAYING</h3>
                 <div class="players-info">
-                    <p><strong>Game ID:</strong> ${data.gameId}</p>
+                    <p><strong>Game ID:</strong> ${data.id}</p>
                     <p><strong>Player :</strong> ${data.player1 ? data.player1.name : 'Unknown'}</p>
                     <p><strong>Opponent :</strong> ${data.player2 ? data.player2.name : 'Unknown'}</p>
                 </div>
             </div>
         `;
-
+        console.log(data)
         this.successMessage.innerHTML = gameInfo;
         this.successMessage.style.display = 'block';
 
