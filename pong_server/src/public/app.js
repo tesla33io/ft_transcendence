@@ -141,8 +141,8 @@ class PongGame {
                 <h3>🎮 PLAYING</h3>
                 <div class="players-info">
                     <p><strong>Game ID:</strong> ${data.gameId}</p>
-                    <p><strong>Player 1:</strong> ${data.player1 ? data.player1.name : 'Unknown'}</p>
-                    <p><strong>Player 2:</strong> ${data.player2 ? data.player2.name : 'Unknown'}</p>
+                    <p><strong>Player :</strong> ${data.player1 ? data.player1.name : 'Unknown'}</p>
+                    <p><strong>Opponent :</strong> ${data.player2 ? data.player2.name : 'Unknown'}</p>
                 </div>
             </div>
         `;

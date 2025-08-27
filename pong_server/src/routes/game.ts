@@ -1,40 +1,18 @@
-import {Player, Game} from "./types.js"
+import {Player, Game, GameWebSocketServer} from "./types.js"
 import { WebSocketServer } from "ws"
 
 let waitingPlayers: Player[] = []
 let activeGame: Game[] = []
-let wss: WebSocketServer
-let connectedClients: Map<string, any>
+let wsServer: GameWebSocketServer
 
 const generateId = (): string => {
 	return Math.random().toString(36).substring(2, 15);
 }
 
-export function setWebSocketServer(websocketServer: WebSocketServer, clients: Map<string, any>){
-	wss = websocketServer
-	connectedClients = clients
+export function setWebSocketServer(websocketServer: GameWebSocketServer){
+	wsServer = websocketServer
 }
 
-
-function notifyGameMatched(player1Id: string, player2Id: string, gameData: any) {
-    const player1Ws = connectedClients.get(player1Id)
-    const player2Ws = connectedClients.get(player2Id)
-
-    const message = JSON.stringify({
-        type: 'game_matched',
-        ...gameData
-    })
-
-    // Send to BOTH players
-    if (player1Ws) {
-        player1Ws.send(message)
-        console.log(`Sent game_matched to player1: ${player1Id}`)
-    }
-    if (player2Ws) {
-        player2Ws.send(message)
-        console.log(`Sent game_matched to player2: ${player2Id}`)
-    }
-}
 export async function joinGameHandler(req:any, reply:any) {
 
 	const { playerName } = req.body as { playerName: string }
@@ -57,14 +35,14 @@ export async function joinGameHandler(req:any, reply:any) {
 			};
 			activeGame.push(game)
 
-			const gameData = {
+			let gameData = {
             status: 'matched',
             gameId: game.id,
             player1: opponent,
             player2: player
-       		 }
+       		}
 			setTimeout(() => {
-				notifyGameMatched(opponent.id, player.id, gameData)
+				wsServer.notifyGameMatched(opponent.id, player.id, gameData)
 			}, 100)
 
 			return {

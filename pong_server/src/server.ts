@@ -3,32 +3,13 @@ import fastifyStatic from '@fastify/static'
 import fastify from 'fastify'
 import { joinGameHandler, setWebSocketServer } from "./routes/game"
 import { WebSocket, WebSocketServer } from "ws"
+import { GameWebSocketServer } from './routes/types'
 
 const server = fastify({ logger: true })
 const PORT = 5000
 
-// Create WebSocket server
-const wss = new WebSocketServer({ port: 8080 })
-const connectedClients = new Map<string, any>()
-
-// Pass WebSocket server to join game handler
-setWebSocketServer(wss, connectedClients)
-
-// WebSocket connection handling
-wss.on('connection', (ws, req) => {
-	const url = new URL(req.url!, 'http://localhost')
-	const playerId = url.searchParams.get('playerId')
-
-	if (playerId) {
-		connectedClients.set(playerId, ws)
-		console.log(`Player ${playerId} connected via WebSocket`)
-
-		ws.on('close', () => {
-			connectedClients.delete(playerId)
-			console.log(`Player ${playerId} disconnected`)
-		})
-	}
-})
+const wsServer = new GameWebSocketServer()
+setWebSocketServer(wsServer)
 
 server.register(fastifyStatic,{
 	root: path.join(__dirname, 'public'),
