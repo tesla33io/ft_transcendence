@@ -1,9 +1,8 @@
-import path, { join } from 'path'
+import path from 'path'
 import fastifyStatic from '@fastify/static'
 import fastify from 'fastify'
 import { joinGameHandler, setWebSocketServer } from "./routes/game"
-import { WebSocket, WebSocketServer } from "ws"
-import { GameWebSocketServer } from './routes/types'
+import { GameWebSocketServer } from './types/GameWebsocketServer'
 
 const server = fastify({ logger: true })
 const PORT = 5000

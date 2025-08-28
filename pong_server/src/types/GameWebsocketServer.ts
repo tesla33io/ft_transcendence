@@ -1,25 +1,5 @@
-import { WebSocketServer, WebSocket } from "ws";
-
-export interface Player {
-		id: string
-		name: string
-		paddleY: number
-		score: number
-}
-
-export interface Ball {
-	x: number
-	y: number
-	vx: number
-	vy: number
-}
-
-export interface Game {
-		id: string
-		status: 'waiting' | 'playing' | 'finished'
-		player1: Player
-		player2: Player
-}
+import { WebSocketServer } from "ws"
+import {Game} from "./types"
 
 export class GameWebSocketServer{
 
@@ -40,7 +20,7 @@ export class GameWebSocketServer{
 				this.connectedClients.set(playerId, ws)
 				console.log(`Player ${playerId} connected via WebSocket`)
 
-				ws.on('close', () => {
+				this.wss.on('close', () => {
 					this.connectedClients.delete(playerId)
 					console.log(`Player ${playerId} disconnected`)
 				})
@@ -86,8 +66,30 @@ export class GameWebSocketServer{
 	}
 
 	public sendGameState(gameState: Game){
+		const player1State = JSON.stringify({
+			type: 'game_state',
+			status: 'playing',
+			id: gameState.id,
+			player: gameState.player1,
+			opponet:gameState.player2,
+			ball: gameState.ball
+		})
 
+		const player2State = JSON.stringify({
+			type: 'game_state',
+			status: 'playing',
+			id: gameState.id,
+			player:gameState.player2,
+			opponet: gameState.player1,
+			ball: {
+				x: 900 - gameState.ball.x,
+				y: gameState.ball.y,
+				vx: -gameState.ball.vx,
+				vy: gameState.ball.vy
+			}
+		})
+
+		this.sendToPlayer(gameState.player1.id, player1State)
+		this.sendToPlayer(gameState.player2.id, player2State)
 	}
 }
-
-
