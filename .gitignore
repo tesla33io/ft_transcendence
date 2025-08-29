@@ -2,7 +2,7 @@
 compile_commands.json
 
 # Database
-data/*.sqlite*
+./**/*.sqlite
 
 # Logs
 logs
