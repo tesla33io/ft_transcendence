@@ -3,7 +3,7 @@
     "target": "ES2020",
     "module": "CommonJS",
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": "game-service",
     "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

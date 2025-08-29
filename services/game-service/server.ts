@@ -11,7 +11,7 @@ const wsServer = new GameWebSocketServer()
 setWebSocketServer(wsServer)
 
 server.register(fastifyStatic,{
-	root: path.join(__dirname, 'public'),
+	root: path.join(__dirname, '../../frontend'),
 	prefix: '/'
 })
 
