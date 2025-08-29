@@ -1,5 +1,5 @@
-import { WebSocketServer } from "ws"
-import {Game} from "./types"
+import { WebSocketServer, WebSocket } from "ws"
+import {Game, GAME_WIDTH} from "./types"
 
 export class GameWebSocketServer{
 
@@ -12,6 +12,8 @@ export class GameWebSocketServer{
 		this.setupWebsocketServer()
 	}
 
+	public onPaddleMove?: (gameId: string, playerId: string, paddleY: number) => void
+
 	private setupWebsocketServer(){
 		this.wss.on('connection', (ws: WebSocket, req) =>{
 			const url = new URL(req.url!, 'http://localhost')
@@ -20,12 +22,28 @@ export class GameWebSocketServer{
 				this.connectedClients.set(playerId, ws)
 				console.log(`Player ${playerId} connected via WebSocket`)
 
+				this.wss.on('message', (data:string) =>{
+					try {
+						const message = JSON.parse(data.toString())
+						this.handleClientMessage(playerId, message)
+					}
+					catch (err){
+						console.error('Invalid message from client:', err)
+					}
+				})
+
 				this.wss.on('close', () => {
 					this.connectedClients.delete(playerId)
 					console.log(`Player ${playerId} disconnected`)
 				})
 			}
 		})
+	}
+
+	private handleClientMessage(playerId: string, message: any){
+		if (message.type === 'paddle_move' && this.onPaddleMove){
+			this.onPaddleMove(message.gameId, playerId, message.paddleY)
+		}
 	}
 
 	public sendToPlayer(playerId: string, message: any){
@@ -82,7 +100,7 @@ export class GameWebSocketServer{
 			player:gameState.player2,
 			opponet: gameState.player1,
 			ball: {
-				x: 900 - gameState.ball.x,
+				x: GAME_WIDTH - gameState.ball.x,
 				y: gameState.ball.y,
 				vx: -gameState.ball.vx,
 				vy: gameState.ball.vy

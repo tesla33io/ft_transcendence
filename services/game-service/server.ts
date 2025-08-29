@@ -1,14 +1,14 @@
 import path from 'path'
 import fastifyStatic from '@fastify/static'
 import fastify from 'fastify'
-import { joinGameHandler, setWebSocketServer } from "./routes/game"
-import { GameWebSocketServer } from './types/GameWebsocketServer'
+import { joinGameHandler, setGameService } from "./routes/game"
+import { GameService } from './routes/GameService'
 
 const server = fastify({ logger: true })
 const PORT = 5000
 
-const wsServer = new GameWebSocketServer()
-setWebSocketServer(wsServer)
+const gameService = new GameService(8080)
+setGameService(gameService)
 
 server.register(fastifyStatic,{
 	root: path.join(__dirname, '../../frontend'),

@@ -1,15 +1,17 @@
 import {Player, Game, generateId, generatePlayerId, generateBallPos} from "../types/types"
-import { GameWebSocketServer } from "../types/GameWebsocketServer"
+import { GameService } from "./GameService"
 
 let waitingPlayers: Player[] = []
 let activeGame: Game[] = []
-let wsServer: GameWebSocketServer
+let gameService: GameService
 
-export function setWebSocketServer(websocketServer: GameWebSocketServer){
-	wsServer = websocketServer
+export function setGameService(service: GameService){
+	gameService = service
+	console.log('GameService set successfully:', !!gameService)
 }
 
 export async function joinGameHandler(req:any, reply:any) {
+	console.log('joinGameHandler called, gameService exists:', !!gameService)
 
 	const { playerName } = req.body as { playerName: string }
 
@@ -35,7 +37,12 @@ export async function joinGameHandler(req:any, reply:any) {
 			activeGame.push(game)
 
 			setTimeout(() => {
-				wsServer.notifyGameMatched(game)
+				if (gameService) {
+					gameService.notifyGameMatched(game)
+					gameService.startGame(game)
+				} else {
+					console.error('GameService not initialized!')
+				}
 			}, 100)
 
 			return {
