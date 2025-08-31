@@ -22,7 +22,7 @@ export class GameWebSocketServer{
 				this.connectedClients.set(playerId, ws)
 				console.log(`Player ${playerId} connected via WebSocket`)
 
-				this.wss.on('message', (data:string) =>{
+				ws.on('message', (data:string) =>{
 					try {
 						const message = JSON.parse(data.toString())
 						this.handleClientMessage(playerId, message)
@@ -32,7 +32,7 @@ export class GameWebSocketServer{
 					}
 				})
 
-				this.wss.on('close', () => {
+				ws.on('close', () => {
 					this.connectedClients.delete(playerId)
 					console.log(`Player ${playerId} disconnected`)
 				})
@@ -41,6 +41,7 @@ export class GameWebSocketServer{
 	}
 
 	private handleClientMessage(playerId: string, message: any){
+		console.log("Message from the client", message)
 		if (message.type === 'paddle_move' && this.onPaddleMove){
 			this.onPaddleMove(message.gameId, playerId, message.paddleY)
 		}
@@ -109,5 +110,27 @@ export class GameWebSocketServer{
 
 		this.sendToPlayer(gameState.player1.id, player1State)
 		this.sendToPlayer(gameState.player2.id, player2State)
+	}
+
+	public winnerAnnouce(game: Game){
+
+		const winnerId = game.player1.score >= 3 ? game.player1.id : game.player2.id
+
+		let gameResult = {
+			player1Score: game.player1.score,
+			player2Score: game.player2.score,
+			winner: game.player1.id,
+			losser: game.player2.id
+		}
+
+		if (game.player2.id === winnerId){
+			gameResult["winner"] = game.player2.id,
+			gameResult["losser"] = game.player1.id
+		}
+
+		const msg = JSON.stringify(gameResult)
+
+		this.sendToPlayer(game.player1.id, msg)
+		this.sendToPlayer(game.player2.id, msg)
 	}
 }

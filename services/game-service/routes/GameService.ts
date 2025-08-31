@@ -14,7 +14,10 @@ export class GameService{
 
 	private setupCommunication(){
 		this.gameEngine.onGameStatusUpdate = (game: Game) => {
-			this.webSocketServer.sendGameState(game)
+			if (game.player1.score >= 3 || game.player2.score >= 3 )
+				this.webSocketServer.winnerAnnouce(game)
+			else
+				this.webSocketServer.sendGameState(game)
 		}
 
 		this.webSocketServer.onPaddleMove = (gameId: string, playerId: string, paddleY: number) =>{
