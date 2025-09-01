@@ -1,4 +1,3 @@
-import { GameWebSocketServer } from "../types/GameWebsocketServer"
 import {Game, GAME_HEIGHT, GAME_WIDTH} from "../types/types"
 
 export class GameEngine {
