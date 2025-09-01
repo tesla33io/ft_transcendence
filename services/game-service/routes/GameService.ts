@@ -19,10 +19,13 @@ export class GameService{
 			else
 				this.webSocketServer.sendGameState(game)
 		}
-
-		this.webSocketServer.onPaddleMove = (gameId: string, playerId: string, paddleY: number) =>{
-			this.gameEngine.updatePlayerPaddle(gameId, playerId, paddleY)
+		this.webSocketServer.onPaddleMove = (gameId: string, playerId: string, deltaY: number) =>{
+			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
+	}
+
+	public initializeGame(game: Game){
+		this.gameEngine.initializeGameState(game)
 	}
 
 	public startGame(game: Game){

@@ -13,6 +13,7 @@ export class GameWebSocketServer{
 	}
 
 	public onPaddleMove?: (gameId: string, playerId: string, paddleY: number) => void
+	public startGame?: (gameId: string) => void
 
 	private setupWebsocketServer(){
 		this.wss.on('connection', (ws: WebSocket, req) =>{
@@ -41,9 +42,8 @@ export class GameWebSocketServer{
 	}
 
 	private handleClientMessage(playerId: string, message: any){
-		console.log("Message from the client", message)
 		if (message.type === 'paddle_move' && this.onPaddleMove){
-			this.onPaddleMove(message.gameId, playerId, message.paddleY)
+			this.onPaddleMove(message.gameId, playerId, message.deltaY)
 		}
 	}
 
@@ -61,12 +61,12 @@ export class GameWebSocketServer{
 		const player2Ws = this.connectedClients.get(gameData.player2.id)
 
 		const messagePlayer1 = JSON.stringify({
-			type: 'playing',
+			type: 'game_state',
 			...gameData
 		})
 
 		const messagePlayer2 = JSON.stringify({
-			type: 'playing',
+			type: 'game_state',
 			status: 'playing',
 			id: gameData.id,
 			player1: gameData.player2,

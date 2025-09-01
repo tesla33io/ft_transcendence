@@ -3,7 +3,7 @@ import {Game, GAME_HEIGHT, GAME_WIDTH} from "../types/types"
 export class GameEngine {
 	private activeGames: Map<string, Game> = new Map()
 	private gameLoops: Map<string, NodeJS.Timeout> = new Map()
-	private FPS = 60
+	private FPS = 30
 	private FRAME_TIME = 1000 / this.FPS
 
 	constructor(){
@@ -35,7 +35,7 @@ export class GameEngine {
 		console.log(`Game ${game.id} stopped`)
 	}
 
-	private initializeGameState(game: Game){
+	public initializeGameState(game: Game){
 		game.player1.paddleY = GAME_HEIGHT / 2 - 50
 		game.player1.paddlyX = 20
 		game.player1.score = 0
@@ -100,13 +100,17 @@ export class GameEngine {
 		const game = this.activeGames.get(gameId)
 		if (!game) return
 
-		const paddleHeight = 100
-		const clampedY = Math.max(0, Math.min(GAME_HEIGHT - paddleHeight, paddleY))
-
+		const paddleHeight = 50
 		if (game.player1.id === playerId) {
-			game.player1.paddleY = clampedY
+			if( game.player1.paddleY + paddleY + paddleHeight <= GAME_HEIGHT &&
+				game.player1.paddleY + paddleY - paddleHeight >= 0)
+					game.player1.paddleY += paddleY
 		} else if (game.player2.id === playerId) {
-			game.player2.paddleY = clampedY
+			if (game.player2.paddleY + paddleY + paddleHeight <= GAME_HEIGHT &&
+				game.player2.paddleY + paddleY - paddleHeight >= 0)
+					game.player2.paddleY += paddleY
 		}
 	}
 }
+
+

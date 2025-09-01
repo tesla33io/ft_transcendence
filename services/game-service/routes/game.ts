@@ -1,4 +1,4 @@
-import {Player, Game, generateId as generateGameId, generatePlayerId, generateBallPos} from "../types/types"
+import {Player, Game, generateId as generateGameId, generateBallPos} from "../types/types"
 import { GameService } from "./GameService"
 
 let waitingPlayers: Player[] = []
@@ -40,6 +40,7 @@ export async function joinGameHandler(req:any, reply:any) {
 			setTimeout(() => {
 				if (gameService) {
 					gameService.notifyGameMatched(game)
+					gameService.initializeGame(game)
 					// gameService.startGame(game)
 				} else {
 					console.error('GameService not initialized!')

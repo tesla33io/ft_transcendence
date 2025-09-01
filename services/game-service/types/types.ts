@@ -9,6 +9,7 @@ export const generatePlayerId = (): string =>{
 	return Math.random().toString().substring(2,6);
 }
 
+
 export interface Player {
 		id: string
 		name: string
