@@ -3,12 +3,12 @@ import { Game, GAME_HEIGHT, GAME_WIDTH } from "../types/types";
 
 export class ClassicPong extends GameEngine {
 	public initializeGameState(game: Game){
-		game.player1.paddleY = GAME_HEIGHT / 2 - 50
-		game.player1.paddlyX = 20
+		game.player1.Y = GAME_HEIGHT / 2 - 50
+		game.player1.X = 20
 		game.player1.score = 0
 
-		game.player2.paddleY = GAME_HEIGHT / 2 - 50
-		game.player2.paddlyX = GAME_WIDTH - 40
+		game.player2.Y = GAME_HEIGHT / 2 - 50
+		game.player2.X = GAME_WIDTH - 40
 		game.player2.score = 0
 
 		this.ballReset(game)
@@ -17,8 +17,8 @@ export class ClassicPong extends GameEngine {
 		this.activeGames.set(game.id, game) // save to the active games
 		console.log(`Game ${game.id} initialized:`)
 		console.log("Saved to active games")
-		console.log(`- Player 1 (${game.player1.name}): paddle at (${game.player1.paddlyX}, ${game.player1.paddleY})`)
-		console.log(`- Player 2 (${game.player2.name}): paddle at (${game.player2.paddlyX}, ${game.player2.paddleY})`)
+		console.log(`- Player 1 (${game.player1.name}): paddle at (${game.player1.X}, ${game.player1.Y})`)
+		console.log(`- Player 2 (${game.player2.name}): paddle at (${game.player2.X}, ${game.player2.Y})`)
 		console.log(`- Ball: position (${game.ball.x}, ${game.ball.y}), velocity (${game.ball.vx}, ${game.ball.vy})`)
 	}
 
@@ -71,13 +71,13 @@ export class ClassicPong extends GameEngine {
 
 		const paddleHeight = 50
 		if (game.player1.id === playerId) {
-			if( game.player1.paddleY + paddleY + paddleHeight <= GAME_HEIGHT &&
-				game.player1.paddleY + paddleY - paddleHeight >= 0)
-					game.player1.paddleY += paddleY
+			if( game.player1.Y + paddleY + paddleHeight <= GAME_HEIGHT &&
+				game.player1.Y + paddleY - paddleHeight >= 0)
+					game.player1.Y += paddleY
 		} else if (game.player2.id === playerId) {
-			if (game.player2.paddleY + paddleY + paddleHeight <= GAME_HEIGHT &&
-				game.player2.paddleY + paddleY - paddleHeight >= 0)
-					game.player2.paddleY += paddleY
+			if (game.player2.Y + paddleY + paddleHeight <= GAME_HEIGHT &&
+				game.player2.Y + paddleY - paddleHeight >= 0)
+					game.player2.Y += paddleY
 		}
 	}
 }

@@ -25,8 +25,8 @@ export async function joinGameHandler(req:any, reply:any) {
 		id: playerId,
 		name: playerName,
 		score: 0,
-		paddleY: 0,
-		paddlyX: 0,
+		Y: 0,
+		X: 0,
 		ready: false
 	};
 

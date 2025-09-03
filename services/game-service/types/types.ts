@@ -23,8 +23,8 @@ export enum GAME_STATE {
 export interface Player {
 		id: string
 		name: string
-		paddleY: number
-		paddlyX: number
+		Y: number
+		X: number
 		score: number
 		ready: boolean
 }

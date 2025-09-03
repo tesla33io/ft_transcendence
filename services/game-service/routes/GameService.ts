@@ -10,7 +10,7 @@ export class GameService{
 
 	constructor(gameMode: GameMode, webSocketPort: number = 8080) {
 		this.gameMode = gameMode
-		this.gameEngine = GameModeEngineProvider.createEngine(gameMode)
+		this.gameEngine = GameModeEngineProvider.createEngine(this.gameMode)
 		this.webSocketServer = new GameWebSocketServer(webSocketPort)
 		this.setupCommunication()
 	}

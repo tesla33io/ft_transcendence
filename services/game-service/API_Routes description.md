@@ -3,6 +3,7 @@ JSON Request:
 {
 	playerName: (string)
 	playerId: (string)
+	gameMode: 'classic'
 }
 
 Return:
@@ -36,28 +37,26 @@ During the game client get from server
 	player: {
 		id: (string) //maybe not needed
 		name: (string) //maybe not needed
-		paddleX: (number)
-		paddleY: (number)
+		X: (number)
+		Y: (number)
 		score: (number)
 		ready: (boolean)
 	}
 	opponent:{
 		id: (string) //maybe not needed
 		name: (string) //maybe not needed
-		paddleX: (number)
-		paddleY: (number)
+		X: (number)
+		Y: (number)
 		score: (number)
 		ready: (boolean)
 	}
 	ball:{
 		x: (number)
 		y: (number)
-		vx: (number) //maybe not needed
-		vy: (number) //maybe not needed
 	}
 }
 
-for movement client send
+for movement client send through the socket
 {
 	status: 'paddle_move'
 	gameId: (string)
