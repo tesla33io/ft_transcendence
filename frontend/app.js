@@ -93,6 +93,7 @@ class PongGame {
                 body: JSON.stringify({
                     playerName: playerName,
                     playerId: this.playerId,
+                    gameMode: 'classic',
                     timestamp: new Date().toISOString()
                 })
             });

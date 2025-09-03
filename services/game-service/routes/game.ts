@@ -8,7 +8,6 @@ let waitingPlayers: Map< GameMode, Player[]> = new Map([
 ])
 let activeGame: Game[] = []
 let gameServiceManager: GameServiceManager
-// let gameService: GameService
 
 export function setGameServiceManager(serviceManager: GameServiceManager){
 	gameServiceManager = serviceManager
@@ -31,7 +30,7 @@ export async function joinGameHandler(req:any, reply:any) {
 		ready: false
 	};
 
-		console.log(waitingPlayers)
+		console.log("waiting player list:", waitingPlayers)
 
 		if (!waitingPlayers.has(gameMode))
 			waitingPlayers.set(gameMode, [])

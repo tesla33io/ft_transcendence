@@ -2,14 +2,10 @@ import path from 'path'
 import fastifyStatic from '@fastify/static'
 import fastify from 'fastify'
 import { joinGameHandler, setGameServiceManager } from "./routes/game"
-import { GameService } from './routes/GameService'
 import { GameServiceManager } from './routes/GameServiceManager'
 
 const server = fastify({ logger: true })
 const PORT = 5000
-
-// const gameService = new GameService(8080)
-// setGameService(gameService)
 
 const gameServiceManager = new GameServiceManager(8080)
 setGameServiceManager(gameServiceManager)
@@ -28,7 +24,6 @@ server.get('/', async (req, reply) => {
 server.setNotFoundHandler(async (req, reply) => {
 	return await reply.sendFile('index.html')
 })
-
 
 
 server.post("/api/join-classic", joinGameHandler)
