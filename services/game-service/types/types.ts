@@ -1,6 +1,8 @@
 export const GAME_HEIGHT = 550
 export const GAME_WIDTH = 900
 
+export type GameMode = 'classic' | 'tournament'
+
 export const generateId = (): string => {
 	return Math.random().toString(36).substring(2, 15);
 }
@@ -9,6 +11,14 @@ export const generatePlayerId = (): string =>{
 	return Math.random().toString().substring(2,6);
 }
 
+export enum GAME_STATE {
+	CONNECTED = 0,
+	DISCONNECTED = 1,
+	WAITING = 2,
+	READY = 3,
+	PLAYING = 4,
+	FINNISED = 5
+}
 
 export interface Player {
 		id: string
@@ -43,6 +53,7 @@ export interface Game {
 		player2: Player
 		ball: Ball
 }
+
 
 
 

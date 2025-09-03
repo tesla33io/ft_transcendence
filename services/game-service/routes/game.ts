@@ -1,34 +1,45 @@
-import {Player, Game, generateId as generateGameId, generateBallPos} from "../types/types"
+import {Player, Game, generateId as generateGameId, generateBallPos, GameMode} from "../types/types"
 import { GameService } from "./GameService"
+import { GameServiceManager } from "./GameServiceManager"
 
-let waitingPlayers: Player[] = []
+let waitingPlayers: Map< GameMode, Player[]> = new Map([
+	['classic', []],
+	['tournament', []]
+])
 let activeGame: Game[] = []
-let gameService: GameService
+let gameServiceManager: GameServiceManager
+// let gameService: GameService
 
-export function setGameService(service: GameService){
-	gameService = service
-	console.log('GameService set successfully:', !!gameService)
+export function setGameServiceManager(serviceManager: GameServiceManager){
+	gameServiceManager = serviceManager
+	console.log('GameService set successfully:', !!GameServiceManager)
 }
 
 export async function joinGameHandler(req:any, reply:any) {
-	console.log('joinGameHandler called, gameService exists:', !!gameService)
+	// console.log('joinGameHandler called, gameService exists:', !!gameService)
 
-	const { playerName } = req.body as { playerName: string }
-	const { playerId } = req.body as { playerId: string }
+	const { playerName, playerId } = req.body as { playerName: string, playerId: string }
+	const { gameMode } = req.body as {gameMode: GameMode}
+	const gameService = gameServiceManager.getGameService(gameMode)
 
-		const player: Player = {
-			id: playerId,
-			name: playerName,
-			score: 0,
-			paddleY: 0,
-			paddlyX: 0,
-			ready: false
-		};
+	const player: Player = {
+		id: playerId,
+		name: playerName,
+		score: 0,
+		paddleY: 0,
+		paddlyX: 0,
+		ready: false
+	};
 
 		console.log(waitingPlayers)
 
-		if (waitingPlayers.length > 0){
-			const opponent = waitingPlayers.shift()!
+		if (!waitingPlayers.has(gameMode))
+			waitingPlayers.set(gameMode, [])
+
+		const gameModeWaitingPlayer = waitingPlayers.get(gameMode)!
+
+		if (gameModeWaitingPlayer.length > 0){
+			const opponent = gameModeWaitingPlayer.shift()!
 			const game: Game = {
 				id: generateGameId(),
 				status: 'playing',
@@ -56,7 +67,7 @@ export async function joinGameHandler(req:any, reply:any) {
 			};
 		}
 		else{
-			waitingPlayers.push(player)
+			gameModeWaitingPlayer.push(player)
 			return {
 				status: 'waiting',
 				playerId: player.id,

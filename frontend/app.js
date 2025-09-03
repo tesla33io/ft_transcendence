@@ -85,7 +85,7 @@ class PongGame {
             this.setLoadingState(true);
             this.playerId = Math.random().toString().substring(2,7)
             console.log('PlayerID: ', this.playerId)
-            const response = await fetch('/api/join-game', {
+            const response = await fetch('/api/join-classic', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -132,18 +132,17 @@ class PongGame {
             const data = JSON.parse(event.data)
             console.log('WebSocket message received:', data)
 
-            if (data.type === 'game_state') {
-                if (data.status === 'playing'){
-                    this.gameId = data.id
-                    this.showGameMatched(data)
-                    const msg = {
-                        type: "ready",
-                        gameId: this.gameId,
-                        playerId: this.playerId
-                    }
-                    setTimeout(this.sendMsgToServer(msg), 1000)
+            if (data.status === 'playing'){
+                this.gameId = data.id
+                this.showGameMatched(data)
+                const msg = {
+                    type: "ready",
+                    gameId: this.gameId,
+                    playerId: this.playerId
                 }
+                setTimeout(this.sendMsgToServer(msg), 1000)
             }
+
         }
 
         this.ws.onclose = () => {

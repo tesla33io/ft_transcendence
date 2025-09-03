@@ -1,23 +1,24 @@
 import { GameEngine } from "../engine/GameEngine";
 import { GameWebSocketServer } from "../types/GameWebsocketServer";
-import { Game } from "../types/types"
+import { Game, GameMode } from "../types/types"
+import { GameModeEngineProvider } from "../engine/GameEngineProvider";
 
 export class GameService{
 	private gameEngine: GameEngine
 	private webSocketServer: GameWebSocketServer
+	private gameMode: GameMode
 
-	constructor(webSocketPort: number = 8080) {
-		this.gameEngine = new GameEngine()
+	constructor(gameMode: GameMode, webSocketPort: number = 8080) {
+		this.gameMode = gameMode
+		this.gameEngine = GameModeEngineProvider.createEngine(gameMode)
 		this.webSocketServer = new GameWebSocketServer(webSocketPort)
 		this.setupCommunication()
 	}
 
 	private setupCommunication(){
 		this.gameEngine.onGameStatusUpdate = (game: Game) => {
-			if (game.player1.score >= 3 || game.player2.score >= 3 ){
-				// this.stopGame(game)
+			if (game.player1.score >= 3 || game.player2.score >= 3 )
 				this.webSocketServer.winnerAnnouce(game)
-			}
 			else
 				this.webSocketServer.sendGameState(game)
 		}
@@ -25,7 +26,6 @@ export class GameService{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
 		this.webSocketServer.clientReady = (gameId: string, playerId: string) => {
-			//add check for readystate of each player in game than start the game
 			if (this.gameEngine.allPlayerReady(gameId, playerId))
 				this.gameEngine.startGame(gameId)
 		}
