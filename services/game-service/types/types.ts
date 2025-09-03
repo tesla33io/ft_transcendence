@@ -16,6 +16,7 @@ export interface Player {
 		paddleY: number
 		paddlyX: number
 		score: number
+		ready: boolean
 }
 
 export interface Ball {
@@ -37,7 +38,7 @@ export const generateBallPos = (): Ball => {
 
 export interface Game {
 		id: string
-		status: 'waiting' | 'playing' | 'finished'
+		status: 'waiting' | 'playing' | 'finished' | 'ready'
 		player1: Player
 		player2: Player
 		ball: Ball

@@ -12,27 +12,33 @@ export class GameEngine {
 
 	public onGameStatusUpdate?: (game: Game) => void
 
-	public startGame(game: Game){
-		console.log(`Starting game ${game.id} with players: ${game.player1.name} vs ${game.player2.name}`)
-		this.activeGames.set(game.id, game)
+	public startGame(gameId: string){
+		// console.log(`Starting game ${game.id} with players: ${game.player1.name} vs ${game.player2.name}`)
+		// this.activeGames.set(game.id, game)
+		const game = this.activeGames.get(gameId)
 
-		this.initializeGameState(game)
-		const gameLoop = setInterval(() => {
-			this.updateGame(game)
-		}, this.FRAME_TIME)
+		// this.initializeGameState(game)
+		if (game){
+			const gameLoop = setInterval(() => {
+				this.updateGame(game)
+			}, this.FRAME_TIME)
+			this.gameLoops.set(gameId, gameLoop)
+			console.log(`Game loop started for ${gameId} at ${this.FPS} FPS gameLoopID ${gameLoop}`)
+		}
+		else
+			console.log(`Game with Id: ${gameId} doesn't exist`)
 
-		this.gameLoops.set(game.id, gameLoop)
-		console.log(`Game loop started for ${game.id} at ${this.FPS} FPS`)
 	}
 
 	public stopGame(game: Game){
 		const gameLoop = this.gameLoops.get(game.id)
+		console.log("gameloop of the game: ", gameLoop)
 		if (gameLoop){
 			clearInterval(gameLoop)
 			this.gameLoops.delete(game.id)
 		}
 		this.activeGames.delete(game.id)
-		console.log(`Game ${game.id} stopped`)
+		console.log(`Game [${game.id}] stopped`)
 	}
 
 	public initializeGameState(game: Game){
@@ -46,8 +52,10 @@ export class GameEngine {
 
 		this.ballReset(game)
 
-		game.status = 'playing'
+		game.status = 'ready'
+		this.activeGames.set(game.id, game) // save to the active games
 		console.log(`Game ${game.id} initialized:`)
+		console.log("Saved to active games")
 		console.log(`- Player 1 (${game.player1.name}): paddle at (${game.player1.paddlyX}, ${game.player1.paddleY})`)
 		console.log(`- Player 2 (${game.player2.name}): paddle at (${game.player2.paddlyX}, ${game.player2.paddleY})`)
 		console.log(`- Ball: position (${game.ball.x}, ${game.ball.y}), velocity (${game.ball.vx}, ${game.ball.vy})`)
@@ -110,6 +118,20 @@ export class GameEngine {
 				game.player2.paddleY + paddleY - paddleHeight >= 0)
 					game.player2.paddleY += paddleY
 		}
+	}
+
+	public allPlayerReady(gameId: string, playerId: string): boolean {
+		const game = this.activeGames.get(gameId)
+
+		if (game && game.player1.id === playerId)
+			game.player1.ready = true
+		else if (game && game.player2.id === playerId)
+			game.player2.ready = true
+
+		if (game && game.player1.ready && game.player2.ready)
+			return true
+		else
+			return false
 	}
 }
 

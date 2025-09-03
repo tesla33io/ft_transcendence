@@ -21,7 +21,8 @@ export async function joinGameHandler(req:any, reply:any) {
 			name: playerName,
 			score: 0,
 			paddleY: 0,
-			paddlyX: 0
+			paddlyX: 0,
+			ready: false
 		};
 
 		console.log(waitingPlayers)
@@ -48,7 +49,7 @@ export async function joinGameHandler(req:any, reply:any) {
 			}, 100)
 
 			return {
-				status: 'connecting',
+				status: 'connected',
 				playerId: player.id,
 				gameId: game.id,
 				message: 'Connecting to game...'

@@ -1,4 +1,5 @@
 class PongGame {
+
     constructor() {
         this.form = document.getElementById('joinGameForm');
         this.playerNameInput = document.getElementById('playerName');
@@ -6,7 +7,8 @@ class PongGame {
         this.loading = document.getElementById('loading');
         this.errorMessage = document.getElementById('errorMessage');
         this.successMessage = document.getElementById('successMessage');
-
+        this.gameId = ""
+        this.playerId = 0
         this.initializeEventListeners();
     }
 
@@ -25,6 +27,35 @@ class PongGame {
         this.playerNameInput.addEventListener('focus', () => {
             this.hideMessages();
         });
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === "ArrowUp"){
+                this.sendPaddleMove(this.gameId, this.playerId,10)
+            }
+            else if (event.key === "ArrowDown"){
+                this.sendPaddleMove(this.gameId, this.playerId,-10)
+            }
+        })
+    }
+
+    sendMsgToServer(msg){
+        if (this.ws && this.ws.readyState == WebSocket.OPEN){
+            this.ws.send(JSON.stringify(msg))
+            console.log("Sent to server: ", msg)
+        }
+    }
+
+    sendPaddleMove(gameId, playerId, deltaY) {
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            const message = {
+                type: "paddle_move",
+                gameId: gameId,
+                playerId: playerId,
+                deltaY: deltaY   // just send change in Y
+            }
+            this.ws.send(JSON.stringify(message))
+            console.log("Sent paddle move:", message)
+        }
     }
 
     validatePlayerName() {
@@ -52,7 +83,8 @@ class PongGame {
 
         try {
             this.setLoadingState(true);
-
+            this.playerId = Math.random().toString().substring(2,7)
+            console.log('PlayerID: ', this.playerId)
             const response = await fetch('/api/join-game', {
                 method: 'POST',
                 headers: {
@@ -60,6 +92,7 @@ class PongGame {
                 },
                 body: JSON.stringify({
                     playerName: playerName,
+                    playerId: this.playerId,
                     timestamp: new Date().toISOString()
                 })
             });
@@ -99,8 +132,17 @@ class PongGame {
             const data = JSON.parse(event.data)
             console.log('WebSocket message received:', data)
 
-            if (data.type === 'playing') {
-                this.showGameMatched(data)
+            if (data.type === 'game_state') {
+                if (data.status === 'playing'){
+                    this.gameId = data.id
+                    this.showGameMatched(data)
+                    const msg = {
+                        type: "ready",
+                        gameId: this.gameId,
+                        playerId: this.playerId
+                    }
+                    setTimeout(this.sendMsgToServer(msg), 1000)
+                }
             }
         }
 
@@ -121,7 +163,8 @@ class PongGame {
         if (data.status === 'waiting') {
             this.showSuccess('Waiting for another player to join...')
             this.connectWebSocket(data.playerId) // Connect WebSocket when waiting
-        } else if (data.status === 'connecting') {
+        } else if (data.status === 'connected') {
+            this.gameId = data.id
             this.connectWebSocket(data.playerId)
             this.showSuccess('Connecting to game...')
         }
@@ -132,7 +175,7 @@ class PongGame {
 
         setTimeout(() => {
             this.displayGameInfo(data)
-        }, 1500)
+        }, 1000)
     }
 
     displayGameInfo(data) {
