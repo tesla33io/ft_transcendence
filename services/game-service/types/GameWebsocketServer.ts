@@ -65,12 +65,14 @@ export class GameWebSocketServer{
 		const player2Ws = this.connectedClients.get(gameData.player2.id)
 
 		const messagePlayer1 = JSON.stringify({
-			type: 'game_state',
-			...gameData
+			status: 'connected',
+			id: gameData.id,
+			player1: gameData.player1,
+			player2: gameData.player2
 		})
 
 		const messagePlayer2 = JSON.stringify({
-			status: 'playing',
+			status: 'connected',
 			id: gameData.id,
 			player1: gameData.player2,
 			player2: gameData.player1

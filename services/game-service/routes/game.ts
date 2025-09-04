@@ -52,14 +52,13 @@ export async function joinGameHandler(req:any, reply:any) {
 				if (gameService) {
 					gameService.notifyGameMatched(game)
 					gameService.initializeGame(game)
-					// gameService.startGame(game)
 				} else {
 					console.error('GameService not initialized!')
 				}
 			}, 100)
 
 			return {
-				status: 'connected',
+				status: 'waiting',
 				playerId: player.id,
 				gameId: game.id,
 				message: 'Connecting to game...'

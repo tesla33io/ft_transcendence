@@ -133,7 +133,7 @@ class PongGame {
             const data = JSON.parse(event.data)
             console.log('WebSocket message received:', data)
 
-            if (data.status === 'playing'){
+            if (data.status === 'connected'){
                 this.gameId = data.id
                 this.showGameMatched(data)
                 const msg = {
@@ -165,7 +165,7 @@ class PongGame {
             this.connectWebSocket(data.playerId) // Connect WebSocket when waiting
         } else if (data.status === 'connected') {
             this.gameId = data.id
-            this.connectWebSocket(data.playerId)
+            // this.connectWebSocket(data.playerId)
             this.showSuccess('Connecting to game...')
         }
     }
