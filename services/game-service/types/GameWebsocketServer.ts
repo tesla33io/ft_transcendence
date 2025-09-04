@@ -70,7 +70,6 @@ export class GameWebSocketServer{
 		})
 
 		const messagePlayer2 = JSON.stringify({
-			type: 'game_state',
 			status: 'playing',
 			id: gameData.id,
 			player1: gameData.player2,
@@ -111,23 +110,19 @@ export class GameWebSocketServer{
 	}
 
 	public winnerAnnouce(game: Game){
-
 		const winnerId = game.player1.score >= 3 ? game.player1.id : game.player2.id
 
 		let gameResult = {
+			status: 'finnished',
 			player1Score: game.player1.score,
 			player2Score: game.player2.score,
 			winner: game.player1.id,
-			losser: game.player2.id
 		}
 
-		if (game.player2.id === winnerId){
-			gameResult["winner"] = game.player2.id,
-			gameResult["losser"] = game.player1.id
-		}
+		if (game.player2.id === winnerId)
+			gameResult["winner"] = game.player2.id
 
 		const msg = JSON.stringify(gameResult)
-
 		this.sendToPlayer(game.player1.id, msg)
 		this.sendToPlayer(game.player2.id, msg)
 	}

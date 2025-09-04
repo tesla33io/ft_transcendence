@@ -2,6 +2,9 @@ import { GameEngine } from "./GameEngine";
 import { Game, GAME_HEIGHT, GAME_WIDTH } from "../types/types";
 
 export class ClassicPong extends GameEngine {
+	protected GAME_SCRORE = 3
+	protected PADDLE_HEIGHT = 50
+
 	public initializeGameState(game: Game){
 		game.player1.Y = GAME_HEIGHT / 2 - 50
 		game.player1.X = 20
@@ -31,23 +34,12 @@ export class ClassicPong extends GameEngine {
 
 	protected updateGame(game: Game){
 		this.updateBallPosition(game)
+		this.updatePlayerScore(game)
 		if (this.onGameStatusUpdate)
 			this.onGameStatusUpdate(game)
 	}
 
-	private updateBallPosition(game: Game){
-		game.ball.x += game.ball.vx
-		game.ball.y += game.ball.vy
-
-		if (game.ball.y <= 10){
-			game.ball.y = 10
-			game.ball.vy *= -1
-		}
-		else if(game.ball.y >= GAME_HEIGHT - 10){
-			game.ball.y = GAME_HEIGHT - 10
-			game.ball.vy *= -1
-		}
-
+	private updatePlayerScore(game: Game){
 		if (game.ball.x <= 0){
 			game.player2.score++
 			this.ballReset(game)
@@ -59,9 +51,9 @@ export class ClassicPong extends GameEngine {
 			console.log(`Player 1 (${game.player1.name}) score!`)
 		}
 
-		if (game.player1.score >= 3 || game.player2.score >= 3){
+		if (game.player1.score >= this.GAME_SCRORE ||
+			game.player2.score >= this.GAME_SCRORE){
 			this.stopGame(game)
-			console.log('GAME STOP!!!')
 		}
 	}
 
@@ -69,15 +61,25 @@ export class ClassicPong extends GameEngine {
 		const game = this.activeGames.get(gameId)
 		if (!game) return
 
-		const paddleHeight = 50
 		if (game.player1.id === playerId) {
-			if( game.player1.Y + paddleY + paddleHeight <= GAME_HEIGHT &&
-				game.player1.Y + paddleY - paddleHeight >= 0)
+			if( game.player1.Y + paddleY + this.PADDLE_HEIGHT <= GAME_HEIGHT &&
+				game.player1.Y + paddleY - this.PADDLE_HEIGHT >= 0)
 					game.player1.Y += paddleY
 		} else if (game.player2.id === playerId) {
-			if (game.player2.Y + paddleY + paddleHeight <= GAME_HEIGHT &&
-				game.player2.Y + paddleY - paddleHeight >= 0)
+			if (game.player2.Y + paddleY + this.PADDLE_HEIGHT <= GAME_HEIGHT &&
+				game.player2.Y + paddleY - this.PADDLE_HEIGHT >= 0)
 					game.player2.Y += paddleY
 		}
+	}
+
+	public allPlayerReady(gameId: string, playerId: string): boolean {
+		const game = this.activeGames.get(gameId)
+
+		if (game && game.player1.id === playerId)
+			game.player1.ready = true
+		else if (game && game.player2.id === playerId)
+			game.player2.ready = true
+
+		return (game?.player1.ready && game?.player2.ready ? true : false)
 	}
 }
