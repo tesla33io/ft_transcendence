@@ -1,75 +1,85 @@
 import {Player, Game, generateId as generateGameId, generateBallPos, GameMode} from "../types/types"
-import { GameService } from "./GameService"
 import { GameServiceManager } from "./GameServiceManager"
 
-let waitingPlayers: Map< GameMode, Player[]> = new Map([
-	['classic', []],
-	['tournament', []]
-])
-let activeGame: Game[] = []
-let gameServiceManager: GameServiceManager
 
-export function setGameServiceManager(serviceManager: GameServiceManager){
-	gameServiceManager = serviceManager
-	console.log('GameService set successfully:', !!GameServiceManager)
-}
+export class GameMatchmaker {
+	private static instance: GameMatchmaker
+	private waitingPlayers: Map< GameMode, Player[]> = new Map([
+		['classic', []],
+		['tournament', []]
+	])
+	private activeGame: Game[] = []
+	private gameServiceManager: GameServiceManager
 
-export async function joinGameHandler(req:any, reply:any) {
-	// console.log('joinGameHandler called, gameService exists:', !!gameService)
+	private constructor (serviceManager: GameServiceManager){
+		this.gameServiceManager = serviceManager
+	}
 
-	const { playerName, playerId } = req.body as { playerName: string, playerId: string }
-	const { gameMode } = req.body as {gameMode: GameMode}
-	const gameService = gameServiceManager.getGameService(gameMode)
+	public static getinstance(gameServiceManager: GameServiceManager){
+		if (!GameMatchmaker.instance)
+				GameMatchmaker.instance = new GameMatchmaker(gameServiceManager)
+		return GameMatchmaker.instance
+	}
 
-	const player: Player = {
-		id: playerId,
-		name: playerName,
-		score: 0,
-		Y: 0,
-		X: 0,
-		ready: false
-	};
+	public async joinGameHandler(playerData:{
+		playerName: string,
+		playerId: string,
+		gameMode?: GameMode
+	}) {
+		const { playerName, playerId, gameMode } = playerData as { playerName: string, playerId: string, gameMode: GameMode }
+		const gameService = this.gameServiceManager.getGameService(gameMode)
 
-		console.log("waiting player list:", waitingPlayers)
+		const player: Player = {
+			id: playerId,
+			name: playerName,
+			score: 0,
+			Y: 0,
+			X: 0,
+			ready: false
+		};
 
-		if (!waitingPlayers.has(gameMode))
-			waitingPlayers.set(gameMode, [])
+			// console.log("waiting player list:", this.waitingPlayers)
 
-		const gameModeWaitingPlayer = waitingPlayers.get(gameMode)!
+			if (!this.waitingPlayers.has(gameMode))
+				this.waitingPlayers.set(gameMode, [])
 
-		if (gameModeWaitingPlayer.length > 0){
-			const opponent = gameModeWaitingPlayer.shift()!
-			const game: Game = {
-				id: generateGameId(),
-				status: 'playing',
-				player1: opponent,
-				player2: player,
-				ball: generateBallPos()
-			};
-			activeGame.push(game)
+			const gameModeWaitingPlayer = this.waitingPlayers.get(gameMode)!
 
-			setTimeout(() => {
-				if (gameService) {
-					gameService.notifyGameMatched(game)
-					gameService.initializeGame(game)
-				} else {
-					console.error('GameService not initialized!')
-				}
-			}, 100)
+			if (gameModeWaitingPlayer.length > 0){
+				const opponent = gameModeWaitingPlayer.shift()!
+				const game: Game = {
+					id: generateGameId(),
+					status: 'playing',
+					player1: opponent,
+					player2: player,
+					ball: generateBallPos()
+				};
+				this.activeGame.push(game)
 
-			return {
-				status: 'waiting',
-				playerId: player.id,
-				gameId: game.id,
-				message: 'Connecting to game...'
-			};
-		}
-		else{
-			gameModeWaitingPlayer.push(player)
-			return {
-				status: 'waiting',
-				playerId: player.id,
-				message: 'Wating for player...'
+				setTimeout(() => {
+					if (gameService) {
+						gameService.notifyGameMatched(game)
+						gameService.initializeGame(game)
+					} else {
+						console.error('GameService not initialized!')
+					}
+				}, 100)
+
+				return {
+					status: 'waiting',
+					playerId: player.id,
+					gameId: game.id,
+					message: 'Connecting to game...'
+				};
 			}
-		}
+			else{
+				gameModeWaitingPlayer.push(player)
+				return {
+					status: 'waiting',
+					playerId: player.id,
+					message: 'Wating for player...'
+				}
+			}
+	}
+
 }

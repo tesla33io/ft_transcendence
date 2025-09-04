@@ -17,11 +17,12 @@ export class GameService{
 
 	private setupCommunication(){
 		this.gameEngine.onGameStatusUpdate = (game: Game) => {
-			if (game.player1.score >= 3 || game.player2.score >= 3 )
-				this.webSocketServer.winnerAnnouce(game)
-			else
 				this.webSocketServer.sendGameState(game)
 		}
+		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
+			this.webSocketServer.winnerAnnouce(game, playerId)
+		}
+
 		this.webSocketServer.onPaddleMove = (gameId: string, playerId: string, deltaY: number) =>{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}

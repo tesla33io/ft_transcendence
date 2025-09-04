@@ -5,12 +5,15 @@ export abstract class GameEngine {
 	protected gameLoops: Map<string, NodeJS.Timeout> = new Map()
 	protected FPS = 30
 	protected FRAME_TIME = 1000 / this.FPS
+	protected GAME_SCRORE = 3
+	protected PADDLE_HEIGHT = 50
 
 	constructor(){
 		console.log('GameEngine initialized')
 	}
 
 	public onGameStatusUpdate?: (game: Game) => void
+	public declareWinner?: (game:Game, playerId: string) => void
 
 	public startGame(gameId: string){
 		const game = this.activeGames.get(gameId)

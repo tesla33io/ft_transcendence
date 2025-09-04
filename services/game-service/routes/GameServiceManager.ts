@@ -14,6 +14,7 @@ export class GameServiceManager{
 			const port = this.baseSocketNumber + this.gameServices.size
 			const service = new GameService(gameMode, port)
 			this.gameServices.set(gameMode, service)
+			console.log(`Created ${gameMode} game service on port ${port}`)
 		}
 		return this.gameServices.get(gameMode)!
 	}

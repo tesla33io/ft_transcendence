@@ -33,6 +33,10 @@ export class GameWebSocketServer{
 					}
 				})
 
+				/**
+				 * add check when the player disconnect and game already start
+				 * then make other player win
+				 */
 				ws.on('close', () => {
 					this.connectedClients.delete(playerId)
 					console.log(`Player ${playerId} disconnected`)
@@ -111,11 +115,9 @@ export class GameWebSocketServer{
 		this.sendToPlayer(gameState.player2.id, player2State)
 	}
 
-	public winnerAnnouce(game: Game){
-		const winnerId = game.player1.score >= 3 ? game.player1.id : game.player2.id
-
+	public winnerAnnouce(game: Game, winnerId: string){
 		let gameResult = {
-			status: 'finnished',
+			status: 'finished',
 			player1Score: game.player1.score,
 			player2Score: game.player2.score,
 			winner: game.player1.id,

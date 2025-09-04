@@ -1,10 +1,8 @@
 import { GameEngine } from "./GameEngine";
 import { Game, GAME_HEIGHT, GAME_WIDTH } from "../types/types";
+import { setTimeout } from "timers/promises";
 
 export class ClassicPong extends GameEngine {
-	protected GAME_SCRORE = 3
-	protected PADDLE_HEIGHT = 50
-
 	public initializeGameState(game: Game){
 		game.player1.Y = GAME_HEIGHT / 2 - 50
 		game.player1.X = 20
@@ -37,6 +35,13 @@ export class ClassicPong extends GameEngine {
 		this.updatePlayerScore(game)
 		if (this.onGameStatusUpdate)
 			this.onGameStatusUpdate(game)
+		if (game.player1.score >= this.GAME_SCRORE ||
+			game.player2.score >= this.GAME_SCRORE){
+			this.stopGame(game)
+			const winner = game.player1.score > game.player2.score ? game.player1.id : game.player2.id
+			if (this.declareWinner)
+				this.declareWinner(game, winner)
+		}
 	}
 
 	private updatePlayerScore(game: Game){
@@ -49,11 +54,6 @@ export class ClassicPong extends GameEngine {
 			game.player1.score++
 			this.ballReset(game)
 			console.log(`Player 1 (${game.player1.name}) score!`)
-		}
-
-		if (game.player1.score >= this.GAME_SCRORE ||
-			game.player2.score >= this.GAME_SCRORE){
-			this.stopGame(game)
 		}
 	}
 

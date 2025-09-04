@@ -1,14 +1,16 @@
 import path from 'path'
 import fastifyStatic from '@fastify/static'
 import fastify from 'fastify'
-import { joinGameHandler, setGameServiceManager } from "./routes/game"
+import { GameMatchmaker} from "./routes/game"
 import { GameServiceManager } from './routes/GameServiceManager'
+import { JoinGameRequest } from './types/types'
 
 const server = fastify({ logger: true })
 const PORT = 5000
 
 const gameServiceManager = new GameServiceManager(8080)
-setGameServiceManager(gameServiceManager)
+const gameMatchmaker = GameMatchmaker.getinstance(gameServiceManager)
+
 
 server.register(fastifyStatic,{
 	root: path.join(__dirname, '../../frontend'),
@@ -26,7 +28,11 @@ server.setNotFoundHandler(async (req, reply) => {
 })
 
 
-server.post("/api/join-classic", joinGameHandler)
+// server.post("/api/join-classic", gameMatchmaker.joinGameHandler)
+server.post("/api/join-classic", async (req, reply) => {
+	const result = await gameMatchmaker.joinGameHandler(req.body as JoinGameRequest)
+	return result
+})
 
 
 

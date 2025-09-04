@@ -17,7 +17,13 @@ export enum GAME_STATE {
 	WAITING = 2,
 	READY = 3,
 	PLAYING = 4,
-	FINNISED = 5
+	FINISED = 5
+}
+
+export interface JoinGameRequest {
+	playerName: string,
+	playerId: string,
+	gameMode?: GameMode
 }
 
 export interface Player {

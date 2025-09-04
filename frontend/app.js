@@ -9,6 +9,7 @@ class PongGame {
         this.successMessage = document.getElementById('successMessage');
         this.gameId = ""
         this.playerId = 0
+        this.ws = null
         this.initializeEventListeners();
     }
 
@@ -94,7 +95,6 @@ class PongGame {
                     playerName: playerName,
                     playerId: this.playerId,
                     gameMode: 'classic',
-                    timestamp: new Date().toISOString()
                 })
             });
 
@@ -123,6 +123,10 @@ class PongGame {
 
     connectWebSocket(playerId) {
         console.log(`Attempting to connect WebSocket with playerId: ${playerId}`)
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            console.log('WebSocket already connected')
+            return
+        }
         this.ws = new WebSocket(`ws://localhost:8080?playerId=${playerId}`)
 
         this.ws.onopen = () => {
@@ -136,12 +140,13 @@ class PongGame {
             if (data.status === 'connected'){
                 this.gameId = data.id
                 this.showGameMatched(data)
+                this.showSuccess('Connecting to game...')
                 const msg = {
                     type: "ready",
                     gameId: this.gameId,
                     playerId: this.playerId
                 }
-                setTimeout(this.sendMsgToServer(msg), 1000)
+                setTimeout(() => this.sendMsgToServer(msg), 10000)
             }
 
         }
@@ -163,10 +168,6 @@ class PongGame {
         if (data.status === 'waiting') {
             this.showSuccess('Waiting for another player to join...')
             this.connectWebSocket(data.playerId) // Connect WebSocket when waiting
-        } else if (data.status === 'connected') {
-            this.gameId = data.id
-            // this.connectWebSocket(data.playerId)
-            this.showSuccess('Connecting to game...')
         }
     }
 
@@ -189,7 +190,6 @@ class PongGame {
                 </div>
             </div>
         `;
-        console.log(data)
         this.successMessage.innerHTML = gameInfo;
         this.successMessage.style.display = 'block';
 
