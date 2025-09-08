@@ -1,4 +1,4 @@
-FROM node:latest
+FROM node:24
 
 WORKDIR /app
 
@@ -10,6 +10,6 @@ COPY . .
 
 RUN npm run build
 
-EXPOSE 3000
+EXPOSE 5000 8080
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]

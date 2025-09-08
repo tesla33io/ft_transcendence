@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - game-service
+    networks:
+      - pong-network
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+
+  game-service:
+    build:
+      context: ./services/game-service
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+      - "8080:8080"
+    networks:
+      - pong-network
+    volumes:
+      - ./services/game-service:/app
+      - /app/node_modules
+
+networks:
+  pong-network:
+

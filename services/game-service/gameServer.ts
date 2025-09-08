@@ -11,21 +11,26 @@ const PORT = 5000
 const gameServiceManager = new GameServiceManager(8080)
 const gameMatchmaker = GameMatchmaker.getinstance(gameServiceManager)
 
-
-server.register(fastifyStatic,{
-	root: path.join(__dirname, '../../frontend'),
-	prefix: '/'
+server.register(import('@fastify/cors'), {
+  origin: true, // Allow all origins in development
+  credentials: true
 })
+
+
+// server.register(fastifyStatic,{
+// 	root: path.join(__dirname, '../../frontend'),
+// 	prefix: '/'
+// })
 
 // Handle specific routes that should serve the SPA
-server.get('/', async (req, reply) => {
-	return await reply.sendFile('index.html')
-})
+// server.get('/', async (req, reply) => {
+// 	return await reply.sendFile('index.html')
+// })
 
 // Handle any route that doesn't match static files (SPA fallback)
-server.setNotFoundHandler(async (req, reply) => {
-	return await reply.sendFile('index.html')
-})
+// server.setNotFoundHandler(async (req, reply) => {
+// 	return await reply.sendFile('index.html')
+// })
 
 
 // server.post("/api/join-classic", gameMatchmaker.joinGameHandler)
