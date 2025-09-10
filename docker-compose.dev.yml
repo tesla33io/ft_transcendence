@@ -9,11 +9,22 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - game-service
+      - gateway
     networks:
       - pong-network
     volumes:
       - ./frontend:/usr/share/nginx/html:ro
+
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - game-service
+    networks:
+      - pong-network
 
   game-service:
     build:
