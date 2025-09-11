@@ -9,9 +9,9 @@ const PORT = 5000
 const gameServiceManager = new GameServiceManager(8080)
 const classicMatchmaker = ClassicMatchmaker.getinstance(gameServiceManager)
 
-server.register(import('@fastify/cors'), {
-  origin: true,
-  credentials: true
+server.register(require('@fastify/cors'), {
+	origin: true,
+	credentials: true
 })
 
 server.post("/join-classic", async (req, reply) => {

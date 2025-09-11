@@ -6,6 +6,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: frontend
     ports:
       - "80:80"
     depends_on:
@@ -19,6 +20,7 @@ services:
     build:
       context: ./services/gateway-service
       dockerfile: Dockerfile
+    container_name: gateway-service
     ports:
       - "3000:3000"
     depends_on:
@@ -32,6 +34,7 @@ services:
     build:
       context: ./services/game-service
       dockerfile: Dockerfile
+    container_name: game-service
     ports:
       - "5000:5000"
       - "8080:8080"
