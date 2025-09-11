@@ -2,8 +2,8 @@ import {Player, Game, generateId as generateGameId, generateBallPos, GameMode} f
 import { GameServiceManager } from "./GameServiceManager"
 
 
-export class GameMatchmaker {
-	private static instance: GameMatchmaker
+export class ClassicMatchmaker {
+	private static instance: ClassicMatchmaker
 	private waitingPlayers: Map< GameMode, Player[]> = new Map([
 		['classic', []],
 		['tournament', []]
@@ -16,9 +16,9 @@ export class GameMatchmaker {
 	}
 
 	public static getinstance(gameServiceManager: GameServiceManager){
-		if (!GameMatchmaker.instance)
-				GameMatchmaker.instance = new GameMatchmaker(gameServiceManager)
-		return GameMatchmaker.instance
+		if (!ClassicMatchmaker.instance)
+				ClassicMatchmaker.instance = new ClassicMatchmaker(gameServiceManager)
+		return ClassicMatchmaker.instance
 	}
 
 	public async joinGameHandler(playerData:{
@@ -37,8 +37,6 @@ export class GameMatchmaker {
 			X: 0,
 			ready: false
 		};
-
-			// console.log("waiting player list:", this.waitingPlayers)
 
 			if (!this.waitingPlayers.has(gameMode))
 				this.waitingPlayers.set(gameMode, [])
