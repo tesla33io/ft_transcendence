@@ -8,9 +8,25 @@ server.register(require('@fastify/cors'),{
 	credentials: true
 })
 
+
+// server.addHook('preHandler', async (request, reply) => {
+// 	server.log.info(`Req: ${request.method} \n req: ${request.url}`)
+// })
+
+server.get('/test', async (req, reply) => {
+	return {message: 'test'}
+})
+
 server.register(require('@fastify/http-proxy'), {
 	upstream: 'http://game-service:5000',
 	prefix: '/api',
+	http2: false
+})
+
+server.register(require('@fastify/http-proxy'), {
+	upstream: 'http://game-service:8080',
+	prefix: '/ws',
+	websocket: true,
 	http2: false
 })
 

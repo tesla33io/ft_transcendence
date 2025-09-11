@@ -1,6 +1,6 @@
 FROM node:18
 
-WORKDIR /app
+WORKDIR /game-service
 
 COPY package.json package-lock.json* ./
 

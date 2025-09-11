@@ -12,6 +12,7 @@ export class GameService{
 		this.gameMode = gameMode
 		this.gameEngine = GameModeEngineProvider.createEngine(this.gameMode)
 		this.webSocketServer = new GameWebSocketServer(webSocketPort)
+		console.log(`Created socket for game mode ${this.gameMode} on port ${webSocketPort}`)
 		this.setupCommunication()
 	}
 

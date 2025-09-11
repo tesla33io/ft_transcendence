@@ -10,7 +10,7 @@ export class GameWebSocketServer{
 		this.wss = new WebSocketServer({port})
 		this.connectedClients = new Map<string, WebSocket>()
 		this.setupWebsocketServer()
-		console.log('Created Server web socket')
+		console.log(`Created Server websocket ${port}`)
 	}
 
 	public onPaddleMove?: (gameId: string, playerId: string, paddleY: number) => void
@@ -18,9 +18,10 @@ export class GameWebSocketServer{
 
 	private setupWebsocketServer(){
 		this.wss.on('connection', (ws: WebSocket, req) =>{
+			console.log("game service websocket request: ", req)
 			const url = new URL(req.url!, 'http://localhost')
 			const playerId = url.searchParams.get('playerId')
-			console.log('here')
+
 			if (playerId) {
 				this.connectedClients.set(playerId, ws)
 				console.log(`Player ${playerId} connected via WebSocket`)

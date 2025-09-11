@@ -25,6 +25,8 @@ services:
       - game-service
     networks:
       - pong-network
+    volumes:
+      - ./services/gateway:/gateway
 
   game-service:
     build:
@@ -36,7 +38,7 @@ services:
     networks:
       - pong-network
     volumes:
-      - ./services/game-service:/app
+      - ./services/game-service:/game-service
       - /app/node_modules
 
 networks:

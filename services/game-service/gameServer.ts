@@ -34,11 +34,14 @@ server.register(import('@fastify/cors'), {
 
 
 // server.post("/api/join-classic", gameMatchmaker.joinGameHandler)
-server.post("/api/join-classic", async (req, reply) => {
+server.post("/join-classic", async (req, reply) => {
 	const result = await gameMatchmaker.joinGameHandler(req.body as JoinGameRequest)
 	return result
 })
 
+server.get('/join-classic', async (req, reply) => {
+	return { message: 'Use POST method to join game' }
+})
 
 
 const start = async () => {

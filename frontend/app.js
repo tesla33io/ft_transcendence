@@ -86,9 +86,7 @@ class PongGame {
             this.setLoadingState(true);
             this.playerId = Math.random().toString().substring(2,7)
             console.log('PlayerID: ', this.playerId)
-            // const gameServiceUrl = window.location.hostname === 'localhost'
-            // ? 'http://localhost:5000'
-            // : `http://${window.location.hostname}:5000`;
+
             const response = await fetch(`/api/join-classic`, {
                 method: 'POST',
                 headers: {
@@ -100,7 +98,6 @@ class PongGame {
                     gameMode: 'classic',
                 })
             });
-
             const data = await response.json();
 
             if (!response.ok) {
@@ -130,7 +127,7 @@ class PongGame {
             console.log('WebSocket already connected')
             return
         }
-        this.ws = new WebSocket(`ws://${window.location.hostname}:8080?playerId=${playerId}`)
+        this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws?playerId=${playerId}`)
 
         this.ws.onopen = () => {
             console.log('WebSocket connected successfully')
