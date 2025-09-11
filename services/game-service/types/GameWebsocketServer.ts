@@ -18,7 +18,6 @@ export class GameWebSocketServer{
 
 	private setupWebsocketServer(){
 		this.wss.on('connection', (ws: WebSocket, req) =>{
-			console.log("game service websocket request: ", req)
 			const url = new URL(req.url!, 'http://localhost')
 			const playerId = url.searchParams.get('playerId')
 

@@ -1,7 +1,5 @@
-import path from 'path'
-import fastifyStatic from '@fastify/static'
 import fastify from 'fastify'
-import { GameMatchmaker} from "./routes/game"
+import { GameMatchmaker} from "./routes/classicGameMatchMaker"
 import { GameServiceManager } from './routes/GameServiceManager'
 import { JoinGameRequest } from './types/types'
 
@@ -12,28 +10,10 @@ const gameServiceManager = new GameServiceManager(8080)
 const gameMatchmaker = GameMatchmaker.getinstance(gameServiceManager)
 
 server.register(import('@fastify/cors'), {
-  origin: true, // Allow all origins in development
+  origin: true,
   credentials: true
 })
 
-
-// server.register(fastifyStatic,{
-// 	root: path.join(__dirname, '../../frontend'),
-// 	prefix: '/'
-// })
-
-// Handle specific routes that should serve the SPA
-// server.get('/', async (req, reply) => {
-// 	return await reply.sendFile('index.html')
-// })
-
-// Handle any route that doesn't match static files (SPA fallback)
-// server.setNotFoundHandler(async (req, reply) => {
-// 	return await reply.sendFile('index.html')
-// })
-
-
-// server.post("/api/join-classic", gameMatchmaker.joinGameHandler)
 server.post("/join-classic", async (req, reply) => {
 	const result = await gameMatchmaker.joinGameHandler(req.body as JoinGameRequest)
 	return result

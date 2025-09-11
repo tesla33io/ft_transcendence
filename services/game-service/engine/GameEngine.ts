@@ -31,7 +31,6 @@ export abstract class GameEngine {
 
 	public stopGame(game: Game){
 		const gameLoop = this.gameLoops.get(game.id)
-		console.log("gameloop of the game: ", gameLoop)
 		if (gameLoop){
 			clearInterval(gameLoop)
 			this.gameLoops.delete(game.id)
