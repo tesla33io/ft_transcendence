@@ -6,7 +6,7 @@ export class GameWebSocketServer{
 	private wss: WebSocketServer
 	private connectedClients: Map<string, WebSocket>
 
-	constructor(port: number = 8080){
+	constructor(port: number = 5001){
 		this.wss = new WebSocketServer({port})
 		this.connectedClients = new Map<string, WebSocket>()
 		this.setupWebsocketServer()

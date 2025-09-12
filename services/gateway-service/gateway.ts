@@ -24,7 +24,7 @@ server.register(require('@fastify/http-proxy'), {
 })
 
 server.register(require('@fastify/http-proxy'), {
-	upstream: 'http://game-service:8080',
+	upstream: 'http://game-service:5001',
 	prefix: '/ws',
 	websocket: true,
 	http2: false

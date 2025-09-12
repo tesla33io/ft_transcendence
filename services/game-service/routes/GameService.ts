@@ -8,7 +8,7 @@ export class GameService{
 	private webSocketServer: GameWebSocketServer
 	private gameMode: GameMode
 
-	constructor(gameMode: GameMode, webSocketPort: number = 8080) {
+	constructor(gameMode: GameMode, webSocketPort: number = 5001) {
 		this.gameMode = gameMode
 		this.gameEngine = GameModeEngineProvider.createEngine(this.gameMode)
 		this.webSocketServer = new GameWebSocketServer(webSocketPort)

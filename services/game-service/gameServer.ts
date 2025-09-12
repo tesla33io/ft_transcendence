@@ -6,7 +6,7 @@ import { JoinGameRequest } from './types/types'
 const server = fastify({ logger: true })
 const PORT = 5000
 
-const gameServiceManager = new GameServiceManager(8080)
+const gameServiceManager = new GameServiceManager(5001)
 const classicMatchmaker = ClassicMatchmaker.getinstance(gameServiceManager)
 
 server.register(require('@fastify/cors'), {
@@ -33,7 +33,7 @@ const start = async () => {
 	try {
 		await server.listen({ port: PORT, host: '0.0.0.0' })
 		console.log(`HTTP Server running on port ${PORT}`)
-		console.log(`WebSocket Server running on port 8080`)
+		console.log(`WebSocket Server running on port 5001`)
 	}
 	catch (error){
 		server.log.error(error)
