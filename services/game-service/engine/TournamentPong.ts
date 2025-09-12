@@ -24,4 +24,8 @@ export class TournamentPong extends GameEngine{
 	public allPlayerReady(gameId: string, playerId: string): boolean {
 		return false
 	}
+
+	protected collisionCheck(game: Game): void {
+
+	}
 }

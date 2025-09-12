@@ -1,12 +1,10 @@
-import {Game, GAME_HEIGHT, GAME_WIDTH} from "../types/types"
+import {Game, GAME_HEIGHT, FPS} from "../types/types"
 
 export abstract class GameEngine {
 	protected activeGames: Map<string, Game> = new Map()
 	protected gameLoops: Map<string, NodeJS.Timeout> = new Map()
-	protected FPS = 30
-	protected FRAME_TIME = 1000 / this.FPS
+	protected FRAME_TIME = 1000 / FPS
 	protected GAME_SCRORE = 3
-	protected PADDLE_HEIGHT = 50
 
 	constructor(){
 		console.log('GameEngine initialized')
@@ -22,7 +20,7 @@ export abstract class GameEngine {
 				this.updateGame(game)
 			}, this.FRAME_TIME)
 			this.gameLoops.set(gameId, gameLoop)
-			console.log(`Game loop started for ${gameId} at ${this.FPS} FPS gameLoopID ${gameLoop}`)
+			console.log(`Game loop started for ${gameId} at ${FPS} FPS gameLoopID ${gameLoop}`)
 		}
 		else
 			console.log(`Game with Id: ${gameId} doesn't exist`)
@@ -51,12 +49,14 @@ export abstract class GameEngine {
 			game.ball.y = GAME_HEIGHT - 10
 			game.ball.vy *= -1
 		}
+		this.collisionCheck(game)
 	}
 
 	public abstract initializeGameState(game: Game): void
 	protected abstract updateGame(game: Game): void
 	public abstract updatePlayerPaddle(gameId: string, playerId: string, paddleY: number): void
 	public abstract allPlayerReady(gameId: string, playerId: string): boolean
+	protected abstract collisionCheck(game: Game): void
 }
 
 
