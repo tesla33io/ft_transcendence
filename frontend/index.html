@@ -80,11 +80,31 @@
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 10px;
         }
 
-        .join-btn:hover {
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .classic-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .classic-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .tournament-btn {
+            background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+        }
+
+        .tournament-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(230, 126, 34, 0.4);
         }
 
         .join-btn:disabled {
@@ -152,9 +172,14 @@
                 >
             </div>
 
-            <button type="submit" class="join-btn" id="joinBtn">
-                Join Game
-            </button>
+            <div class="button-group">
+                <button type="button" class="join-btn classic-btn" id="joinClassicBtn">
+                    Join Classic Game
+                </button>
+                <button type="button" class="join-btn tournament-btn" id="joinTournamentBtn">
+                    Join Tournament
+                </button>
+            </div>
         </form>
 
         <div class="loading" id="loading">

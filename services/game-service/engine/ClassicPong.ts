@@ -83,7 +83,8 @@ export class ClassicPong extends GameEngine {
 	}
 
 	protected collisionCheck(game: Game): void {
-		if (game.ball.x >= game.player2.X || game.ball.x >= game.player1.X){
+		if (game.ball.x <= game.player1.X + PADDLE_WIDTH / 2 ||
+			game.ball.x >= game.player2.X - PADDLE_WIDTH / 2){
 			game.ball.vx = game.ball.vx < 0 ? game.ball.vx - 2 : game.ball.vx + 2
 			game.ball.vx *= -1;
 		}

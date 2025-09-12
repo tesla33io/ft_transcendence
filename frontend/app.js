@@ -3,7 +3,8 @@ class PongGame {
     constructor() {
         this.form = document.getElementById('joinGameForm');
         this.playerNameInput = document.getElementById('playerName');
-        this.joinBtn = document.getElementById('joinBtn');
+        this.joinClassicBtn = document.getElementById('joinClassicBtn');
+        this.joinTournamentBtn = document.getElementById('joinTournamentBtn');
         this.loading = document.getElementById('loading');
         this.errorMessage = document.getElementById('errorMessage');
         this.successMessage = document.getElementById('successMessage');
@@ -14,9 +15,13 @@ class PongGame {
     }
 
     initializeEventListeners() {
-        this.form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleJoinGame();
+        // Remove form submit handler since we're using individual buttons
+        this.joinClassicBtn.addEventListener('click', () => {
+            this.handleJoinGame('classic');
+        });
+
+        this.joinTournamentBtn.addEventListener('click', () => {
+            this.handleJoinGame('tournament');
         });
 
         // Real-time validation
@@ -63,7 +68,8 @@ class PongGame {
         const name = this.playerNameInput.value.trim();
         const isValid = name.length >= 2 && name.length <= 20 && /^[a-zA-Z0-9_-]+$/.test(name);
 
-        this.joinBtn.disabled = !isValid;
+        this.joinClassicBtn.disabled = !isValid;
+        this.joinTournamentBtn.disabled = !isValid;
 
         if (name.length > 0 && !isValid) {
             this.showError('Name must be 2-20 characters, alphanumeric, underscore, or hyphen only');
@@ -74,7 +80,7 @@ class PongGame {
         return isValid;
     }
 
-    async handleJoinGame() {
+    async handleJoinGame(gameMode = 'classic') {
         if (!this.validatePlayerName()) {
             this.showError('Please enter a valid player name');
             return;
@@ -86,8 +92,12 @@ class PongGame {
             this.setLoadingState(true);
             this.playerId = Math.random().toString().substring(2,7)
             console.log('PlayerID: ', this.playerId)
+            console.log('Game Mode: ', gameMode)
 
-            const response = await fetch(`/api/join-classic`, {
+            // Determine API endpoint based on game mode
+            const apiEndpoint = gameMode === 'tournament' ? '/api/join-tournament' : '/api/join-classic';
+
+            const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -95,13 +105,13 @@ class PongGame {
                 body: JSON.stringify({
                     playerName: playerName,
                     playerId: this.playerId,
-                    gameMode: 'classic',
+                    gameMode: gameMode,
                 })
             });
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.message || 'Failed to join game');
+                throw new Error(data.message || `Failed to join ${gameMode} game`);
             }
 
             console.log('=== SERVER RESPONSE ===');
@@ -109,13 +119,14 @@ class PongGame {
             console.log('Response Data:', data);
             console.log('Game Status:', data.status);
             console.log('Player ID:', data.playerId);
+            console.log('Game Mode:', gameMode);
             console.log('=======================');
             // Success - handle the response
-            this.handleJoinSuccess(data);
+            this.handleJoinSuccess(data, gameMode);
 
         } catch (error) {
             console.error('Join game error:', error);
-            this.showError(error.message || 'Failed to join game. Please try again.');
+            this.showError(error.message || `Failed to join ${gameMode} game. Please try again.`);
         } finally {
             this.setLoadingState(false);
         }
@@ -162,12 +173,19 @@ class PongGame {
     }
 
 
-    handleJoinSuccess(data) {
+    handleJoinSuccess(data, gameMode = 'classic') {
         console.log('Game data:', data);
 
         if (data.status === 'waiting') {
-            this.showSuccess('Waiting for another player to join...')
-            this.connectWebSocket(data.playerId) // Connect WebSocket when waiting
+            const waitingMessage = gameMode === 'tournament'
+                ? `Waiting for tournament players... (${data.playersWaiting || 1}/4)`
+                : 'Waiting for another player to join...';
+
+            this.showSuccess(waitingMessage);
+            this.connectWebSocket(data.playerId); // Connect WebSocket when waiting
+        } else if (data.status === 'tournament_starting') {
+            this.showSuccess('Tournament starting! Prepare for your first match.');
+            this.connectWebSocket(data.playerId);
         }
     }
 
