@@ -8,7 +8,7 @@ export class GameMatchmaker {
 		['classic', []],
 		['tournament', []]
 	])
-	private activeGame: Game[] = []
+
 	private gameServiceManager: GameServiceManager
 	private tournamentLimit = 4
 
@@ -48,12 +48,11 @@ export class GameMatchmaker {
 			const opponent = ClassicWaitingPlayer.shift()!
 			const game: Game = {
 				id: generateGameId(),
-				status: 'playing',
+				status: 'connected',
 				player1: opponent,
 				player2: player,
 				ball: generateBallPos()
 			};
-			this.activeGame.push(game)
 
 			setTimeout(() => {
 				if (gameService) {
@@ -89,7 +88,7 @@ export class GameMatchmaker {
 	}){
 		const {playerName, playerId, gameMode} = playerData as {playerName: string, playerId: string, gameMode: GameMode}
 		const gameService = this.gameServiceManager.getGameService(gameMode)
-		console.log("Game service: ", gameService)
+
 		const player: Player = {
 			id: playerId,
 			name: playerName,
@@ -107,6 +106,12 @@ export class GameMatchmaker {
 		if (tournamentWatingPlayer.length === this.tournamentLimit){
 			const players = tournamentWatingPlayer.splice(0, 4)
 
+			const bracket = {
+				id: generateGameId(),
+				player: players,
+				semifinals: {player1: players[0].name, player2: players[1].name,
+							 player3: players[2].name, player4: players[3].name}
+			}
 
 			return {
 				status: 'waiting',
