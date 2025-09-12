@@ -1,0 +1,294 @@
+:root {
+  --color-background: #231942;   /* Deep Purple – main background */
+  --color-primary: #5E548E;      /* Purple – main buttons, paddles */
+  --color-secondary: #9F86C0;    /* Lavender – accents, highlights */
+  --color-text: #BE95C4;         /* Light Purple – main text */
+  --color-accent: #E0B1CB;       /* Pink Mist – overlays, hover states */
+  --color-error: #dc2626;        /* Error messages */
+  --color-error-bg: #fee2e2;
+  --color-error-border: #fecaca;
+  --color-success: #059669;      /* Success messages */
+  --color-success-bg: #d1fae5;
+  --color-success-border: #a7f3d0;
+  --color-dev-console: #0f0;     /* Dev console text */
+  --color-overlay-bg: rgba(0,0,0,0.8);
+}
+
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
+    background: linear-gradient(135deg, var(--color-background) 0%, var(--color-primary) 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--color-text);
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+
+
+.subtitle {
+    color: var(--color-text);
+    margin-bottom: 2.5rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+    letter-spacing: -0.5px;
+}
+
+#gameContainer {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+#gameCanvas {
+    display: none;
+    background: var(--color-background);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.form-group {
+    margin-bottom: 1.75rem;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid var(--color-secondary);
+    border-radius: 12px;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    background: var(--color-accent);
+    color: var(--color-text);
+}
+
+input[type="text"]:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    background: var(--color-background);
+    box-shadow: 0 0 0 4px rgba(94, 84, 142, 0.1);
+}
+
+.join-btn {
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    color: var(--color-text);
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.join-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(94, 84, 142, 0.4);
+}
+
+.join-btn:active {
+    transform: translateY(0);
+}
+
+.join-btn:disabled {
+    background: var(--color-accent);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.error-message, .success-message {
+    margin-top: 1.25rem;
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-weight: 500;
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.error-message {
+    color: var(--color-error);
+    background: var(--color-error-bg);
+    border: 1px solid var(--color-error-border);
+}
+
+.success-message {
+    color: var(--color-success);
+    background: var(--color-success-bg);
+    border: 1px solid var(--color-success-border);
+}
+
+.loading {
+    display: none;
+    margin-top: 1.25rem;
+}
+
+.spinner {
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--color-primary);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto;
+}
+
+.game-active {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: var(--color-background);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.game-active #gameCanvas {
+    display: block;
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.game-active .logo,
+.game-active .subtitle,
+.game-active #joinGameForm,
+.game-active .loading,
+.game-active .error-message,
+.game-active .success-message {
+    display: none;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#dev-console {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 250px;
+  background: rgba(0,0,0,0.9);
+  color: var(--color-dev-console);
+  font-family: monospace;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  z-index: 9999;
+  border-top: 2px solid var(--color-secondary);
+}
+
+#dev-console .header {
+  background: var(--color-background);
+  color: var(--color-text);
+  padding: 4px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+#dev-console .output {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+  line-height: 1.3;
+}
+
+#result-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--color-overlay-bg);
+  z-index: 1000;
+}
+
+#result-screen.hidden {
+  display: none;
+}
+
+.result-content {
+  text-align: center;
+  color: var(--color-text);
+  background: var(--color-accent);
+  padding: 40px 60px;
+  border-radius: 12px;
+  font-family: monospace;
+}
+
+#play-again-btn {
+  margin-top: 20px;
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  background: var(--color-primary);
+  color: var(--color-text);
+  border: none;
+  border-radius: 8px;
+}
+
+#play-again-btn:hover {
+    background: var(--color-secondary);
+}
+
+
+#testingSitebutton {
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    color: var(--color-text);
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#testingSitebutton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(94, 84, 142, 0.4);
+}

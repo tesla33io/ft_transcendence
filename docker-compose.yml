@@ -5,16 +5,16 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: frontend
     ports:
-      - "8080:80"
+      - "5173:5173"
     depends_on:
       - gateway-service
     networks:
       - pong-network
     volumes:
-      - ./frontend:/usr/share/nginx/html:ro
+      - ./frontend:/app
 
   gateway-service:
     build:
@@ -36,7 +36,7 @@ services:
       dockerfile: Dockerfile
     container_name: game-service
     ports:
-      - "5000:5000"
+      - "5002:5000"
       - "5001:5001"
     networks:
       - pong-network

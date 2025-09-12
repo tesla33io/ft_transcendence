@@ -1,8 +1,5 @@
 export const GAME_HEIGHT = 550
 export const GAME_WIDTH = 900
-export const PADDLE_HEIGHT = 50
-export const PADDLE_WIDTH = 10
-export const FPS = 60
 
 export type GameMode = 'classic' | 'tournament'
 
@@ -57,7 +54,7 @@ export const generateBallPos = (): Ball => {
 
 export interface Game {
 		id: string
-		status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
+		status: 'waiting' | 'playing' | 'finished' | 'ready'
 		player1: Player
 		player2: Player
 		ball: Ball

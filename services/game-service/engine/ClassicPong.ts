@@ -1,5 +1,6 @@
 import { GameEngine } from "./GameEngine";
-import { Game, GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH} from "../types/types";
+import { Game, GAME_HEIGHT, GAME_WIDTH } from "../types/types";
+import { setTimeout } from "timers/promises";
 
 export class ClassicPong extends GameEngine {
 	public initializeGameState(game: Game){
@@ -61,12 +62,12 @@ export class ClassicPong extends GameEngine {
 		if (!game) return
 
 		if (game.player1.id === playerId) {
-			if( game.player1.Y + paddleY + PADDLE_HEIGHT / 2 <= GAME_HEIGHT &&
-				game.player1.Y + paddleY - PADDLE_HEIGHT / 2 >= 0)
+			if( game.player1.Y + paddleY + this.PADDLE_HEIGHT <= GAME_HEIGHT &&
+				game.player1.Y + paddleY - this.PADDLE_HEIGHT >= 0)
 					game.player1.Y += paddleY
 		} else if (game.player2.id === playerId) {
-			if (game.player2.Y + paddleY + PADDLE_HEIGHT / 2 <= GAME_HEIGHT &&
-				game.player2.Y + paddleY - PADDLE_HEIGHT / 2 >= 0)
+			if (game.player2.Y + paddleY + this.PADDLE_HEIGHT <= GAME_HEIGHT &&
+				game.player2.Y + paddleY - this.PADDLE_HEIGHT >= 0)
 					game.player2.Y += paddleY
 		}
 	}
@@ -80,13 +81,5 @@ export class ClassicPong extends GameEngine {
 			game.player2.ready = true
 
 		return (game?.player1.ready && game?.player2.ready ? true : false)
-	}
-
-	protected collisionCheck(game: Game): void {
-		if (game.ball.x <= game.player1.X + PADDLE_WIDTH / 2 ||
-			game.ball.x >= game.player2.X - PADDLE_WIDTH / 2){
-			game.ball.vx = game.ball.vx < 0 ? game.ball.vx - 2 : game.ball.vx + 2
-			game.ball.vx *= -1;
-		}
 	}
 }

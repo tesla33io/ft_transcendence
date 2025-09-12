@@ -1,5 +1,5 @@
 import fastify from 'fastify'
-import { GameMatchmaker} from "./routes/GameMatchmaker"
+import { ClassicMatchmaker} from "./routes/classicGameMatchMaker"
 import { GameServiceManager } from './routes/GameServiceManager'
 import { JoinGameRequest } from './types/types'
 
@@ -7,7 +7,7 @@ const server = fastify({ logger: true })
 const PORT = 5000
 
 const gameServiceManager = new GameServiceManager(5001)
-const gameMatchmaker = GameMatchmaker.getinstance(gameServiceManager)
+const classicMatchmaker = ClassicMatchmaker.getinstance(gameServiceManager)
 
 server.register(require('@fastify/cors'), {
 	origin: true,
@@ -15,13 +15,13 @@ server.register(require('@fastify/cors'), {
 })
 
 server.post("/join-classic", async (req, reply) => {
-	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
+	const result = await classicMatchmaker.joinGameHandler(req.body as JoinGameRequest)
 	return result
 })
 
 server.post("/join-tournament", async (req, reply) => {
-	const result = await gameMatchmaker.joinTournament(req.body as JoinGameRequest)
-	return result
+
+	return { message: 'WIP' }
 })
 
 server.get('/join-classic', async (req, reply) => {
