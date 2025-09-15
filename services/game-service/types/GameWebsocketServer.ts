@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws"
-import {Game, GAME_WIDTH} from "./types"
+import {Game, GAME_WIDTH, GAME_HEIGHT} from "./types"
 
 export class GameWebSocketServer{
 
@@ -96,6 +96,7 @@ export class GameWebSocketServer{
 	}
 
 	public sendGameState(gameState: Game){
+
 		let player1State = JSON.stringify({
 			status: 'playing',
 			player: {
@@ -109,7 +110,7 @@ export class GameWebSocketServer{
 			opponet:{
 				id: gameState.player2.id,
 				name: gameState.player2.name,
-				Y: gameState.player2.Y,
+				Y:  gameState.player2.Y,
 				X: GAME_WIDTH - gameState.player2.X,
 				score: gameState.player2.score,
 				ready: gameState.player2.ready

@@ -82,6 +82,6 @@ export interface GameResult{
 	myPlayerid:  string;
 	player1Score: number;
 	player2Score: number;
-	winner: number;
+	winner: string;
 	losser: number; //with typo change later to loser
 }

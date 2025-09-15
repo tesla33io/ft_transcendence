@@ -33,8 +33,9 @@ export class Renderer {
 	public onPlayAgain?: () => void; // callback to PongGame
 
 	showResultScreen(result: GameResult, myPlayerId: string) {
-        const isWin = result.winner === Number(myPlayerId);
+        const isWin = result.winner === myPlayerId;
 		this.resultTitle.textContent = isWin ? "🎉 YOU WIN!" : "😢 YOU LOSE!";
+        console.log(`Player: ${myPlayerId} - Won: ${isWin}`)
 		this.resultScore.textContent = `${result.player1Score} : ${result.player2Score}`;
 		this.resultScreen.classList.remove('hidden');
   }

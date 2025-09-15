@@ -135,7 +135,7 @@ export class WebSocketHandler {
         };
 
         this.ws.onmessage = (event: MessageEvent) => {
-            console.log("Websocket msg: ", event.data);
+            // console.log("Websocket msg: ", event.data);
             this.handleWebSocketMessage(event.data);
         };
 
