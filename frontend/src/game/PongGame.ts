@@ -65,7 +65,7 @@ export class PongGame {
     private handleKeyPress(event: KeyboardEvent): void {
         if (!this.wsHandler || !this.gameId) return;
 
-        const deltaY = event.key === "ArrowUp" ? 10 : event.key === "ArrowDown" ? -10 : 0;
+        const deltaY = event.key === "ArrowUp" ? -10 : event.key === "ArrowDown" ? 10 : 0;
         if (deltaY !== 0) {
             this.wsHandler.sendMessage({
                 type: MessageType.PADDLE_MOVE,
@@ -142,7 +142,6 @@ export class PongGame {
             this.initializeWebSocket(data.playerId || this.playerId);
         } else if (data.status === 'connected') {
             this.gameId = data.id || '';
-            this.initializeWebSocket(data.playerId || this.playerId);
             this.showSuccess('Connecting to game...');
         }
     }

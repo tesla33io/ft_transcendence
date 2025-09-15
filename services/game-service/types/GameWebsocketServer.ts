@@ -96,10 +96,24 @@ export class GameWebSocketServer{
 	}
 
 	public sendGameState(gameState: Game){
-		const player1State = JSON.stringify({
+		let player1State = JSON.stringify({
 			status: 'playing',
-			player: gameState.player1,
-			opponet:gameState.player2,
+			player: {
+				id: gameState.player1.id,
+				name: gameState.player1.name,
+				Y: gameState.player1.Y,
+				X: GAME_WIDTH - gameState.player1.X,
+				score: gameState.player1.score,
+				ready: gameState.player1.ready
+			},
+			opponet:{
+				id: gameState.player2.id,
+				name: gameState.player2.name,
+				Y: gameState.player2.Y,
+				X: GAME_WIDTH - gameState.player2.X,
+				score: gameState.player2.score,
+				ready: gameState.player2.ready
+			},
 			ball: gameState.ball
 		})
 
