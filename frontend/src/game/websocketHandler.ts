@@ -4,6 +4,7 @@ import { Renderer } from "./renderCanvas";
 export class WebSocketHandler {
     private ws?: WebSocket;
     private gameId: string = '';
+	private isReady: boolean = false;
 
     constructor(
         private playerId: string,
@@ -51,19 +52,25 @@ export class WebSocketHandler {
     );
 	}
 
-    // Handle different types of messages
-    private handleInitialGameState(data: GameData): void {
-        console.log('=== INITIAL GAME STATE ===');
-        this.gameId = data.id || '';
-        this.onGameStart(data);
 
-        // Send ready message
+    public sendReadyMessage(): void {
+        if (this.isReady) return;
+
         const readyMsg: WebSocketMessage = {
             type: MessageType.PLAYER_READY,
             gameId: this.gameId,
             playerId: this.playerId
         };
-        setTimeout(() => this.sendMessage(readyMsg), 1000);
+        this.sendMessage(readyMsg);
+        this.isReady = true;
+    }
+
+    // Handle different types of messages
+    private handleInitialGameState(data: GameData): void {
+        console.log('=== INITIAL GAME STATE ===');
+		console.log(data)
+        this.gameId = data.id || '';
+        this.onGameStart(data);
     }
 
 	private handleGameResult(data:any): void{

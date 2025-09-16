@@ -148,10 +148,26 @@ export class PongGame {
 
     private handleGameStart(data: GameData): void {
         this.gameId = data.id || '';
-        this.showGameMatched(data);
+
+		//show gameinfo/matched opponent
+		this.showGameMatched(data);
+
+		// Initialize renderer first
+        this.renderer.initializeCanvas();
+
+        // Only send ready message after renderer is initialized
+        if (this.renderer.isReady() && this.wsHandler) {
+            this.wsHandler.sendReadyMessage();
+			console.log('################################################')
+        }
     }
 
 	private handelGameState(data: GameState): void{
+		 // If this is the first game state update (both players ready)
+		if (data.status === 'playing' && !this.gameState) {
+			// Start the actual game
+			this.startGame();
+		}
 		this.gameState = data;
         this.renderer.render(data);
 	}
@@ -195,21 +211,19 @@ export class PongGame {
 
         this.successMessage.innerHTML = gameInfo;
         this.successMessage.style.display = 'block';
-
-        setTimeout(() => this.startGame(data), 2000);
     }
 
-    private startGame(gameData: GameData): void {
-        console.log('Starting game with data:', gameData);
+    private startGame(){//gameData: GameData): void {
+    // Fade out the game info with animation
+    this.successMessage.classList.add('fade-out');
 
-        // Hide form and success message
-        this.form.style.display = 'none';
+    setTimeout(() => {
         this.successMessage.style.display = 'none';
-
-        // Show canvas
+        this.successMessage.classList.remove('fade-out');
         this.canvas.style.display = 'block';
+    }, 1000); // shorter, cleaner transition
 
-        console.log('Game initialized - ready for gameplay');
+    console.log('Game started - both players ready');
     }
 
     private setLoadingState(isLoading: boolean): void {

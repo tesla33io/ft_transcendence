@@ -7,6 +7,7 @@ export class Renderer {
 	private resultTitle: HTMLElement;
 	private resultScore: HTMLElement;
 	private playAgainBtn: HTMLButtonElement;
+	private isInitialized: boolean = false;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -44,6 +45,16 @@ export class Renderer {
 			this.resultScreen.classList.add('hidden');
 	}
 
+	public initializeCanvas() {
+        // Initialize canvas with game dimensions
+        this.canvas.height = GAME_CONFIG.CANVAS.HEIGHT;
+        this.canvas.width = GAME_CONFIG.CANVAS.WIDTH;
+        this.isInitialized = true;
+    }
+
+    public isReady(): boolean {
+        return this.isInitialized;
+    }
 
     public render(gameState: GameState): void {
         this.clear();
