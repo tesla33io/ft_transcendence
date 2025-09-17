@@ -2,16 +2,19 @@ import { GameEngine } from "../engine/GameEngine";
 import { GameWebSocketServer } from "../types/GameWebsocketServer";
 import { Game, GameMode } from "../types/types"
 import { GameModeEngineProvider } from "../engine/GameEngineProvider";
+import { GameMatchmaker } from "./GameMatchmaker";
 
 export class GameService{
 	private gameEngine: GameEngine
 	private webSocketServer: GameWebSocketServer
 	private gameMode: GameMode
+	private matchmaker: GameMatchmaker
 
-	constructor(gameMode: GameMode, webSocketPort: number = 5005) {
+	constructor(matchmaker: GameMatchmaker, gameMode: GameMode, webSocketPort: number = 5005) {
 		this.gameMode = gameMode
 		this.gameEngine = GameModeEngineProvider.createEngine(this.gameMode)
 		this.webSocketServer = new GameWebSocketServer(webSocketPort)
+		this.matchmaker = matchmaker
 		console.log(`Created socket for game mode ${this.gameMode} on port ${webSocketPort}`)
 		this.setupCommunication()
 	}
@@ -31,6 +34,18 @@ export class GameService{
 			if (this.gameEngine.allPlayerReady(gameId, playerId))
 				this.gameEngine.startGame(gameId)
 		}
+		this.webSocketServer.clientDisconnect = (playerId: string) => {
+			const game = this.gameEngine.findPlayerInGame(playerId)
+			if (game !== undefined){
+				this.stopGame(game.id);
+				const winnerId = playerId === game.player1.id ? game.player2.id : game.player1.id
+				this.webSocketServer.winnerAnnouce(game, winnerId)
+			}
+			else{
+				if (this.matchmaker)
+					this.matchmaker.removePlayerFromQueue(playerId)
+			}
+		}
 	}
 
 	public initializeGame(game: Game){
@@ -41,8 +56,8 @@ export class GameService{
 		this.gameEngine.startGame(gameId)
 	}
 
-	public stopGame(game: Game){
-		this.gameEngine.stopGame(game)
+	public stopGame(gameId: string){
+		this.gameEngine.stopGame(gameId)
 	}
 
 	public notifyGameMatched(game: Game){

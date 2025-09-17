@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws"
-import {Game, GAME_WIDTH, GAME_HEIGHT} from "./types"
+import {Game, GAME_WIDTH} from "./types"
 
 export class GameWebSocketServer{
 
@@ -15,6 +15,7 @@ export class GameWebSocketServer{
 
 	public onPaddleMove?: (gameId: string, playerId: string, paddleY: number) => void
 	public clientReady?: (gameId: string, playerId: string) => void
+	public clientDisconnect?: (playerId: string) => void
 
 	private setupWebsocketServer(){
 		this.wss.on('connection', (ws: WebSocket, req) =>{
@@ -35,13 +36,11 @@ export class GameWebSocketServer{
 					}
 				})
 
-				/**
-				 * add check when the player disconnect and game already start
-				 * then make other player win
-				 */
 				ws.on('close', () => {
 					this.connectedClients.delete(playerId)
 					console.log(`Player ${playerId} disconnected`)
+					if (this.clientDisconnect)
+						this.clientDisconnect(playerId)
 				})
 			}
 		})
@@ -54,6 +53,10 @@ export class GameWebSocketServer{
 		else if (message.type === 'ready' && this.clientReady){
 			console.log(`Player ${message.playerId} is ready`)
 			this.clientReady(message.gameId, message.playerId)
+		}
+		else if (message.type === 'disconnect' && this.clientDisconnect){
+			console.log(`handleCleantmessage: Player ${playerId} explicitly disconnecting from game ${message.gameId}`)
+			this.clientDisconnect(playerId)
 		}
 	}
 

@@ -27,14 +27,14 @@ export abstract class GameEngine {
 
 	}
 
-	public stopGame(game: Game){
-		const gameLoop = this.gameLoops.get(game.id)
+	public stopGame(gameId: string){
+		const gameLoop = this.gameLoops.get(gameId)
 		if (gameLoop){
 			clearInterval(gameLoop)
-			this.gameLoops.delete(game.id)
+			this.gameLoops.delete(gameId)
 		}
-		this.activeGames.delete(game.id)
-		console.log(`Game [${game.id}] stopped`)
+		this.activeGames.delete(gameId)
+		console.log(`Game [${gameId}] stopped`)
 	}
 
 	protected updateBallPosition(game: Game){
@@ -50,6 +50,17 @@ export abstract class GameEngine {
 			game.ball.vy *= -1
 		}
 		this.collisionCheck(game)
+	}
+
+	public findPlayerInGame(playerId: string): Game | undefined{
+		for (const game of this.activeGames.values()){
+			if (game){
+				if (game.player1.id === playerId ||
+					game.player2.id === playerId)
+					return game
+			}
+		}
+		return undefined
 	}
 
 	public abstract initializeGameState(game: Game): void

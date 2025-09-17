@@ -14,7 +14,7 @@ export class ClassicPong extends GameEngine {
 		this.ballReset(game)
 
 		game.status = 'ready'
-		this.activeGames.set(game.id, game) // save to the active games
+		this.activeGames.set(game.id, game)
 		console.log(`Game ${game.id} initialized:`)
 		console.log("Saved to active games")
 		console.log(`- Player 1 (${game.player1.name}): paddle at (${game.player1.X}, ${game.player1.Y})`)
@@ -36,7 +36,7 @@ export class ClassicPong extends GameEngine {
 			this.onGameStatusUpdate(game)
 		if (game.player1.score >= this.GAME_SCRORE ||
 			game.player2.score >= this.GAME_SCRORE){
-			this.stopGame(game)
+			this.stopGame(game.id)
 			const winner = game.player1.score > game.player2.score ? game.player1.id : game.player2.id
 			if (this.declareWinner)
 				this.declareWinner(game, winner)

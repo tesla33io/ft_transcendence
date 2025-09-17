@@ -4,13 +4,12 @@ import { GameServiceManager } from "./GameServiceManager"
 
 export class GameMatchmaker {
 	private static instance: GameMatchmaker
+	private gameServiceManager: GameServiceManager
+	private tournamentPlayerLimit = 4
 	private waitingPlayers: Map< GameMode, Player[]> = new Map([
 		['classic', []],
 		['tournament', []]
 	])
-
-	private gameServiceManager: GameServiceManager
-	private tournamentLimit = 4
 
 	private constructor (serviceManager: GameServiceManager){
 		this.gameServiceManager = serviceManager
@@ -20,6 +19,20 @@ export class GameMatchmaker {
 		if (!GameMatchmaker.instance)
 				GameMatchmaker.instance = new GameMatchmaker(gameServiceManager)
 		return GameMatchmaker.instance
+	}
+
+	public removePlayerFromQueue(playerId: string, gameMode: GameMode = 'classic'): boolean{
+		const waitingList = this.waitingPlayers.get(gameMode)
+		if (!waitingList)
+			return false
+
+		const playerIndex = waitingList.findIndex(player => player.id === playerId)
+		if (playerIndex !== -1){
+			waitingList.splice(playerIndex, 1)
+			console.log(`Player ${playerId} removed from the ${gameMode} waiting list`)
+			return true
+		}
+		return false
 	}
 
 	public async joinClassicGame(playerData:{
@@ -103,7 +116,7 @@ export class GameMatchmaker {
 
 		const tournamentWatingPlayer = this.waitingPlayers.get(gameMode)!
 
-		if (tournamentWatingPlayer.length === this.tournamentLimit){
+		if (tournamentWatingPlayer.length === this.tournamentPlayerLimit){
 			const players = tournamentWatingPlayer.splice(0, 4)
 
 			const bracket = {
