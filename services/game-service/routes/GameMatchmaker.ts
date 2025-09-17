@@ -1,4 +1,4 @@
-import {Player, Game, generateId as generateGameId, generateBallPos, GameMode} from "../types/types"
+import {Player, Game, generateGameId, generateBallPos, GameMode} from "../types/types"
 import { GameServiceManager } from "./GameServiceManager"
 
 
@@ -119,12 +119,6 @@ export class GameMatchmaker {
 		if (tournamentWatingPlayer.length === this.tournamentPlayerLimit){
 			const players = tournamentWatingPlayer.splice(0, 4)
 
-			const bracket = {
-				id: generateGameId(),
-				player: players,
-				semifinals: {player1: players[0].name, player2: players[1].name,
-							 player3: players[2].name, player4: players[3].name}
-			}
 
 			return {
 				status: 'waiting',
@@ -138,7 +132,7 @@ export class GameMatchmaker {
 			return {
 				status: 'waiting',
 				playerId: player.id,
-				message: 'Waiting for player...'
+				message: `Waiting for player... (${tournamentWatingPlayer.length}/${this.tournamentPlayerLimit})`
 			}
 		}
 	}

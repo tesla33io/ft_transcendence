@@ -25,6 +25,9 @@ export class GameService{
 		}
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnouce(game, playerId)
+			if (this.gameMode === 'tournament'){
+
+			}
 		}
 
 		this.webSocketServer.onPaddleMove = (gameId: string, playerId: string, deltaY: number) =>{
@@ -43,7 +46,7 @@ export class GameService{
 			}
 			else{
 				if (this.matchmaker)
-					this.matchmaker.removePlayerFromQueue(playerId)
+					this.matchmaker.removePlayerFromQueue(playerId, this.gameMode)
 			}
 		}
 	}

@@ -2,11 +2,11 @@ export const GAME_HEIGHT = 550
 export const GAME_WIDTH = 900
 export const PADDLE_HEIGHT = 40
 export const PADDLE_WIDTH = 10
-export const FPS = 30
+export const FPS = 60
 
 export type GameMode = 'classic' | 'tournament'
 
-export const generateId = (): string => {
+export const generateGameId = (): string => {
 	return Math.random().toString(36).substring(2, 15);
 }
 
@@ -61,6 +61,23 @@ export interface Game {
 		player1: Player
 		player2: Player
 		ball: Ball
+}
+
+export interface Tournament {
+	id: string
+	status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
+	players: Player[]
+	bracket: TournamentMatch[]
+	winner: Player | null
+}
+
+export interface TournamentMatch {
+	id: string
+	tournamentId: string
+	status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
+	player1: Player
+	player2: Player
+	winner: Player | null
 }
 
 
