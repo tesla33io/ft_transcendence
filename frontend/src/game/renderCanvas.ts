@@ -32,7 +32,7 @@ export class Renderer {
         this.clear();
         this.drawPaddles(gameState);
         this.drawBall(gameState.ball);
-        this.drawScores(gameState);
+        //this.drawScores(gameState);
     }
 
     private clear(): void {

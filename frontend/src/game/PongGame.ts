@@ -167,10 +167,14 @@ export class PongGame {
 			this.startGame();
 		}
 		this.gameState = data;
-		this.gameView.updateScore(
-			data.player.score,
-			data.opponet.score
-		);
+		this.gameView?.updatePlayers(
+			data.player.name,
+			data.opponet.name
+		)
+        this.gameView?.updateScore(
+            data.player.score,
+            data.opponet.score
+        );
 
         this.renderer?.render(data);
 	}

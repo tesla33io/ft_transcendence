@@ -307,12 +307,44 @@ input[type="text"]:focus {
     margin-bottom: 20px;
 }
 
+
 .score-board {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    font-size: 1.5rem;
+  position: absolute;
+  top: 20px;                 /* distance from top */
+  left: 50%;                 /* start from middle */
+  transform: translateX(-50%); /* shift to center */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;                 /* space between player/VS/player */
+
+  background: rgba(0, 0, 0, 0.6); /* semi-transparent black */
+  color: var(--color-text);
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 1px;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 1000;             /* ensure it's above canvas */
 }
+
+.score-board .player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-board .vs {
+  font-size: 42px;
+  opacity: 0.8;
+}
+
+
+
 
 .player-info {
     display: flex;
@@ -320,10 +352,6 @@ input[type="text"]:focus {
     align-items: center;
 }
 
-.vs {
-    font-weight: bold;
-    color: #666;
-}
 
 .back-button {
     padding: 10px 20px;

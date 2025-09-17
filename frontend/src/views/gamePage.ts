@@ -14,13 +14,14 @@ export function gameView() {
     scoreBoard.className = "score-board";
     scoreBoard.innerHTML = `
         <div class="player-info">
-            <span id="player-name">Player</span>
-            <span id="player-score">0</span>
+          	<span id="opponent-name">Opponent</span>
+            <span id="opponent-score">0</span>
         </div>
         <div class="vs">VS</div>
         <div class="player-info">
-            <span id="opponent-name">Opponent</span>
-            <span id="opponent-score">0</span>
+			<span id="player-name">Player</span>
+            <span id="player-score">0</span>
+
         </div>
     `;
     header.appendChild(scoreBoard);
