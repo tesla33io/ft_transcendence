@@ -19,12 +19,12 @@ server.get('/test', async (req, reply) => {
 
 server.register(require('@fastify/http-proxy'), {
 	upstream: 'http://game-service:5000',
-	prefix: '/api',
+	prefix: '/api/v1/game',
 	http2: false
 })
 
 server.register(require('@fastify/http-proxy'), {
-	upstream: 'http://game-service:5001',
+	upstream: 'http://game-service:5005',
 	prefix: '/ws',
 	websocket: true,
 	http2: false

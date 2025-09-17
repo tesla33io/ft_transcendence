@@ -105,7 +105,7 @@ export class PongGame {
             this.playerId = Math.random().toString().substring(2,7);
             console.log('PlayerID: ', this.playerId);
 
-            const response = await fetch('/api/join-classic', {
+            const response = await fetch('/api/v1/game/join-classic', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
