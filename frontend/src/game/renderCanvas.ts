@@ -1,4 +1,4 @@
-import { type GameState, type GameResult, type Ball, GAME_CONFIG } from '../types';
+import { type GameState, type Ball, GAME_CONFIG } from '../types';
 
 export class Renderer {
     private ctx: CanvasRenderingContext2D;

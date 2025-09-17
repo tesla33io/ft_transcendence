@@ -25,10 +25,6 @@ export class PongGame {
 		router: Router
     ) {
 		this.router = router;
-
-        // Initialize game renderer
-        //this.renderer = new Renderer(this.gameView.canvas);
-        // Set up event listeners
         this.initializeEventListeners();
     }
 
@@ -52,12 +48,6 @@ export class PongGame {
         this.playerNameInput.addEventListener("input", () => {
             this.validatePlayerName();
         });
-
-        // Clear messages on focus
-        this.playerNameInput.addEventListener("focus", () => {
-            this.hideMessages();
-        });
-
         // Paddle movement controls
         document.addEventListener("keydown", this.handleKeyPress.bind(this));
     }
@@ -133,17 +123,16 @@ export class PongGame {
         }
     }
 
-
     private handleGameStart(data: GameData): void {
        console.log('Game start received, initializing view...');
     this.gameId = data.id || '';
 
-    //navigate to game view
+    // First navigate to game view
     this.router.navigate("/game");
 
     // Wait for navigation to complete
     requestAnimationFrame(() => {
-        // Create game view
+        // 3. Create game view
         this.gameView = gameView();
 
         // Verify view creation
@@ -157,7 +146,7 @@ export class PongGame {
             this.renderer = new Renderer(this.gameView.canvas);
             this.renderer.initializeCanvas();
 
-            //Show match info
+            // Show match info
             this.showGameMatched(data);
 
             // Send ready message only after everything is set up

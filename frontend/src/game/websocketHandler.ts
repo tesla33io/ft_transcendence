@@ -1,5 +1,4 @@
 import { type GameData,type GameResult, type GameState, MessageType, type WebSocketMessage } from '../types';
-import { Renderer } from "./renderCanvas";
 
 export class WebSocketHandler {
     private ws?: WebSocket;
@@ -39,7 +38,6 @@ export class WebSocketHandler {
 
 	}
 
-
 	private isGameUpdate(data: any): data is GameState {
 		    return (
         data &&
@@ -52,9 +50,8 @@ export class WebSocketHandler {
     );
 	}
 
-
     public sendReadyMessage(): void {
-        console.log('called send ready msg');
+        //console.log('called send ready msg');
 		if (this.isReady) return;
 
         const readyMsg: WebSocketMessage = {
@@ -66,9 +63,8 @@ export class WebSocketHandler {
         this.isReady = true;
     }
 
-    // Handle different types of messages
     private handleInitialGameState(data: GameData): void {
-        console.log('=== INITIAL GAME STATE ===');
+        //console.log('=== INITIAL GAME STATE ===');
 		console.log(data)
         this.gameId = data.id || '';
         this.onGameStart(data);
