@@ -1,7 +1,7 @@
-// src/pages/GamePage.ts
 import { PongGame } from "../game/PongGame";
+import {Router} from "../router"
 
-export function testingPage() {
+export function testingPage(router: Router) {
 	const root = document.getElementById("app")!;
 
     root.innerHTML = ""; // clear existing content
@@ -22,40 +22,10 @@ export function testingPage() {
     subtitle.textContent = "ft_transcendence";
     container.appendChild(subtitle);
 
-    // Game Canvas
-    const gameContainer = document.createElement("div");
-    gameContainer.id = "gameContainer";
-
-    const canvas = document.createElement("canvas");
+	const canvas = document.createElement("canvas");
     canvas.id = "gameCanvas";
     canvas.width = 900;
     canvas.height = 550;
-    gameContainer.appendChild(canvas);
-    container.appendChild(gameContainer);
-
-    // Result screen
-    const resultScreen = document.createElement("div");
-    resultScreen.id = "result-screen";
-    resultScreen.className = "hidden";
-
-    const resultContent = document.createElement("div");
-    resultContent.className = "result-content";
-
-    const resultTitle = document.createElement("h1");
-    resultTitle.id = "result-title";
-    resultTitle.textContent = "You Win!";
-
-    const resultScore = document.createElement("p");
-    resultScore.id = "result-score";
-    resultScore.textContent = "0 : 0";
-
-    const playAgainBtn = document.createElement("button");
-    playAgainBtn.id = "play-again-btn";
-    playAgainBtn.textContent = "Play Again";
-
-    resultContent.append(resultTitle, resultScore, playAgainBtn);
-    resultScreen.appendChild(resultContent);
-    container.appendChild(resultScreen);
 
     // Form
     const form = document.createElement("form");
@@ -120,19 +90,29 @@ export function testingPage() {
     devLog.setAttribute("aria-live", "polite");
     container.appendChild(devLog);
 
-    // Append everything to root
-    root.appendChild(container);
+	root.appendChild(container);
 
-     new PongGame(
-        form,
-        input,
-        joinBtn,
-        loading,
-        errorMessage,
-        successMessage,
-        canvas
-    );
+    form.addEventListener("submit", async (e: Event) => {
+        e.preventDefault();
+        const playerName = input.value.trim();
+        if (!playerName) return;
+
+        try {
+            const game = new PongGame(
+                form,
+                input,
+                joinBtn,
+                loading,
+                errorMessage,
+                successMessage,
+                canvas,
+                router
+            );
+			await game.joinGame(playerName);
+        } catch (error) {
+            console.error('Failed to join game:', error);
+            errorMessage.textContent = 'Failed to join game';
+            errorMessage.style.display = 'block';
+        }
+    });
 }
-
-
-

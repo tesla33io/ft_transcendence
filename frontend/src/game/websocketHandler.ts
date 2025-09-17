@@ -54,7 +54,8 @@ export class WebSocketHandler {
 
 
     public sendReadyMessage(): void {
-        if (this.isReady) return;
+        console.log('called send ready msg');
+		if (this.isReady) return;
 
         const readyMsg: WebSocketMessage = {
             type: MessageType.PLAYER_READY,

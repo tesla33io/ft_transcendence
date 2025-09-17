@@ -16,7 +16,7 @@ export function HomePage(router: Router) {
 	quickMatchBtn.id = "testingSitebutton";
     quickMatchBtn.onclick = () => {
         // navigate to PongGame page
-        router.navigate("/testingSite");
+        router.navigate("/test");
     };
     container.appendChild(quickMatchBtn);
 

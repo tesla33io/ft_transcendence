@@ -3,11 +3,8 @@ import { type GameState, type GameResult, type Ball, GAME_CONFIG } from '../type
 export class Renderer {
     private ctx: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
-	private resultScreen: HTMLElement;
-	private resultTitle: HTMLElement;
-	private resultScore: HTMLElement;
-	private playAgainBtn: HTMLButtonElement;
 	private isInitialized: boolean = false;
+
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -18,32 +15,7 @@ export class Renderer {
         if (!context) throw new Error('Could not get canvas context');
         this.ctx = context;
 
-		 // cache DOM elements
-		this.resultScreen = document.getElementById('result-screen')!;
-		this.resultTitle = document.getElementById('result-title')!;
-		this.resultScore = document.getElementById('result-score')!;
-        this.playAgainBtn = document.getElementById('play-again-btn') as HTMLButtonElement;
-
-		// attach click
-		this.playAgainBtn.addEventListener('click', () => {
-		this.hideResultScreen();
-		this.onPlayAgain?.();
-		});
   }
-
-	public onPlayAgain?: () => void; // callback to PongGame
-
-	showResultScreen(result: GameResult, myPlayerId: string) {
-        const isWin = result.winner === myPlayerId;
-		this.resultTitle.textContent = isWin ? "🎉 YOU WIN!" : "😢 YOU LOSE!";
-        console.log(`Player: ${myPlayerId} - Won: ${isWin}`)
-		this.resultScore.textContent = `${result.player1Score} : ${result.player2Score}`;
-		this.resultScreen.classList.remove('hidden');
-  }
-
-	hideResultScreen() {
-			this.resultScreen.classList.add('hidden');
-	}
 
 	public initializeCanvas() {
         // Initialize canvas with game dimensions

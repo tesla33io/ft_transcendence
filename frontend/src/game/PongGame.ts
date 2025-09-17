@@ -1,14 +1,18 @@
 import { MessageType, type GameState, type GameResult, type GameData } from "../types";
 import { Renderer } from "./renderCanvas";
 import { WebSocketHandler } from "./websocketHandler";
+import { gameView} from "../views/gamePage";
+import { Router} from "../router";
 
 export class PongGame {
     // Game state
     private gameId: string = '';
     private playerId: string = '';
     private wsHandler?: WebSocketHandler;
-    private readonly renderer: Renderer;
+    private renderer?: Renderer;
     private gameState?: GameState;
+	private gameView?: ReturnType<typeof gameView>;
+	private router: Router
 
     constructor(
     	private readonly form: HTMLFormElement,
@@ -17,12 +21,13 @@ export class PongGame {
         private readonly loading: HTMLElement,
         private readonly errorMessage: HTMLElement,
         private readonly successMessage: HTMLElement,
-        private readonly canvas: HTMLCanvasElement
+        private readonly canvas: HTMLCanvasElement,
+		router: Router
     ) {
+		this.router = router;
 
         // Initialize game renderer
-        this.renderer = new Renderer(this.canvas);
-
+        //this.renderer = new Renderer(this.gameView.canvas);
         // Set up event listeners
         this.initializeEventListeners();
     }
@@ -43,11 +48,6 @@ export class PongGame {
 
     private initializeEventListeners(): void {
         // Form submission
-        this.form.addEventListener("submit", (e: Event) => {
-            e.preventDefault();
-            this.handleJoinGame();
-        });
-
         // Input validation
         this.playerNameInput.addEventListener("input", () => {
             this.validatePlayerName();
@@ -91,16 +91,9 @@ export class PongGame {
         return isValid;
     }
 
-    private async handleJoinGame(): Promise<void> {
-        if (!this.validatePlayerName()) {
-            this.showError('Please enter a valid player name');
-            return;
-        }
-
-        const playerName = this.playerNameInput.value.trim();
-
+	/*entry point for starting game, Handels api call if succes->handelJoinSuccess function*/
+    public async joinGame(playerName:string): Promise<void> {
         try {
-			this.form.style.display = 'none';
             this.setLoadingState(true);
             this.playerId = Math.random().toString().substring(2,7);
             console.log('PlayerID: ', this.playerId);
@@ -119,47 +112,63 @@ export class PongGame {
             });
 
             const data: GameData = await response.json();
-
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to join game');
-            }
-
+			}
             this.handleJoinSuccess(data);
-
         } catch (error) {
             console.error('Join game error:', error);
-            this.showError(error instanceof Error ? error.message : 'Failed to join game. Please try again.');
+            throw error;
         } finally {
             this.setLoadingState(false);
         }
     }
 
+	//manages game state transition and init websocket
     private handleJoinSuccess(data: GameData): void {
         console.log('Game data:', data);
-
         if (data.status === 'waiting') {
             this.showSuccess('Waiting for another player to join...');
             this.initializeWebSocket(data.playerId || this.playerId);
-        } else if (data.status === 'connected') {
-            this.gameId = data.id || '';
-            this.showSuccess('Connecting to game...');
         }
     }
 
+
     private handleGameStart(data: GameData): void {
-        this.gameId = data.id || '';
+       console.log('Game start received, initializing view...');
+    this.gameId = data.id || '';
 
-		//show gameinfo/matched opponent
-		this.showGameMatched(data);
+    //navigate to game view
+    this.router.navigate("/game");
 
-		// Initialize renderer first
-        this.renderer.initializeCanvas();
+    // Wait for navigation to complete
+    requestAnimationFrame(() => {
+        // Create game view
+        this.gameView = gameView();
 
-        // Only send ready message after renderer is initialized
-        if (this.renderer.isReady() && this.wsHandler) {
-            this.wsHandler.sendReadyMessage();
-			console.log('################################################')
+        // Verify view creation
+        if (!this.gameView?.canvas) {
+            console.error('Failed to create game view');
+            return;
         }
+
+        // Initialize renderer
+        try {
+            this.renderer = new Renderer(this.gameView.canvas);
+            this.renderer.initializeCanvas();
+
+            //Show match info
+            this.showGameMatched(data);
+
+            // Send ready message only after everything is set up
+            if (this.renderer.isReady() && this.wsHandler) {
+                console.log('View ready, sending ready message');
+                this.wsHandler.sendReadyMessage();
+            }
+        } catch (error) {
+            console.error('Failed to initialize renderer:', error);
+        }
+    });
     }
 
 	private handelGameState(data: GameState): void{
@@ -169,21 +178,28 @@ export class PongGame {
 			this.startGame();
 		}
 		this.gameState = data;
-        this.renderer.render(data);
+		this.gameView.updateScore(
+			data.player.score,
+			data.opponet.score
+		);
+
+        this.renderer?.render(data);
 	}
 
 	private handleGameResult(data: GameResult): void{
+		const isWin = data.winner === this.playerId;
+        const finalScore = `${data.player1Score} - ${data.player2Score}`;
 		this.wsHandler?.disconnect();
 		 this.wsHandler = undefined;
 
     	 // render the final game state first
 		if (this.gameState) {
-			this.renderer.render(this.gameState);
+			this.renderer?.render(this.gameState);
 		}
 
 		// then schedule the result screen on next frame
 		requestAnimationFrame(() => {
-			this.renderer.showResultScreen(data, this.playerId);
+			this.gameView.showGameResult(isWin, finalScore);
 			//this.renderer.onPlayAgain = () => this.resetGame();
 		});
 }
