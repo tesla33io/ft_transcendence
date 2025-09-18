@@ -16,7 +16,7 @@ export class GameService{
 		this.gameEngine = GameModeEngineProvider.createEngine(this.gameMode)
 		this.webSocketServer = new GameWebSocketServer(webSocketPort)
 		this.matchmaker = matchmaker
-		console.log(`Created socket for game mode ${this.gameMode} on port ${webSocketPort}`)
+		console.log(`GameService: created socket for game mode ${this.gameMode} on port ${webSocketPort}`)
 		this.setupCommunication()
 	}
 
@@ -35,8 +35,12 @@ export class GameService{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
 		this.webSocketServer.clientReady = (gameId: string, playerId: string) => {
-			if (this.gameEngine.allPlayerReady(gameId, playerId))
+			if (this.gameMode === 'classic' && this.gameEngine.allPlayerReady(gameId, playerId))
 				this.gameEngine.startGame(gameId)
+			else if (this.gameEngine instanceof TournamentPong){
+				const playesReady = this.gameEngine.tournamentAllPlayersReady(gameId, playerId)
+				console.log(`Tournament playes are ready: ${playesReady}`)
+			}
 		}
 		this.webSocketServer.clientDisconnect = (playerId: string) => {
 			const game = this.gameEngine.findPlayerInGame(playerId)
@@ -69,7 +73,8 @@ export class GameService{
 	}
 
 	public createTournament(players: Player[]){
-
+		if (this.gameEngine.createTournament)
+			this.gameEngine.createTournament(players)
 	}
 }
 

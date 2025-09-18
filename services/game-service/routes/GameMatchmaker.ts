@@ -69,8 +69,8 @@ export class GameMatchmaker {
 
 			setTimeout(() => {
 				if (gameService) {
-					gameService.notifyGameMatched(game)
 					gameService.initializeGame(game)
+					gameService.notifyGameMatched(game)
 				} else {
 					console.error('GameService not initialized!')
 				}
@@ -100,7 +100,7 @@ export class GameMatchmaker {
 		gameMode?: GameMode
 	}){
 		const {playerName, playerId, gameMode} = playerData as {playerName: string, playerId: string, gameMode: GameMode}
-		const gameService = this.gameServiceManager.getGameService(gameMode)
+		const gameService = this.gameServiceManager.getGameService('tournament')
 
 		const player: Player = {
 			id: playerId,
@@ -109,6 +109,7 @@ export class GameMatchmaker {
 			Y: 0,
 			X: 0,
 			ready: false
+
 		};
 
 		if (!this.waitingPlayers.has(gameMode))
@@ -116,9 +117,11 @@ export class GameMatchmaker {
 
 		const tournamentWatingPlayer = this.waitingPlayers.get(gameMode)!
 
-		if (tournamentWatingPlayer.length === this.tournamentPlayerLimit){
+		tournamentWatingPlayer.push(player)
+		if (tournamentWatingPlayer.length >= this.tournamentPlayerLimit){
 			const players = tournamentWatingPlayer.splice(0, this.tournamentPlayerLimit)
-			// const tournament = gameService.createTournament(players)
+
+			const tournamentId = gameService.createTournament(players)
 
 			return {
 				status: 'waiting',
@@ -127,7 +130,6 @@ export class GameMatchmaker {
 			}
 		}
 		else{
-			tournamentWatingPlayer.push(player)
 			console.log("Waiting players: ", this.waitingPlayers)
 			return {
 				status: 'waiting',

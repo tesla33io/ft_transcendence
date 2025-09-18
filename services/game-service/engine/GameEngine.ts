@@ -1,4 +1,4 @@
-import {Game, GAME_HEIGHT, FPS} from "../types/types"
+import {Game, GAME_HEIGHT, FPS, Player} from "../types/types"
 
 export abstract class GameEngine {
 	protected activeGames: Map<string, Game> = new Map()
@@ -61,6 +61,10 @@ export abstract class GameEngine {
 			}
 		}
 		return undefined
+	}
+
+	public createTournament?(players: Player[]){
+		throw new Error('Tournament functionality not supported for this game mode')
 	}
 
 	public abstract initializeGameState(game: Game): void
