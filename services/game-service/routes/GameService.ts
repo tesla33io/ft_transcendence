@@ -1,8 +1,9 @@
 import { GameEngine } from "../engine/GameEngine";
 import { GameWebSocketServer } from "../types/GameWebsocketServer";
-import { Game, GameMode } from "../types/types"
+import { Game, GameMode, Player } from "../types/types"
 import { GameModeEngineProvider } from "../engine/GameEngineProvider";
 import { GameMatchmaker } from "./GameMatchmaker";
+import { TournamentPong } from "../engine/TournamentPong";
 
 export class GameService{
 	private gameEngine: GameEngine
@@ -65,6 +66,10 @@ export class GameService{
 
 	public notifyGameMatched(game: Game){
 		this.webSocketServer.notifyGameMatched(game)
+	}
+
+	public createTournament(players: Player[]){
+
 	}
 }
 

@@ -117,8 +117,8 @@ export class GameMatchmaker {
 		const tournamentWatingPlayer = this.waitingPlayers.get(gameMode)!
 
 		if (tournamentWatingPlayer.length === this.tournamentPlayerLimit){
-			const players = tournamentWatingPlayer.splice(0, 4)
-
+			const players = tournamentWatingPlayer.splice(0, this.tournamentPlayerLimit)
+			// const tournament = gameService.createTournament(players)
 
 			return {
 				status: 'waiting',
