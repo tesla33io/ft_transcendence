@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS friends (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id_from INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     user_id_to INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    status TEXT NOT NULL DEFAULT 'pending',
+    status TEXT NOT NULL DEFAULT 'pending',                   -- pending/accepted/denied
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     accepted_at DATETIME NULL,
     version INTEGER DEFAULT 1,
