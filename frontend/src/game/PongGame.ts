@@ -13,7 +13,8 @@ export class PongGame {
     constructor(
     	private readonly form: HTMLFormElement,
         private readonly playerNameInput: HTMLInputElement,
-        private readonly joinBtn: HTMLButtonElement,
+        private readonly joinClassicBtn: HTMLButtonElement,
+        private readonly joinTournamentBtn: HTMLButtonElement,
         private readonly loading: HTMLElement,
         private readonly errorMessage: HTMLElement,
         private readonly successMessage: HTMLElement,
@@ -42,10 +43,15 @@ export class PongGame {
     }
 
     private initializeEventListeners(): void {
-        // Form submission
-        this.form.addEventListener("submit", (e: Event) => {
+        // Button-specific event listeners
+        this.joinClassicBtn.addEventListener("click", (e: Event) => {
             e.preventDefault();
-            this.handleJoinGame();
+            this.handleJoinGame('classic');
+        });
+
+        this.joinTournamentBtn.addEventListener("click", (e: Event) => {
+            e.preventDefault();
+            this.handleJoinGame('tournament');
         });
 
         // Input validation
@@ -80,7 +86,8 @@ export class PongGame {
         const name = this.playerNameInput.value.trim();
         const isValid = name.length >= 1 && name.length <= 20 && /^[a-zA-Z0-9_-]+$/.test(name);
 
-        this.joinBtn.disabled = !isValid;
+        this.joinClassicBtn.disabled = !isValid;
+        this.joinTournamentBtn.disabled = !isValid;
 
         if (name.length > 0 && !isValid) {
             this.showError('Name must be 2-20 characters, alphanumeric, underscore, or hyphen only');
@@ -91,7 +98,7 @@ export class PongGame {
         return isValid;
     }
 
-    private async handleJoinGame(): Promise<void> {
+    private async handleJoinGame(gameMode = 'classic'): Promise<void> {
         if (!this.validatePlayerName()) {
             this.showError('Please enter a valid player name');
             return;
@@ -103,9 +110,11 @@ export class PongGame {
 			this.form.style.display = 'none';
             this.setLoadingState(true);
             this.playerId = Math.random().toString().substring(2,7);
-            console.log('PlayerID: ', this.playerId);
+            console.log(`PlayerID: ${this.playerId} - ${gameMode}`);
 
-            const response = await fetch('/api/v1/game/join-classic', {
+            const apiEndpoint = gameMode === 'tournament' ? '/api/v1/game/join-tournament' : '/api/v1/game/join-classic'
+
+            const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -113,7 +122,7 @@ export class PongGame {
                 body: JSON.stringify({
                     playerName,
                     playerId: this.playerId,
-                    gameMode: 'classic',
+                    gameMode: gameMode,
                     timestamp: new Date().toISOString()
                 })
             });

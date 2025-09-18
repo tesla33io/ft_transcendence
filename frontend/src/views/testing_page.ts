@@ -77,16 +77,28 @@ export function testingPage() {
     input.maxLength = 20;
     input.required = true;
 
-    const joinBtn = document.createElement("button");
-    joinBtn.type = "submit";
-    joinBtn.className = "join-btn";
-    joinBtn.id = "joinBtn";
-    joinBtn.textContent = "Join Game";
-
     formGroup.append(label, input);
-    form.appendChild(formGroup);
-    form.appendChild(joinBtn);
+    const buttonGroup = document.createElement("div");
+    buttonGroup.className = "button-group";
+
+    const joinClassicBtn = document.createElement("button");
+    joinClassicBtn.type = "button";  // IMPORTANT: Not "submit"
+    joinClassicBtn.className = "join-btn";
+    joinClassicBtn.id = "joinClassicBtn";
+    joinClassicBtn.textContent = "Join Classic Game";
+
+    const joinTournamentBtn = document.createElement("button");
+    joinTournamentBtn.type = "button";  // Not "submit"
+    joinTournamentBtn.className = "join-btn";
+    joinTournamentBtn.id = "joinTournamentBtn";
+    joinTournamentBtn.textContent = "Join Tournament";
+
+    buttonGroup.appendChild(joinClassicBtn);
+    buttonGroup.appendChild(joinTournamentBtn);
+
+    form.append(formGroup, buttonGroup);
     container.appendChild(form);
+
 
     // Loading
     const loading = document.createElement("div");
@@ -126,7 +138,8 @@ export function testingPage() {
      new PongGame(
         form,
         input,
-        joinBtn,
+        joinClassicBtn,
+        joinTournamentBtn,
         loading,
         errorMessage,
         successMessage,

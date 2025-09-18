@@ -127,6 +127,12 @@ input[type="text"]:focus {
     box-shadow: none;
 }
 
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .error-message, .success-message {
     margin-top: 1.25rem;
     padding: 12px 16px;
