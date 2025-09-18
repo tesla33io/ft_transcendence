@@ -11,7 +11,7 @@ export class TournamentPong extends ClassicPong{
 	private activeTournament: Map<string, Tournament> = new Map()
 	private gameIdToTournamentId: Map<string, string> = new Map()
 
-	public createTournament(players: Player[]){
+	public createTournament(players: Player[]): Tournament{
 		const tournamentId = generateGameId()
 		const tournament: Tournament = {
 			id: tournamentId,
@@ -22,7 +22,7 @@ export class TournamentPong extends ClassicPong{
 		}
 		this.activeTournament.set(tournamentId, tournament)
 		console.log("Tournament:", tournament)
-		return tournamentId
+		return tournament
 	}
 
 	private generateBracket(tournamentId: string, players: Player[]): TournamentMatch[]{
@@ -66,7 +66,7 @@ export class TournamentPong extends ClassicPong{
 	}
 
 	public tournamentAllPlayersReady(gameId: string, playerId: string): boolean{
-
+		console.log(`Client sent id: ${gameId}`)
 		let tournamentId = undefined
 
 		for (let tounaments of this.activeTournament.values() ){
@@ -87,7 +87,7 @@ export class TournamentPong extends ClassicPong{
 			let player = tournament.players.find(player => player.id === playerId)
 			if (player)
 				player.ready = true
-
+			console.log("list of non ready players: ", tournament.players.filter(player => player.ready === false))
 			if (tournament.players.filter(player => player.ready === false).length > 0)
 				return false
 			else

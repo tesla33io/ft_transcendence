@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws"
-import {Game, GAME_WIDTH} from "./types"
+import {Game, GAME_WIDTH, Tournament} from "./types"
 
 export class GameWebSocketServer{
 
@@ -95,6 +95,26 @@ export class GameWebSocketServer{
 		if (player2Ws) {
 			player2Ws.send(messagePlayer2)
 			console.log(`Sent game_matched to player2: ${gameData.player2.id}`)
+		}
+	}
+
+	public notifyTournamentReady(tournament: Tournament){
+		const message = JSON.stringify({
+			gameMode: 'tournament',
+			status: 'ready',
+			id: tournament.id,
+			player1: tournament.players[0],
+			player2: tournament.players[1],
+			player3: tournament.players[2],
+			player4: tournament.players[3]
+		})
+
+		for (let player of tournament.players){
+			const playerWs = this.connectedClients.get(player.id)
+			if (playerWs){
+				playerWs.send(message)
+				console.log(`Sent tournament data to player: ${player.id}`)
+			}
 		}
 	}
 

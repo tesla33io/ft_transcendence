@@ -63,10 +63,6 @@ export abstract class GameEngine {
 		return undefined
 	}
 
-	public createTournament?(players: Player[]){
-		throw new Error('Tournament functionality not supported for this game mode')
-	}
-
 	public abstract initializeGameState(game: Game): void
 	protected abstract updateGame(game: Game): void
 	public abstract updatePlayerPaddle(gameId: string, playerId: string, paddleY: number): void

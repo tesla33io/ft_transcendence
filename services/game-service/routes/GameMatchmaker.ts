@@ -1,4 +1,4 @@
-import {Player, Game, generateGameId, generateBallPos, GameMode} from "../types/types"
+import {Player, Game, generateGameId, generateBallPos, GameMode, Tournament} from "../types/types"
 import { GameServiceManager } from "./GameServiceManager"
 
 
@@ -121,7 +121,15 @@ export class GameMatchmaker {
 		if (tournamentWatingPlayer.length >= this.tournamentPlayerLimit){
 			const players = tournamentWatingPlayer.splice(0, this.tournamentPlayerLimit)
 
-			const tournamentId = gameService.createTournament(players)
+			setTimeout(() => {
+				if (gameService) {
+					const tournament: Tournament = gameService.createTournament(players)
+					// gameService.notifyTournamentReady(tournament) need some change in client loggic
+
+				} else {
+					console.error('GameService not initialized!')
+				}
+			}, 100)
 
 			return {
 				status: 'waiting',

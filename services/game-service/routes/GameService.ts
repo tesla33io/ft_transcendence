@@ -1,9 +1,10 @@
 import { GameEngine } from "../engine/GameEngine";
 import { GameWebSocketServer } from "../types/GameWebsocketServer";
-import { Game, GameMode, Player } from "../types/types"
+import { Game, GameMode, Player, Tournament } from "../types/types"
 import { GameModeEngineProvider } from "../engine/GameEngineProvider";
 import { GameMatchmaker } from "./GameMatchmaker";
 import { TournamentPong } from "../engine/TournamentPong";
+import { ClassicPong } from "../engine/ClassicPong";
 
 export class GameService{
 	private gameEngine: GameEngine
@@ -26,8 +27,8 @@ export class GameService{
 		}
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnouce(game, playerId)
-			if (this.gameMode === 'tournament'){
-
+			if (this.gameMode === 'tournament' && this.gameEngine instanceof TournamentPong){
+				//logic for findding the finnalist
 			}
 		}
 
@@ -35,11 +36,13 @@ export class GameService{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
 		this.webSocketServer.clientReady = (gameId: string, playerId: string) => {
-			if (this.gameMode === 'classic' && this.gameEngine.allPlayerReady(gameId, playerId))
+			if (this.gameEngine instanceof ClassicPong && this.gameEngine.allPlayerReady(gameId, playerId)){
+				console.log(`Classic players are ready: true`)
 				this.gameEngine.startGame(gameId)
+			}
 			else if (this.gameEngine instanceof TournamentPong){
 				const playesReady = this.gameEngine.tournamentAllPlayersReady(gameId, playerId)
-				console.log(`Tournament playes are ready: ${playesReady}`)
+				console.log(`Tournament players are ready: ${playesReady}`)
 			}
 		}
 		this.webSocketServer.clientDisconnect = (playerId: string) => {
@@ -72,9 +75,14 @@ export class GameService{
 		this.webSocketServer.notifyGameMatched(game)
 	}
 
-	public createTournament(players: Player[]){
-		if (this.gameEngine.createTournament)
-			this.gameEngine.createTournament(players)
+	public notifyTournamentReady(tournament: Tournament){
+		this.webSocketServer.notifyTournamentReady(tournament)
+	}
+
+	public createTournament(players: Player[]) {
+		if (this.gameEngine instanceof TournamentPong)
+			return this.gameEngine.createTournament(players)
+		throw new Error("Game engine is not a TournamentPong");
 	}
 }
 
