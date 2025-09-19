@@ -1,0 +1,224 @@
+
+@import './vendor/98.css';
+
+
+:root {
+  --color-background: #231942;   /* Deep Purple – main background */
+  --color-primary: #5E548E;      /* Purple – main buttons, paddles */
+  --color-secondary: #9F86C0;    /* Lavender – accents, highlights */
+  --color-text: #BE95C4;         /* Light Purple – main text */
+  --color-accent: #E0B1CB;       /* Pink Mist – overlays, hover states */
+  --color-error: #dc2626;        /* Error messages */
+  --color-error-bg: #fee2e2;
+  --color-error-border: #fecaca;
+  --color-success: #059669;      /* Success messages */
+  --color-success-bg: #d1fae5;
+  --color-success-border: #a7f3d0;
+  --color-dev-console: #0f0;     /* Dev console text */
+  --color-overlay-bg: rgba(0,0,0,0.8);
+}
+
+/* Reset and base styles */
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden; /* Prevent scrolling on body */
+}
+
+body {
+    background: url('src/views/images/WindowsWallpaper1.png') no-repeat center center fixed;
+    background-size: cover;
+    padding: 16px;
+    box-sizing: border-box; /* Include padding in height calculation */
+}
+
+/* Main window container */
+.main-window {
+    width: 95vw;
+    height: 90vh;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent window scrolling */
+}
+
+/* Content panel */
+.tab-content {
+    flex: 1;
+    padding: 16px;
+    overflow: hidden; /* Change from auto to hidden */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Game container adjustments */
+.game-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#gameCanvas {
+    max-width: 100%;
+    max-height: calc(90vh - 200px); /* Adjust based on your header height */
+    width: auto;
+    height: auto;
+}
+
+/* Make content containers respect parent boundaries */
+.container {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.score-board {
+  position: absolute;
+  top: 20px;                 /* distance from top */
+  left: 50%;                 /* start from middle */
+  transform: translateX(-50%); /* shift to center */
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;                 /* space between player/VS/player */
+
+  background: rgba(0, 0, 0, 0.6); /* semi-transparent black */
+  color: var(--color-text);
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: bold;
+  text-align: center;
+  letter-spacing: 1px;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 1000;             /* ensure it's above canvas */
+}
+
+.score-board .player-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-board .vs {
+  font-size: 42px;
+  opacity: 0.8;
+}
+
+.player-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.game-window {
+    width: 920px;
+    border: 2px solid var(--color-primary);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    background: var(--color-background);
+    z-index: 999;
+}
+
+/*
+.title-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--color-primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    cursor: move;
+    user-select: none;
+}
+
+.title-bar-controls button {
+    width: 1.2rem;
+    height: 1.2rem;
+    background: #E63946;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    line-height: 1.2rem;
+    color: white;
+}
+*/
+.game-header {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    margin: 10px 0;
+}
+
+.back-button {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 4px 8px;
+    border: none;
+    background: var(--color-secondary);
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.game-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+#gameCanvas {
+    max-width: 100%;
+    max-height: calc(90vh - 200px);
+}
+
+.game-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--color-overlay-bg);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.game-overlay.hidden {
+    display: none;
+}
+
+.result-window {
+    position: absolute;
+    min-width: 300px;
+    background: silver;
+    z-index: 1000;
+    box-shadow: 1px 1px 8px rgba(0, 0, 0, 0.3);
+}
+
+.result-window .window-body {
+    padding: 16px;
+    text-align: center;
+}
+
+.result-window.hidden {
+    display: none;
+}
+
+.result-window button {
+    margin-top: 16px;
+}

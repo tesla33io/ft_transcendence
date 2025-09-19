@@ -16,12 +16,6 @@ export const GAME_CONFIG = {
             Y: 2
         }
     },
-    SCORE: {
-        FONT: '32px Arial',
-        OFFSET_Y: 50,
-        LEFT_X: 50,
-        RIGHT_X: 850
-    }
 };
 
 

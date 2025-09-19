@@ -1,14 +1,72 @@
-export function friendsProfileView() {
+import { Router } from "../router";
+
+export function friendsProfileView(router: Router) {
     const root = document.getElementById("app")!;
     root.innerHTML = "";
 
-    const container = document.createElement("div");
-    container.className = "friends-profile-container";
+    // Create main window
+    const mainWindow = document.createElement("div");
+    mainWindow.className = "window main-window";
 
-    const header = document.createElement("div");
-    header.className = "friends-profile-header";
-    header.innerHTML = "<h1>Friend's Profile</h1>";
+    // Create title bar
+    const titleBar = document.createElement("div");
+    titleBar.className = "title-bar";
 
-    container.appendChild(header);
-    root.appendChild(container);
+    const titleText = document.createElement("div");
+    titleText.className = "title-bar-text";
+    titleText.textContent = "ft_transcendence - Pong";
+
+    titleBar.appendChild(titleText);
+    mainWindow.appendChild(titleBar);
+
+    // Create window body
+    const windowBody = document.createElement("div");
+    windowBody.className = "window-body";
+
+    // Create tab menu
+    const tabMenu = document.createElement("menu");
+    tabMenu.setAttribute("role", "tablist");
+
+    const tabs = [
+        { name: "Homepage", route: "/homepage" },
+        { name: "Test Site", route: "/test" },
+        { name: "Profile", route: "/profile" },
+        { name: "Friends", route: "/friends" },
+        { name: "Tournament", route: "/tournament" }
+    ];
+
+    // Create tabs
+    tabs.forEach((tab, index) => {
+        const li = document.createElement("li");
+        li.setAttribute("role", "tab");
+        if (index === 0) {
+            li.setAttribute("aria-selected", "true");
+        }
+
+        const a = document.createElement("a");
+        a.href = "#";
+        a.textContent = tab.name;
+        a.onclick = (e) => {
+            e.preventDefault();
+            // Update selected tab
+            tabMenu.querySelectorAll('[role="tab"]').forEach(tab =>
+                tab.removeAttribute('aria-selected'));
+            li.setAttribute('aria-selected', 'true');
+            router.navigate(tab.route);
+        };
+
+        li.appendChild(a);
+        tabMenu.appendChild(li);
+    });
+
+    // Create content area
+    const tabContent = document.createElement("div");
+    tabContent.className = "tab-content";
+    tabContent.innerHTML = "<p>Friends page</p>";
+
+    // Assemble the components
+    windowBody.appendChild(tabMenu);
+    windowBody.appendChild(tabContent);
+    mainWindow.appendChild(windowBody);
+    root.appendChild(mainWindow);
 }

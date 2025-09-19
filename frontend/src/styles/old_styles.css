@@ -1,3 +1,7 @@
+
+@import './vendor/98.css';
+
+
 :root {
   --color-background: #231942;   /* Deep Purple – main background */
   --color-primary: #5E548E;      /* Purple – main buttons, paddles */
@@ -14,21 +18,38 @@
   --color-overlay-bg: rgba(0,0,0,0.8);
 }
 
+/*
 
 * {
+
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+.window {
+    width: 90%;
+    max-width: 800px;
+    margin: 32px auto;
+}
+
+
+
 body {
     font-family: 'Inter', 'SF Pro Display', -apple-system, sans-serif;
-    background: linear-gradient(135deg, var(--color-background) 0%, var(--color-primary) 100%);
+    //background: linear-gradient(135deg, var(--color-background) 0%, var(--color-primary) 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     color: var(--color-text);
+	margin: 0; /* removes default browser spacing */
+  	padding: 0;
+  height: 100vh;
+  background: url('src/views/images/WindowsWallpaper1.png') no-repeat center center fixed;
+  background-size: cover;
+  font-family: sans-serif;
+  //color: white; /* optional, so text is visible */
 }
 
 .container {
@@ -95,7 +116,7 @@ input[type="text"]:focus {
     background: var(--color-background);
     box-shadow: 0 0 0 4px rgba(94, 84, 142, 0.1);
 }
-
+/*
 .join-btn {
     width: 100%;
     padding: 14px 20px;
@@ -244,9 +265,6 @@ input[type="text"]:focus {
   z-index: 1000;
 }
 
-#result-screen.hidden {
-  display: none;
-}
 
 .result-content {
   text-align: center;
@@ -291,6 +309,13 @@ input[type="text"]:focus {
 #testingSitebutton:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(94, 84, 142, 0.4);
+}
+
+*/
+
+
+#result-screen.hidden {
+  display: none;
 }
 
 .gameplay-container {
