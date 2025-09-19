@@ -28,7 +28,7 @@ export class GameService{
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnouce(game, playerId)
 			if (this.gameMode === 'tournament' && this.gameEngine instanceof TournamentPong){
-				//logic for findding the finnalist
+				this.gameEngine.bracketWinner(game.id, playerId)
 			}
 		}
 
@@ -36,13 +36,9 @@ export class GameService{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
 		this.webSocketServer.clientReady = (gameId: string, playerId: string) => {
-			if (this.gameEngine instanceof ClassicPong && this.gameEngine.allPlayerReady(gameId, playerId)){
+			if (this.gameEngine.allPlayerReady(gameId, playerId)){
 				console.log(`Classic players are ready: true`)
 				this.gameEngine.startGame(gameId)
-			}
-			else if (this.gameEngine instanceof TournamentPong){
-				const playesReady = this.gameEngine.tournamentAllPlayersReady(gameId, playerId)
-				console.log(`Tournament players are ready: ${playesReady}`)
 			}
 		}
 		this.webSocketServer.clientDisconnect = (playerId: string) => {
@@ -83,6 +79,16 @@ export class GameService{
 		if (this.gameEngine instanceof TournamentPong)
 			return this.gameEngine.createTournament(players)
 		throw new Error("Game engine is not a TournamentPong");
+	}
+
+	public startTournament(tournamentId: string){
+		if (this.gameEngine instanceof TournamentPong){
+			const games = this.gameEngine.createMatchGame(tournamentId)
+			if (games)
+				games.forEach(game => {
+					this.webSocketServer.notifyGameMatched(game)
+				})
+		}
 	}
 }
 

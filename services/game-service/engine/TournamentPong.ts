@@ -41,18 +41,20 @@ export class TournamentPong extends ClassicPong{
 		return bracket
 	}
 
-	//just pair 2 up until last guy standing
-	private createRoundMatches(tournamentId: string){
+
+	public createMatchGame(tournamentId: string): Game[] | undefined{
 		const tournament = this.activeTournament.get(tournamentId)
 		if (!tournament)
 			return
 		if (tournament.bracket.length > 0){
+			let games: Game[] = []
 			tournament.bracket.forEach(match => {
 				match.player1.ready = false
 				match.player2.ready = false
 				const game: Game = {
 					id: match.id,
 					status: 'connected',
+					gameMode: 'tournament',
 					player1: match.player1,
 					player2: match.player2,
 					ball: generateBallPos()
@@ -60,29 +62,48 @@ export class TournamentPong extends ClassicPong{
 				match.status = 'playing'
 				this.gameIdToTournamentId.set(game.id, tournament.id)
 				this.initializeGameState(game)
+				games.push(game)
 				console.log(`Tournament Match start ${game.player1.id} VS ${game.player2.id}`)
 			})
+			return games
 		}
+	}
+
+	private findTournament(gameId: string): string | undefined{
+		const tournamentId = this.gameIdToTournamentId.get(gameId)
+		return tournamentId
+	}
+
+	public bracketWinner(gameId: string, playerId: string){
+		const tournamentId = this.findTournament(gameId)
+		if (tournamentId != undefined){
+			const tournament = this.activeTournament.get(tournamentId)
+			if (!tournament)
+				return
+			let bracket = tournament.bracket.find(player => player.id === playerId)
+			if (!bracket)
+				return
+			const player = bracket.player1.id === playerId ? bracket.player1 : bracket.player2
+			bracket.status = 'finished'
+			bracket.winner = player
+			console.log("Winner is: ", bracket.winner)
+		}
+	}
+
+	public pairTheWinners(gameId: string){
+		const tournamentId = this.findTournament(gameId)
+
+
 	}
 
 	public tournamentAllPlayersReady(gameId: string, playerId: string): boolean{
 		console.log(`Client sent id: ${gameId}`)
-		let tournamentId = undefined
-
-		for (let tounaments of this.activeTournament.values() ){
-			for (let bracket of tounaments.bracket){
-				if (bracket.id === gameId){
-					tournamentId = tounaments.id
-					break
-				}
-			}
-		}
+		const tournamentId = this.findTournament(gameId)
 
 		if (tournamentId === undefined)
 			return false
 
 		const tournament = this.activeTournament.get(tournamentId)
-
 		if (tournament){
 			let player = tournament.players.find(player => player.id === playerId)
 			if (player)

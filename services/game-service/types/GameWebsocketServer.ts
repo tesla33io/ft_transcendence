@@ -157,7 +157,8 @@ export class GameWebSocketServer{
 
 	public winnerAnnouce(game: Game, winnerId: string){
 		let gameResult = {
-			status: 'finished',
+			status: 'done',
+			gameMode: game.gameMode,
 			player1Score: game.player1.score,
 			player2Score: game.player2.score,
 			winner: game.player1.id,

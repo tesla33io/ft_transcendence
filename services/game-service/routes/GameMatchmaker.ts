@@ -1,3 +1,4 @@
+import { TournamentPong } from "../engine/TournamentPong"
 import {Player, Game, generateGameId, generateBallPos, GameMode, Tournament} from "../types/types"
 import { GameServiceManager } from "./GameServiceManager"
 
@@ -61,6 +62,7 @@ export class GameMatchmaker {
 			const opponent = ClassicWaitingPlayer.shift()!
 			const game: Game = {
 				id: generateGameId(),
+				gameMode: 'classic',
 				status: 'connected',
 				player1: opponent,
 				player2: player,
@@ -116,7 +118,6 @@ export class GameMatchmaker {
 			this.waitingPlayers.set(gameMode, [])
 
 		const tournamentWatingPlayer = this.waitingPlayers.get(gameMode)!
-
 		tournamentWatingPlayer.push(player)
 		if (tournamentWatingPlayer.length >= this.tournamentPlayerLimit){
 			const players = tournamentWatingPlayer.splice(0, this.tournamentPlayerLimit)
@@ -125,7 +126,7 @@ export class GameMatchmaker {
 				if (gameService) {
 					const tournament: Tournament = gameService.createTournament(players)
 					// gameService.notifyTournamentReady(tournament) need some change in client loggic
-
+					gameService.startTournament(tournament.id)
 				} else {
 					console.error('GameService not initialized!')
 				}

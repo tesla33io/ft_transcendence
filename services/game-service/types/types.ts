@@ -57,6 +57,7 @@ export const generateBallPos = (): Ball => {
 
 export interface Game {
 		id: string
+		gameMode: string
 		status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
 		player1: Player
 		player2: Player

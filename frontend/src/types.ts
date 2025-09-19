@@ -80,6 +80,8 @@ export interface WebSocketMessage {
 
 export interface GameResult{
 	myPlayerid:  string;
+    status?: string,
+    gameMode?: string,
 	player1Score: number;
 	player2Score: number;
 	winner: string;
