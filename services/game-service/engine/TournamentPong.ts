@@ -69,13 +69,20 @@ export class TournamentPong extends ClassicPong{
 		}
 	}
 
-	private findTournament(gameId: string): string | undefined{
+	private findTournamentId(gameId: string): string | undefined{
 		const tournamentId = this.gameIdToTournamentId.get(gameId)
 		return tournamentId
 	}
 
+	public getTournament(gameId: string): Tournament | undefined{
+		const tournamentId = this.findTournamentId(gameId)
+		if (!tournamentId)
+			return undefined
+		return this.activeTournament.get(tournamentId)
+	}
+
 	public bracketWinner(gameId: string, playerId: string){
-		const tournamentId = this.findTournament(gameId)
+		const tournamentId = this.findTournamentId(gameId)
 		if (tournamentId != undefined){
 			const tournament = this.activeTournament.get(tournamentId)
 			if (!tournament)
@@ -91,14 +98,42 @@ export class TournamentPong extends ClassicPong{
 	}
 
 	public pairTheWinners(gameId: string){
-		const tournamentId = this.findTournament(gameId)
+		const tournamentId = this.findTournamentId(gameId)
+		if(!tournamentId)
+			return undefined
 
+		const tournament = this.activeTournament.get(tournamentId)
+		if (!tournament)
+			return undefined
 
+		const allMatchesFinished = tournament.bracket.every(match => match.status === 'finished')
+		if (!allMatchesFinished){
+			console.log('Not all matches in current round are finished')
+			return undefined
+		}
+
+		const winners = tournament.bracket.filter(match => match.winner !== null).map(match => match.winner!)
+
+		console.log(`Round complete. Winner: ${winners}`)
+
+		if (winners.length === 1){
+			tournament.status = 'finished'
+			tournament.winner = winners[0]
+			console.log(`Tournament champion is ${winners[0].id}`)
+			return undefined
+		}
+
+		const nextRoundBracket = this.generateBracket(tournamentId, winners)
+		tournament.bracket = nextRoundBracket
+
+		console.log(`Next round with ${winners.length} players: `, winners)
+
+		return this.createMatchGame(tournamentId)
 	}
 
 	public tournamentAllPlayersReady(gameId: string, playerId: string): boolean{
 		console.log(`Client sent id: ${gameId}`)
-		const tournamentId = this.findTournament(gameId)
+		const tournamentId = this.findTournamentId(gameId)
 
 		if (tournamentId === undefined)
 			return false
@@ -117,4 +152,11 @@ export class TournamentPong extends ClassicPong{
 		return false
 	}
 
+	public tournamentCleanup(tournamentId: string){
+		this.activeGames.delete(tournamentId)
+		for (const [gameId, tId] of this.gameIdToTournamentId.entries()){
+			if (tId === tournamentId)
+				this.gameIdToTournamentId.delete(gameId)
+		}
+	}
 }

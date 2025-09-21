@@ -118,6 +118,19 @@ export class GameWebSocketServer{
 		}
 	}
 
+	public notifyTournamentComplete(tournament: Tournament){
+		if (!tournament.winner)
+			return
+		const gameResult = {
+			status: 'finnished',
+			gameMode: 'tournament',
+			winner: tournament.winner.id
+		}
+
+		const msg = JSON.stringify(gameResult)
+		this.sendToPlayer(tournament.winner.id, msg)
+	}
+
 	public sendGameState(gameState: Game){
 
 		let player1State = JSON.stringify({
@@ -158,7 +171,7 @@ export class GameWebSocketServer{
 
 	public winnerAnnounce(game: Game, winnerId: string){
 		const gameResult = {
-			status: 'done',
+			status: 'finnished',
 			gameMode: game.gameMode,
 			player1Score: game.player1.score,
 			player2Score: game.player2.score,

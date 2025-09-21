@@ -29,6 +29,22 @@ export class GameService{
 			this.webSocketServer.winnerAnnounce(game, playerId)
 			if (this.gameMode === 'tournament' && this.gameEngine instanceof TournamentPong){
 				this.gameEngine.bracketWinner(game.id, playerId)
+
+				const nextRoundGames = this.gameEngine.pairTheWinners(game.id)
+
+				if (nextRoundGames && nextRoundGames.length > 0){
+					nextRoundGames.forEach(newGame => {
+						this.webSocketServer.notifyGameMatched(newGame)
+					})
+					console.log(`Started next tournament round with ${nextRoundGames.length} games`)
+				}
+				else if (this.gameEngine instanceof TournamentPong) {
+					const tournament = this.gameEngine.getTournament(game.id)
+					if (tournament?.status === 'finished'){
+						console.log(`Tournament ${tournament.id} completed`)
+						this.webSocketServer.notifyTournamentComplete(tournament)
+					}
+				}
 			}
 		}
 
