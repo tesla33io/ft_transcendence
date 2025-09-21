@@ -34,7 +34,7 @@ export class PongGame {
             // Game start callback
             (data: GameData) => this.handleGameStart(data),
             // Game update callback
-            (state: GameState) => this.handelGameState(state),
+            (state: GameState) => this.handleGameState(state),
 			// on Game end one player win
 			(result: GameResult) => this.handleGameResult(result),
             // Error callback
@@ -160,7 +160,7 @@ export class PongGame {
         this.showGameMatched(data);
     }
 
-	private handelGameState(data: GameState): void{
+	private handleGameState(data: GameState): void{
 		this.gameState = data;
         this.renderer.render(data);
 	}

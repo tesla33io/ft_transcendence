@@ -20,7 +20,7 @@ export enum GAME_STATE {
 	WAITING = 2,
 	READY = 3,
 	PLAYING = 4,
-	FINISED = 5
+	FINISHED = 5
 }
 
 export interface JoinGameRequest {
@@ -47,8 +47,8 @@ export interface Ball {
 
 export const generateBallPos = (): Ball => {
 	let ball = {
-		x: Math.floor(Math.random() * GAME_HEIGHT),
-		y: Math.floor(Math.random() * GAME_WIDTH),
+		x: Math.floor(Math.random() * GAME_WIDTH),
+		y: Math.floor(Math.random() * GAME_HEIGHT),
 		vx: Math.floor(Math.random() * 10),
 		vy: Math.floor(Math.random() * 10)
 	}

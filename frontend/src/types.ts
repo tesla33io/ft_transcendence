@@ -47,7 +47,7 @@ export interface GameState {
     status: string;        // Current game status
     gameid: string;        // Game identifier
     player: Player;        // Current player data
-    opponet: Player;       // Opponent data (keeping server's spelling)
+    opponent: Player;       // Opponent data (keeping server's spelling)
     ball: Ball;           // Ball position and velocity
 }
 

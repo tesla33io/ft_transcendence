@@ -130,7 +130,7 @@ export class GameWebSocketServer{
 				score: gameState.player1.score,
 				ready: gameState.player1.ready
 			},
-			opponet:{
+			opponent:{
 				id: gameState.player2.id,
 				name: gameState.player2.name,
 				Y:  gameState.player2.Y,
@@ -144,7 +144,7 @@ export class GameWebSocketServer{
 		const player2State = JSON.stringify({
 			status: 'playing',
 			player:gameState.player2,
-			opponet: gameState.player1,
+			opponent: gameState.player1,
 			ball: {
 				x: GAME_WIDTH - gameState.ball.x,
 				y: gameState.ball.y,

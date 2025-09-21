@@ -46,7 +46,7 @@ export class WebSocketHandler {
         'status' in data &&
         //'gameid' in data &&
         'player' in data &&
-        'opponet' in data && // Note: keeping the misspelling to match server
+        'opponent' in data && // Note: keeping the misspelling to match server
         'ball' in data
     );
 	}
@@ -81,7 +81,7 @@ export class WebSocketHandler {
 	}
 
     private handleGameUpdate(data: any): void {
-        if (!data.player || !data.opponet || !data.ball) {
+        if (!data.player || !data.opponent || !data.ball) {
             console.error('Invalid game update data:', data);
             return;
         }
@@ -90,7 +90,7 @@ export class WebSocketHandler {
             status: data.status,
             gameid: data.gameid,
             player: data.player,
-            opponet: data.opponet,
+            opponent: data.opponent,
             ball: data.ball
         };
 

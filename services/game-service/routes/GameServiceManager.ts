@@ -7,8 +7,8 @@ export class GameServiceManager{
 	private baseSocketNumber: number
 	private matchmaker?: GameMatchmaker
 
-	constructor (sockerNumber: number){
-		this.baseSocketNumber = sockerNumber
+	constructor (socketNumber: number){
+		this.baseSocketNumber = socketNumber
 	}
 
 	public getMatchmaker(): GameMatchmaker | undefined {

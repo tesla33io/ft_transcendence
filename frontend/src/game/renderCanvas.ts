@@ -70,8 +70,8 @@ export class Renderer {
 
     // Opponent paddle - centered around paddleY
     	this.ctx.fillRect(
-        gameState.opponet.X,
-        gameState.opponet.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
+        gameState.opponent.X,
+        gameState.opponent.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
         GAME_CONFIG.PADDLE.WIDTH,
         GAME_CONFIG.PADDLE.HEIGHT
     	);
@@ -98,7 +98,7 @@ export class Renderer {
             GAME_CONFIG.SCORE.OFFSET_Y
         );
         this.ctx.fillText(
-            gameState.opponet.score.toString(),
+            gameState.opponent.score.toString(),
             GAME_CONFIG.SCORE.LEFT_X,
             GAME_CONFIG.SCORE.OFFSET_Y
         );
