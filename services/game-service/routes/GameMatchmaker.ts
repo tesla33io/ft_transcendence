@@ -91,7 +91,7 @@ export class GameMatchmaker {
 			return {
 				status: 'waiting',
 				playerId: player.id,
-				message: 'Wating for player...'
+				message: 'Waiting for player...'
 			}
 		}
 	}
@@ -117,10 +117,10 @@ export class GameMatchmaker {
 		if (!this.waitingPlayers.has(gameMode))
 			this.waitingPlayers.set(gameMode, [])
 
-		const tournamentWatingPlayer = this.waitingPlayers.get(gameMode)!
-		tournamentWatingPlayer.push(player)
-		if (tournamentWatingPlayer.length >= this.tournamentPlayerLimit){
-			const players = tournamentWatingPlayer.splice(0, this.tournamentPlayerLimit)
+		const tournamentWaitingPlayer = this.waitingPlayers.get(gameMode)!
+		tournamentWaitingPlayer.push(player)
+		if (tournamentWaitingPlayer.length >= this.tournamentPlayerLimit){
+			const players = tournamentWaitingPlayer.splice(0, this.tournamentPlayerLimit)
 
 			setTimeout(() => {
 				if (gameService) {
@@ -143,7 +143,7 @@ export class GameMatchmaker {
 			return {
 				status: 'waiting',
 				playerId: player.id,
-				message: `Waiting for player... (${tournamentWatingPlayer.length}/${this.tournamentPlayerLimit})`
+				message: `Waiting for player... (${tournamentWaitingPlayer.length}/${this.tournamentPlayerLimit})`
 			}
 		}
 	}

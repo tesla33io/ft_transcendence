@@ -47,12 +47,12 @@ export class ClassicPong extends GameEngine {
 		if (game.ball.x <= 0){
 			game.player1.score++
 			this.ballReset(game)
-			console.log(`Player 1 (${game.player2.name}) score!`)
+			console.log(`Player 1 (${game.player1.name}) score!`)
 		}
 		else if (game.ball.x >= GAME_WIDTH){
 			game.player2.score++
 			this.ballReset(game)
-			console.log(`Player 2 (${game.player1.name}) score!`)
+			console.log(`Player 2 (${game.player2.name}) score!`)
 		}
 	}
 
