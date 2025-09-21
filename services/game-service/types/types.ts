@@ -47,8 +47,8 @@ export interface Ball {
 
 export const generateBallPos = (): Ball => {
 	let ball = {
-		x: Math.floor(Math.random() * GAME_HEIGHT),
-		y: Math.floor(Math.random() * GAME_WIDTH),
+		x: Math.floor(Math.random() * GAME_WIDTH),
+		y: Math.floor(Math.random() * GAME_HEIGHT),
 		vx: Math.floor(Math.random() * 10),
 		vy: Math.floor(Math.random() * 10)
 	}
