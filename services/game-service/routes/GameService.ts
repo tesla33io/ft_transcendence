@@ -26,9 +26,9 @@ export class GameService{
 				this.webSocketServer.sendGameState(game)
 		}
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
-			this.webSocketServer.winnerAnnouce(game, playerId)
+			this.webSocketServer.winnerAnnounce(game, playerId)
 			if (this.gameMode === 'tournament' && this.gameEngine instanceof TournamentPong){
-				//logic for findding the finnalist
+				this.gameEngine.bracketWinner(game.id, playerId)
 			}
 		}
 
@@ -36,13 +36,9 @@ export class GameService{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
 		this.webSocketServer.clientReady = (gameId: string, playerId: string) => {
-			if (this.gameEngine instanceof ClassicPong && this.gameEngine.allPlayerReady(gameId, playerId)){
+			if (this.gameEngine.allPlayerReady(gameId, playerId)){
 				console.log(`Classic players are ready: true`)
 				this.gameEngine.startGame(gameId)
-			}
-			else if (this.gameEngine instanceof TournamentPong){
-				const playesReady = this.gameEngine.tournamentAllPlayersReady(gameId, playerId)
-				console.log(`Tournament players are ready: ${playesReady}`)
 			}
 		}
 		this.webSocketServer.clientDisconnect = (playerId: string) => {
@@ -50,7 +46,7 @@ export class GameService{
 			if (game !== undefined){
 				this.stopGame(game.id);
 				const winnerId = playerId === game.player1.id ? game.player2.id : game.player1.id
-				this.webSocketServer.winnerAnnouce(game, winnerId)
+				this.webSocketServer.winnerAnnounce(game, winnerId)
 			}
 			else{
 				if (this.matchmaker)
@@ -84,5 +80,18 @@ export class GameService{
 			return this.gameEngine.createTournament(players)
 		throw new Error("Game engine is not a TournamentPong");
 	}
+<<<<<<< HEAD
+=======
+
+	public startTournament(tournamentId: string){
+		if (this.gameEngine instanceof TournamentPong){
+			const games = this.gameEngine.createMatchGame(tournamentId)
+			if (games)
+				games.forEach(game => {
+					this.webSocketServer.notifyGameMatched(game)
+				})
+		}
+	}
+>>>>>>> quan_remote_host_base_test
 }
 

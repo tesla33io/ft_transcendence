@@ -34,8 +34,8 @@ export class ClassicPong extends GameEngine {
 		this.updatePlayerScore(game)
 		if (this.onGameStatusUpdate)
 			this.onGameStatusUpdate(game)
-		if (game.player1.score >= this.GAME_SCRORE ||
-			game.player2.score >= this.GAME_SCRORE){
+		if (game.player1.score >= this.GAME_SCORE ||
+			game.player2.score >= this.GAME_SCORE){
 			this.stopGame(game.id)
 			const winner = game.player1.score > game.player2.score ? game.player1.id : game.player2.id
 			if (this.declareWinner)
@@ -45,14 +45,14 @@ export class ClassicPong extends GameEngine {
 
 	private updatePlayerScore(game: Game){
 		if (game.ball.x <= 0){
-			game.player1.score++
-			this.ballReset(game)
-			console.log(`Player 1 (${game.player2.name}) score!`)
-		}
-		else if (game.ball.x >= GAME_WIDTH){
 			game.player2.score++
 			this.ballReset(game)
-			console.log(`Player 2 (${game.player1.name}) score!`)
+			console.log(`Player 2 (${game.player2.name}|${game.player2.id}) score!`)
+		}
+		else if (game.ball.x >= GAME_WIDTH){
+			game.player1.score++
+			this.ballReset(game)
+			console.log(`Player 1 (${game.player1.name}|${game.player1.id}) score!`)
 		}
 	}
 

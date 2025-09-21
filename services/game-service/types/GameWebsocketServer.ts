@@ -55,7 +55,7 @@ export class GameWebSocketServer{
 			this.clientReady(message.gameId, message.playerId)
 		}
 		else if (message.type === 'disconnect' && this.clientDisconnect){
-			console.log(`handleClientMessage: Player ${playerId} explicitly disconnecting from game ${message.gameId}`)
+			console.log(`handleClientmessage: Player ${playerId} explicitly disconnecting from game ${message.gameId}`)
 			this.clientDisconnect(playerId)
 		}
 	}
@@ -138,26 +138,28 @@ export class GameWebSocketServer{
 				score: gameState.player2.score,
 				ready: gameState.player2.ready
 			},
-			ball: gameState.ball
+			ball: {
+				x: GAME_WIDTH - gameState.ball.x,
+				y: gameState.ball.y,
+			}
+
 		})
 
 		const player2State = JSON.stringify({
 			status: 'playing',
 			player:gameState.player2,
 			opponent: gameState.player1,
-			ball: {
-				x: GAME_WIDTH - gameState.ball.x,
-				y: gameState.ball.y,
-			}
+			ball: gameState.ball
 		})
 
 		this.sendToPlayer(gameState.player1.id, player1State)
 		this.sendToPlayer(gameState.player2.id, player2State)
 	}
 
-	public winnerAnnouce(game: Game, winnerId: string){
+	public winnerAnnounce(game: Game, winnerId: string){
 		let gameResult = {
-			status: 'finished',
+			status: 'done',
+			gameMode: game.gameMode,
 			player1Score: game.player1.score,
 			player2Score: game.player2.score,
 			winner: game.player1.id,

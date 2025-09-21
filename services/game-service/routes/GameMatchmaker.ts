@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+import { TournamentPong } from "../engine/TournamentPong"
+>>>>>>> quan_remote_host_base_test
 import {Player, Game, generateGameId, generateBallPos, GameMode, Tournament} from "../types/types"
 import { GameServiceManager } from "./GameServiceManager"
 
@@ -15,7 +19,11 @@ export class GameMatchmaker {
 		this.gameServiceManager = serviceManager
 	}
 
+<<<<<<< HEAD
 	public static getinstance(gameServiceManager: GameServiceManager){
+=======
+	public static getInstance(gameServiceManager: GameServiceManager){
+>>>>>>> quan_remote_host_base_test
 		if (!GameMatchmaker.instance)
 				GameMatchmaker.instance = new GameMatchmaker(gameServiceManager)
 		return GameMatchmaker.instance
@@ -61,6 +69,7 @@ export class GameMatchmaker {
 			const opponent = ClassicWaitingPlayer.shift()!
 			const game: Game = {
 				id: generateGameId(),
+				gameMode: 'classic',
 				status: 'connected',
 				player1: opponent,
 				player2: player,
@@ -89,7 +98,7 @@ export class GameMatchmaker {
 			return {
 				status: 'waiting',
 				playerId: player.id,
-				message: 'Wating for player...'
+				message: 'Waiting for player...'
 			}
 		}
 	}
@@ -115,17 +124,16 @@ export class GameMatchmaker {
 		if (!this.waitingPlayers.has(gameMode))
 			this.waitingPlayers.set(gameMode, [])
 
-		const tournamentWatingPlayer = this.waitingPlayers.get(gameMode)!
-
-		tournamentWatingPlayer.push(player)
-		if (tournamentWatingPlayer.length >= this.tournamentPlayerLimit){
-			const players = tournamentWatingPlayer.splice(0, this.tournamentPlayerLimit)
+		const tournamentWaitingPlayer = this.waitingPlayers.get(gameMode)!
+		tournamentWaitingPlayer.push(player)
+		if (tournamentWaitingPlayer.length >= this.tournamentPlayerLimit){
+			const players = tournamentWaitingPlayer.splice(0, this.tournamentPlayerLimit)
 
 			setTimeout(() => {
 				if (gameService) {
 					const tournament: Tournament = gameService.createTournament(players)
 					// gameService.notifyTournamentReady(tournament) need some change in client loggic
-
+					gameService.startTournament(tournament.id)
 				} else {
 					console.error('GameService not initialized!')
 				}
@@ -142,7 +150,7 @@ export class GameMatchmaker {
 			return {
 				status: 'waiting',
 				playerId: player.id,
-				message: `Waiting for player... (${tournamentWatingPlayer.length}/${this.tournamentPlayerLimit})`
+				message: `Waiting for player... (${tournamentWaitingPlayer.length}/${this.tournamentPlayerLimit})`
 			}
 		}
 	}

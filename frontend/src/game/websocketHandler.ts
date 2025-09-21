@@ -46,7 +46,7 @@ export class WebSocketHandler {
         'status' in data &&
         //'gameid' in data &&
         'player' in data &&
-        'opponent' in data && 
+        'opponent' in data && // Note: keeping the misspelling to match server
         'ball' in data
     );
 	}
@@ -68,11 +68,13 @@ export class WebSocketHandler {
 
 	private handleGameResult(data:any): void{
 		const gameResult: GameResult = {
+            status: data.status,
+            gameMode: data.gameMode,
 			myPlayerid: this.playerId,
 			player1Score: data.player1Score,
 			player2Score: data.player2Score,
 			winner: data.winner,
-			losser: data.losser //loser: data.loser
+			loser: data.loser //loser: data.loser
 		};
 
 		this.onGameResult(gameResult);
