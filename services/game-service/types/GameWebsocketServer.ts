@@ -55,7 +55,7 @@ export class GameWebSocketServer{
 			this.clientReady(message.gameId, message.playerId)
 		}
 		else if (message.type === 'disconnect' && this.clientDisconnect){
-			console.log(`handleCleantmessage: Player ${playerId} explicitly disconnecting from game ${message.gameId}`)
+			console.log(`handleClientMessage: Player ${playerId} explicitly disconnecting from game ${message.gameId}`)
 			this.clientDisconnect(playerId)
 		}
 	}
