@@ -4,7 +4,7 @@ export abstract class GameEngine {
 	protected activeGames: Map<string, Game> = new Map()
 	protected gameLoops: Map<string, NodeJS.Timeout> = new Map()
 	protected FRAME_TIME = 1000 / FPS
-	protected GAME_SCRORE = 3
+	protected GAME_SCORE = 3
 
 	constructor(){
 		console.log('GameEngine initialized')
