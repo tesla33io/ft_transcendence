@@ -157,16 +157,13 @@ export class GameWebSocketServer{
 	}
 
 	public winnerAnnounce(game: Game, winnerId: string){
-		let gameResult = {
+		const gameResult = {
 			status: 'done',
 			gameMode: game.gameMode,
 			player1Score: game.player1.score,
 			player2Score: game.player2.score,
-			winner: game.player1.id,
+			winner: winnerId
 		}
-
-		if (game.player2.id === winnerId)
-			gameResult["winner"] = game.player2.id
 
 		const msg = JSON.stringify(gameResult)
 		this.sendToPlayer(game.player1.id, msg)

@@ -80,7 +80,7 @@ export class TournamentPong extends ClassicPong{
 			const tournament = this.activeTournament.get(tournamentId)
 			if (!tournament)
 				return
-			let bracket = tournament.bracket.find(player => player.id === playerId)
+			let bracket = tournament.bracket.find(match => match.player1.id === playerId || match.player2.id === playerId)
 			if (!bracket)
 				return
 			const player = bracket.player1.id === playerId ? bracket.player1 : bracket.player2

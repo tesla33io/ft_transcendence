@@ -24,9 +24,9 @@ export class ClassicPong extends GameEngine {
 
 	private ballReset(game: Game){
 		game.ball.x =  GAME_WIDTH / 2,
-		game.ball.y = GAME_WIDTH / 2,
-		game.ball.vx = Math.random() > 0.5 ? 5 : -5,
-		game.ball.vy = (Math.random() * 4) ? 2 : -2
+		game.ball.y = Math.random() * GAME_HEIGHT,
+		game.ball.vx = Math.random() > 0.5 ? 2 : -2,
+		game.ball.vy = (Math.random() * 0.5) ? 2 : -2
 	}
 
 	protected updateGame(game: Game){
