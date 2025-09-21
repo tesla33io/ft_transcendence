@@ -8,15 +8,6 @@ server.register(require('@fastify/cors'),{
 	credentials: true
 })
 
-
-// server.addHook('preHandler', async (request, reply) => {
-// 	server.log.info(`Req: ${request.method} \n req: ${request.url}`)
-// })
-
-server.get('/test', async (req, reply) => {
-	return {message: 'test'}
-})
-
 server.register(require('@fastify/http-proxy'), {
 	upstream: 'http://game-service:5000',
 	prefix: '/api/v1/game',
@@ -33,7 +24,7 @@ server.register(require('@fastify/http-proxy'), {
 const start = async() =>{
 	try{
 		await server.listen({port:PORT, host:'0.0.0.0'})
-		console.log(`Gateway server start on port ${PORT}`)
+		console.log(`Gateway server started on port ${PORT}`)
 	}
 	catch (error){
 		server.log.error(error)

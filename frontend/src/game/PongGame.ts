@@ -166,7 +166,7 @@ export class PongGame {
 	}
 
 	private handleGameResult(data: GameResult): void{
-        console.log("Game resutl: ", data)
+        console.log("Game result: ", data)
         if (data.status && data.status === 'finished' &&
             data.gameMode && data.gameMode === 'classic'){
                 this.wsHandler?.disconnect();
