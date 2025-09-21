@@ -16,7 +16,7 @@ export class GameMatchmaker {
 		this.gameServiceManager = serviceManager
 	}
 
-	public static getinstance(gameServiceManager: GameServiceManager){
+	public static getInstance(gameServiceManager: GameServiceManager){
 		if (!GameMatchmaker.instance)
 				GameMatchmaker.instance = new GameMatchmaker(gameServiceManager)
 		return GameMatchmaker.instance

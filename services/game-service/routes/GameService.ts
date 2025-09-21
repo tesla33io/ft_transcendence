@@ -26,7 +26,7 @@ export class GameService{
 				this.webSocketServer.sendGameState(game)
 		}
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
-			this.webSocketServer.winnerAnnouce(game, playerId)
+			this.webSocketServer.winnerAnnounce(game, playerId)
 			if (this.gameMode === 'tournament' && this.gameEngine instanceof TournamentPong){
 				this.gameEngine.bracketWinner(game.id, playerId)
 			}
@@ -46,7 +46,7 @@ export class GameService{
 			if (game !== undefined){
 				this.stopGame(game.id);
 				const winnerId = playerId === game.player1.id ? game.player2.id : game.player1.id
-				this.webSocketServer.winnerAnnouce(game, winnerId)
+				this.webSocketServer.winnerAnnounce(game, winnerId)
 			}
 			else{
 				if (this.matchmaker)

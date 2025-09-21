@@ -155,7 +155,7 @@ export class GameWebSocketServer{
 		this.sendToPlayer(gameState.player2.id, player2State)
 	}
 
-	public winnerAnnouce(game: Game, winnerId: string){
+	public winnerAnnounce(game: Game, winnerId: string){
 		let gameResult = {
 			status: 'done',
 			gameMode: game.gameMode,

@@ -74,7 +74,7 @@ export class WebSocketHandler {
 			player1Score: data.player1Score,
 			player2Score: data.player2Score,
 			winner: data.winner,
-			losser: data.losser //loser: data.loser
+			loser: data.loser //loser: data.loser
 		};
 
 		this.onGameResult(gameResult);

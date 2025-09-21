@@ -8,7 +8,7 @@ const PORT = 5000
 const WebsocketPORT = 5005
 
 const gameServiceManager = new GameServiceManager(WebsocketPORT)
-const gameMatchmaker = GameMatchmaker.getinstance(gameServiceManager)
+const gameMatchmaker = GameMatchmaker.getInstance(gameServiceManager)
 gameServiceManager.setMatchmaker(gameMatchmaker)
 
 server.register(require('@fastify/cors'), {
