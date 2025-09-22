@@ -4,7 +4,6 @@ import { Game, GameMode, Player, Tournament } from "../types/types"
 import { GameModeEngineProvider } from "../engine/GameEngineProvider";
 import { GameMatchmaker } from "./GameMatchmaker";
 import { TournamentPong } from "../engine/TournamentPong";
-import { ClassicPong } from "../engine/ClassicPong";
 
 export class GameService{
 	private gameEngine: GameEngine
@@ -27,24 +26,8 @@ export class GameService{
 		}
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnounce(game, playerId)
-			if (this.gameMode === 'tournament' && this.gameEngine instanceof TournamentPong){
-				this.gameEngine.bracketWinner(game.id, playerId)
-
-				const nextRoundGames = this.gameEngine.pairTheWinners(game.id)
-
-				if (nextRoundGames && nextRoundGames.length > 0){
-					nextRoundGames.forEach(newGame => {
-						this.webSocketServer.notifyGameMatched(newGame)
-					})
-					console.log(`Started next tournament round with ${nextRoundGames.length} games`)
-				}
-				else if (this.gameEngine instanceof TournamentPong) {
-					const tournament = this.gameEngine.getTournament(game.id)
-					if (tournament?.status === 'finished'){
-						console.log(`Tournament ${tournament.id} completed`)
-						this.webSocketServer.notifyTournamentComplete(tournament)
-					}
-				}
+			if (this.gameMode === 'tournament'){
+				this.tournamnetHandling(game, playerId)
 			}
 		}
 
@@ -67,6 +50,28 @@ export class GameService{
 			else{
 				if (this.matchmaker)
 					this.matchmaker.removePlayerFromQueue(playerId, this.gameMode)
+			}
+		}
+	}
+
+	private tournamnetHandling(game: Game, playerId: string){
+		if (this.gameEngine instanceof TournamentPong){
+			this.gameEngine.bracketWinner(game.id, playerId)
+
+			const nextRoundGames = this.gameEngine.pairTheWinners(game.id)
+
+			if (nextRoundGames && nextRoundGames.length > 0){
+				nextRoundGames.forEach(newGame => {
+					this.webSocketServer.notifyGameMatched(newGame)
+				})
+				console.log(`Started next tournament round with ${nextRoundGames.length} games`)
+			}
+			else if (this.gameEngine instanceof TournamentPong) {
+				const tournament = this.gameEngine.getTournament(game.id)
+				if (tournament?.status === 'finished'){
+					console.log(`Tournament ${tournament.id} completed`)
+					this.webSocketServer.notifyTournamentComplete(tournament)
+				}
 			}
 		}
 	}

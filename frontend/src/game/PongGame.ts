@@ -180,7 +180,7 @@ export class PongGame {
 
 		// then schedule the result screen on next frame
 		requestAnimationFrame(() => {
-			this.renderer.showResultScreen(data, this.playerId);
+			// this.renderer.showResultScreen(data, this.playerId);
 			//this.renderer.onPlayAgain = () => this.resetGame();
 		});
 }

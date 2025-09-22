@@ -1,8 +1,9 @@
 export const GAME_HEIGHT = 550
 export const GAME_WIDTH = 900
-export const PADDLE_HEIGHT = 40
+export const PADDLE_HEIGHT = 50
 export const PADDLE_WIDTH = 10
 export const FPS = 60
+export const PLAYER_OFFSET = 20
 
 export type GameMode = 'classic' | 'tournament'
 

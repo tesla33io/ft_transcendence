@@ -1,14 +1,14 @@
 import { GameEngine } from "./GameEngine";
-import { Game, GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH } from "../types/types";
+import { Game, GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH, PLAYER_OFFSET } from "../types/types";
 
 export class ClassicPong extends GameEngine {
 	public initializeGameState(game: Game){
 		game.player1.Y = GAME_HEIGHT / 2 - 50
-		game.player1.X = 20
+		game.player1.X = PLAYER_OFFSET
 		game.player1.score = 0
 
 		game.player2.Y = GAME_HEIGHT / 2 - 50
-		game.player2.X = GAME_WIDTH - 20
+		game.player2.X = GAME_WIDTH - PLAYER_OFFSET
 		game.player2.score = 0
 
 		this.ballReset(game)
@@ -23,9 +23,9 @@ export class ClassicPong extends GameEngine {
 	}
 
 	private ballReset(game: Game){
-		game.ball.x =  GAME_WIDTH / 2,
-		game.ball.y = Math.random() * GAME_HEIGHT,
-		game.ball.vx = Math.random() > 0.5 ? 2 : -2,
+		game.ball.x =  GAME_WIDTH / 2
+		game.ball.y = Math.random() * GAME_HEIGHT
+		game.ball.vx = Math.random() > 0.5 ? 2 : -2
 		game.ball.vy = (Math.random() * 0.5) ? 2 : -2
 	}
 
@@ -44,12 +44,12 @@ export class ClassicPong extends GameEngine {
 	}
 
 	private updatePlayerScore(game: Game){
-		if (game.ball.x <= 0){
+		if (game.ball.x <= PLAYER_OFFSET){
 			game.player2.score++
 			this.ballReset(game)
 			console.log(`Player 2 (${game.player2.name}|${game.player2.id}) score!`)
 		}
-		else if (game.ball.x >= GAME_WIDTH){
+		else if (game.ball.x >= GAME_WIDTH - PLAYER_OFFSET){
 			game.player1.score++
 			this.ballReset(game)
 			console.log(`Player 1 (${game.player1.name}|${game.player1.id}) score!`)
@@ -83,15 +83,38 @@ export class ClassicPong extends GameEngine {
 	}
 
 	protected collisionCheck(game: Game): void {
-	if (game.ball.x <= game.player1.X + PADDLE_WIDTH / 2 ||
-		 game.ball.x >= game.player2.X - PADDLE_WIDTH / 2) {
-		if ((game.ball.y >= game.player1.Y - PADDLE_HEIGHT / 2 &&
-			game.ball.y <= game.player1.Y + PADDLE_HEIGHT / 2) ||
-			(game.ball.y >= game.player2.Y - PADDLE_HEIGHT / 2 &&
-			game.ball.y <= game.player2.Y + PADDLE_HEIGHT / 2)){
-			game.ball.vx = game.ball.vx < 0 ? game.ball.vx - 2 : game.ball.vx + 2
-			game.ball.vx *= -1;
+		if (game.ball.x <= game.player1.X + PADDLE_WIDTH ||
+			game.ball.x >= game.player2.X - PADDLE_WIDTH) {
+
+			if ((game.ball.y >= game.player1.Y - 5 &&
+				game.ball.y <= game.player1.Y + 5 ) ||
+
+				(game.ball.y >= game.player2.Y - 5 &&
+				game.ball.y <= game.player2.Y + 5 )){
+				game.ball.vx = game.ball.vx < 0 ? -2 :  2
+				game.ball.vx *= -1
+			}
+
+			else if ((game.ball.y === game.player1.Y - PADDLE_HEIGHT / 2 &&
+				game.ball.y === game.player1.Y + PADDLE_HEIGHT / 2) ||
+
+				(game.ball.y === game.player2.Y - PADDLE_HEIGHT / 2 &&
+				game.ball.y === game.player2.Y + PADDLE_HEIGHT / 2)){
+
+				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - 4 : game.ball.vx + 4
+				game.ball.vx *= -1
+				game.ball.vy *= -1
+			}
+
+			else if ((game.ball.y >= game.player1.Y - PADDLE_HEIGHT / 2 &&
+				game.ball.y <= game.player1.Y + PADDLE_HEIGHT / 2) ||
+
+				(game.ball.y >= game.player2.Y - PADDLE_HEIGHT / 2 &&
+				game.ball.y <= game.player2.Y + PADDLE_HEIGHT / 2)){
+
+				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - 2 : game.ball.vx + 2
+				game.ball.vx *= -1
+			}
 		}
 	}
-}
 }
