@@ -7,6 +7,7 @@ export class WebSocketHandler {
 
     constructor(
         private playerId: string,
+        private gameMode: string,
         private onGameStart: (data: GameData) => void,
         private onGameUpdate: (state: GameState) => void,
 		private onGameResult: (result: GameResult) => void,
@@ -74,7 +75,7 @@ export class WebSocketHandler {
 			player1Score: data.player1Score,
 			player2Score: data.player2Score,
 			winner: data.winner,
-			loser: data.loser //loser: data.loser
+			loser: data.loser
 		};
 
 		this.onGameResult(gameResult);
@@ -130,7 +131,7 @@ export class WebSocketHandler {
     // WebSocket connection management
     private connect(): void {
         console.log(`Attempting to connect WebSocket with playerId: ${this.playerId}`);
-        this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws?playerId=${this.playerId}`)
+        this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws/${this.gameMode}?playerId=${this.playerId}`)
 
         this.ws.onopen = () => {
             console.log('WebSocket connected successfully');

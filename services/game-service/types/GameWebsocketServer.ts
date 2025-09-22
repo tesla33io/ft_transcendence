@@ -24,7 +24,7 @@ export class GameWebSocketServer{
 
 			if (playerId) {
 				this.connectedClients.set(playerId, ws)
-				console.log(`Player ${playerId} connected via WebSocket`)
+				console.log(`Player ${playerId} connected via WebSocket [Port ${this.wss.options.port}]`)
 
 				ws.on('message', (data:string) =>{
 					try {
@@ -92,11 +92,16 @@ export class GameWebSocketServer{
 			player1Ws.send(messagePlayer1)
 			console.log(`Sent game_matched to player1: ${gameData.player1.id}`)
 		}
+		else
+			console.log(`Websocket for player1 ${gameData.player1.id} not found`)
+
 		if (player2Ws) {
 			player2Ws.send(messagePlayer2)
 			console.log(`Sent game_matched to player2: ${gameData.player2.id}`)
 		}
-	}
+		else
+			console.log(`Websocket for player2 ${gameData.player2.id} not found`)
+}
 
 	public notifyTournamentReady(tournament: Tournament){
 		const message = JSON.stringify({
@@ -122,7 +127,7 @@ export class GameWebSocketServer{
 		if (!tournament.winner)
 			return
 		const gameResult = {
-			status: 'finnished',
+			status: 'finished',
 			gameMode: 'tournament',
 			winner: tournament.winner.id
 		}
@@ -171,7 +176,7 @@ export class GameWebSocketServer{
 
 	public winnerAnnounce(game: Game, winnerId: string){
 		const gameResult = {
-			status: 'finnished',
+			status: 'finished',
 			gameMode: game.gameMode,
 			player1Score: game.player1.score,
 			player2Score: game.player2.score,

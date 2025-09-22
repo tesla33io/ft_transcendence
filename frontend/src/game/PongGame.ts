@@ -6,6 +6,7 @@ export class PongGame {
     // Game state
     private gameId: string = '';
     private playerId: string = '';
+    private gameMode: string = '';
     private wsHandler?: WebSocketHandler;
     private readonly renderer: Renderer;
     private gameState?: GameState;
@@ -32,6 +33,7 @@ export class PongGame {
         this.wsHandler = new WebSocketHandler(
             playerId,
             // Game start callback
+            this.gameMode,
             (data: GameData) => this.handleGameStart(data),
             // Game update callback
             (state: GameState) => this.handleGameState(state),
@@ -111,7 +113,7 @@ export class PongGame {
             this.setLoadingState(true);
             this.playerId = Math.random().toString().substring(2,7);
             console.log(`PlayerID: ${this.playerId} - ${gameMode}`);
-
+            this.gameMode = gameMode;
             const apiEndpoint = gameMode === 'tournament' ? '/api/v1/game/join-tournament' : '/api/v1/game/join-classic'
 
             const response = await fetch(apiEndpoint, {
