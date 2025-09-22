@@ -2,7 +2,11 @@ import { Router } from "../router";
 
 import joystickIcon from './images/joystick.png';
 import padlock from './images/padlock.png';
-import gps from './images/gps.png'
+import remote from './images/remote.png'
+import usergreen from './images/users_green.png'
+import network from './images/network.png'
+import spider from './images/spider.png'
+import phone from './images/phone.png'
 
 // Define the type for icons
 type IconData = {
@@ -28,7 +32,11 @@ export function desktopView(router: Router) {
   const icons: IconData[] = [
     { id: "local_game", title: "local_Pong.exe", img: joystickIcon, x: 100, y: 100 },
     { id: "logout", title: "logout.exe", img: padlock  , x: 100, y: 200 },
-    { id: "Remotepong", title: "Online_Pong.exe", img: gps, x: 100, y: 300 },
+    { id: "Remotepong", title: "Online_Pong.exe", img: remote, x: 100, y: 300 },
+	{ id: "friends", title: "friends.exe", img: phone, x: 100, y: 400 },
+	{ id: "Ai", title: "Ai_Pong.exe", img: spider, x: 100, y: 400 },
+	{ id: "profile", title: "Profile.exe", img: usergreen, x: 100, y: 600 },
+	{ id: "tournament", title: "Tornament.exe", img: network, x: 100, y: 500 }
   ];
 
   //render icons
@@ -45,7 +53,7 @@ export function desktopView(router: Router) {
 	img.className = "w-16 h-16 mx-auto";
     iconDiv.appendChild(img);
 
-    // 4b️⃣ Title
+    // Title
     const label = document.createElement("div");
     label.innerText = icon.title;
     label.className = "mt-1 text-xs text-white";
@@ -60,8 +68,17 @@ export function desktopView(router: Router) {
         case "logout":
           router.navigate("/login");   // add some disconect handelinh here
           break;
-        case "mycomputer":
-          router.navigate("/mycomputer"); // hypothetical page
+        case "Remotepong":
+          router.navigate("/test");
+          break;
+		case "friends":
+          router.navigate("/friends");
+          break;
+		case "tournament":
+          router.navigate("/tournament");
+          break;
+		case "profile":
+          router.navigate("/profile");
           break;
       }
     });

@@ -1,73 +1,43 @@
 import { Router } from "../router";
+import { createWindow } from "./components";
 
 
 export function tournamentView(router: Router) {
-    const root = document.getElementById("app")!;
-    root.innerHTML = "";
+	const root = document.getElementById("app")!;
+		root.innerHTML = "";
 
-    // Create main window
-    const mainWindow = document.createElement("div");
-    mainWindow.className = "window main-window";
+		const content = document.createElement("div");
+		content.innerHTML = `
+			<fieldset>
+			<div class="field-row">Select a tournament to join:</div>
+			<div class="field-row">
+				<input id="radio10" type="radio" name="fieldset-example">
+				<label for="radio10">linus Room</label>
+			</div>
+			<div class="field-row">
+				<input id="radio11" type="radio" name="fieldset-example">
+				<label for="radio11">max Room</label>
+			</div>
+			<div class="field-row">
+				<input id="radio12" type="radio" name="fieldset-example">
+				<label for="radio12">Felix Room</label>
+			</div>
+			</fieldset>
+			<button class="default">Join Tournament Room</button>
+		`;
 
-    // Create title bar
-    const titleBar = document.createElement("div");
-    titleBar.className = "title-bar";
+		const simpleWindow = createWindow({
+		title: "Tournament",
+		width: "400px",
+		content: content,
+		titleBarControls: {
+			close: true,
+			onClose: () => {
+    			router.navigate("/desktop")
+			}
+		}
+	});
 
-    const titleText = document.createElement("div");
-    titleText.className = "title-bar-text";
-    titleText.textContent = "ft_transcendence - Pong";
+	root.append(simpleWindow);
 
-    titleBar.appendChild(titleText);
-    mainWindow.appendChild(titleBar);
-
-    // Create window body
-    const windowBody = document.createElement("div");
-    windowBody.className = "window-body";
-
-    // Create tab menu
-    const tabMenu = document.createElement("menu");
-    tabMenu.setAttribute("role", "tablist");
-
-    const tabs = [
-        { name: "Tournament", route: "/tournament" },
-		{ name: "Homepage", route: "/homepage" },
-        { name: "Test Site", route: "/test" },
-        { name: "Profile", route: "/profile" },
-        { name: "Friends", route: "/friends" }
-    ];
-
-    // Create tabs
-    tabs.forEach((tab, index) => {
-        const li = document.createElement("li");
-        li.setAttribute("role", "tab");
-        if (index === 0) {
-            li.setAttribute("aria-selected", "true");
-        }
-
-        const a = document.createElement("a");
-        a.href = "#";
-        a.textContent = tab.name;
-        a.onclick = (e) => {
-            e.preventDefault();
-            // Update selected tab
-            tabMenu.querySelectorAll('[role="tab"]').forEach(tab =>
-                tab.removeAttribute('aria-selected'));
-            li.setAttribute('aria-selected', 'true');
-            router.navigate(tab.route);
-        };
-
-        li.appendChild(a);
-        tabMenu.appendChild(li);
-    });
-
-    // Create content area
-    const tabContent = document.createElement("div");
-    tabContent.className = "tab-content";
-    tabContent.innerHTML = "<p>Welcome to Pong! Select a tab to navigate.</p>";
-
-    // Assemble the components
-    windowBody.appendChild(tabMenu);
-    windowBody.appendChild(tabContent);
-    mainWindow.appendChild(windowBody);
-    root.appendChild(mainWindow);
 }
