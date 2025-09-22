@@ -1,4 +1,7 @@
-export function gameView() {
+import { Router } from "../router";
+
+
+export function gameView(router: Router) {
     const root = document.getElementById("app")!;
     root.innerHTML = "";
 
@@ -91,15 +94,19 @@ export function gameView() {
 	const resultScore = document.createElement("p");
 	resultScore.id = "result-score";
 
-	// Add play again button
-	const playAgainBtn = document.createElement("button");
-	playAgainBtn.textContent = "Play Again";
-	playAgainBtn.className = "button";
+	// back to menu button
+	const backToMenuBtn = document.createElement("button");
+	backToMenuBtn.textContent = "Menu";
+	backToMenuBtn.className = "button";
+
+	backToMenuBtn.addEventListener("click", () => {
+		router.navigate("/")
+	});
 
 	// Assemble the components
 	resultControls.appendChild(closeResultBtn);
 	resultTitleBar.append(resultTitleText, resultControls);
-	resultBody.append(resultScore, playAgainBtn);
+	resultBody.append(resultScore,backToMenuBtn);
 	resultWindow.append(resultTitleBar, resultBody);
 
 	// Add to container
@@ -160,6 +167,8 @@ export function gameView() {
 		resultWindow.classList.add("hidden");
 	});
 
+
+
 	root.appendChild(container);
     return {
         canvas,
@@ -172,7 +181,7 @@ export function gameView() {
         	   document.getElementById("opponent-name")!.textContent = opponentName;
         },
          showGameResult: (isWin: boolean, finalScore: string) => {
-        resultTitleText.textContent = isWin ? "🎉 YOU WIN!" : "😢 YOU LOSE!";
+        resultTitleText.textContent = isWin ? "YOU WIN!" : "YOU LOSE!";
         resultScore.textContent = finalScore;
         resultWindow.classList.remove("hidden");
 		},

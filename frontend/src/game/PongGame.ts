@@ -133,7 +133,7 @@ export class PongGame {
     // Wait for navigation to complete
     requestAnimationFrame(() => {
         // 3. Create game view
-        this.gameView = gameView();
+        this.gameView = gameView(this.router);
 
         // Verify view creation
         if (!this.gameView?.canvas) {

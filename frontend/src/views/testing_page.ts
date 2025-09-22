@@ -70,37 +70,29 @@ export function testingPage(router: Router) {
     const container = document.createElement("div");
     container.className = "container";
 
-    // Logo
-    const logo = document.createElement("div");
-    logo.className = "logo";
-    logo.textContent = "PONG";
-    container.appendChild(logo);
-
-    // Subtitle
-    const subtitle = document.createElement("div");
-    subtitle.className = "subtitle";
-    subtitle.textContent = "ft_transcendence";
-    container.appendChild(subtitle);
 
 	const canvas = document.createElement("canvas");
     canvas.id = "gameCanvas";
     canvas.width = 900;
-    canvas.height = 550;
+    canvas.height = 50;
 
     // Form
     const form = document.createElement("form");
     form.id = "joinGameForm";
+	form.className = "joinGameForm"
 
     const formGroup = document.createElement("div");
     formGroup.className = "form-group";
 
     const label = document.createElement("label");
     label.htmlFor = "playerName";
+	label.className = "label"
     label.textContent = "Player Name";
 
     const input = document.createElement("input");
     input.type = "text";
     input.id = "playerName";
+	input.className = "inputName";
     input.name = "playerName";
     input.placeholder = "Enter your name";
     input.minLength = 1;
@@ -126,10 +118,8 @@ export function testingPage(router: Router) {
     const spinner = document.createElement("div");
     spinner.className = "spinner";
 
-    const loadingText = document.createElement("p");
-    loadingText.textContent = "Joining game...";
 
-    loading.append(spinner, loadingText);
+
     container.appendChild(loading);
 
     // Error and success messages
@@ -156,6 +146,8 @@ export function testingPage(router: Router) {
         e.preventDefault();
         const playerName = input.value.trim();
         if (!playerName) return;
+		joinBtn.disabled = true;
+    	joinBtn.textContent = "Waiting for opponent...";
 
         try {
             const game = new PongGame(
@@ -170,9 +162,12 @@ export function testingPage(router: Router) {
             );
 			await game.joinGame(playerName);
         } catch (error) {
-            console.error('Failed to join game:', error);
-            errorMessage.textContent = 'Failed to join game';
-            errorMessage.style.display = 'block';
+        console.error('Failed to join game:', error);
+        	errorMessage.textContent = 'Failed to join game';
+        	errorMessage.style.display = 'block';
+        	// Re-enable button if there's an error
+        	joinBtn.disabled = false;
+        	joinBtn.textContent = "Join Game";
         }
     });
 

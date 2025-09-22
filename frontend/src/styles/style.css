@@ -1,6 +1,13 @@
 
 @import './vendor/98.css';
 
+@font-face {
+  font-family: "WinFont";
+  src: url("WindowsFont.woff2") format("woff2"),
+       url("WindowsFont.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
 
 :root {
   --color-background: #231942;   /* Deep Purple – main background */
@@ -23,11 +30,12 @@ html, body {
     margin: 0;
     padding: 0;
     height: 100vh;
+	font-family: "WinFont",sans-serif;
     overflow: hidden; /* Prevent scrolling on body */
 }
 
 body {
-    background: url('src/views/images/WindowsWallpaper1.png') no-repeat center center fixed;
+    background: url('src/views/images/Desktop.png') no-repeat center center fixed;
     background-size: cover;
     padding: 16px;
     box-sizing: border-box; /* Include padding in height calculation */
@@ -221,4 +229,37 @@ body {
 
 .result-window button {
     margin-top: 16px;
+}
+
+.button:disabled {
+    color: #808080;
+    text-shadow: 1px 1px #fff;
+    cursor: default;
+    background-color: silver;
+}
+
+.button:disabled:hover {
+    box-shadow: none;
+}
+
+.joinGameForm{
+	padding: 20px;
+}
+
+.join-btn{
+	padding: 10px 20px;
+    font-size: 16px;
+}
+.form-group {
+    padding: 10px 15px;
+    font-size: 16px;
+    margin-right: 10px;
+    width: 250px;
+}
+.inputName{
+	font-size: 16px;
+}
+
+.label{
+	font-size: 16px;
 }
