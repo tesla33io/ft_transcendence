@@ -187,4 +187,12 @@ export class GameWebSocketServer{
 		this.sendToPlayer(game.player1.id, msg)
 		this.sendToPlayer(game.player2.id, msg)
 	}
+
+	public disconnectClient(playerId: string){
+		const ws = this.connectedClients.get(playerId)
+		if (ws && ws.readyState === WebSocket.OPEN){
+			ws.close(1000, 'Server initiated disconnect')
+		}
+		this.connectedClients.delete(playerId)
+	}
 }

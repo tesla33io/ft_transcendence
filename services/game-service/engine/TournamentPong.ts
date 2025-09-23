@@ -81,16 +81,24 @@ export class TournamentPong extends ClassicPong{
 		return this.activeTournament.get(tournamentId)
 	}
 
-	public bracketWinner(gameId: string, playerId: string){
+	public bracketWinner(gameId: string, winnerId: string){
 		const tournamentId = this.findTournamentId(gameId)
 		if (tournamentId != undefined){
 			const tournament = this.activeTournament.get(tournamentId)
 			if (!tournament)
 				return
-			let bracket = tournament.bracket.find(match => match.player1.id === playerId || match.player2.id === playerId)
+			let bracket = tournament.bracket.find(match => match.player1.id === winnerId || match.player2.id === winnerId)
 			if (!bracket)
 				return
-			const player = bracket.player1.id === playerId ? bracket.player1 : bracket.player2
+
+			const isPlayer1Winner = bracket.player1.id === winnerId;
+			const player = isPlayer1Winner ? bracket.player1 : bracket.player2;
+
+			if (this.disconnectClient) {
+				const loserId = isPlayer1Winner ? bracket.player2.id : bracket.player1.id;
+				this.disconnectClient(loserId);
+			}
+
 			bracket.status = 'finished'
 			bracket.winner = player
 			console.log("Winner is: ", bracket.winner)

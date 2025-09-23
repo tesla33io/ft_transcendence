@@ -52,6 +52,9 @@ export class GameService{
 					this.matchmaker.removePlayerFromQueue(playerId, this.gameMode)
 			}
 		}
+		this.gameEngine.disconnectClient = (playerId: string) => {
+			this.webSocketServer.disconnectClient(playerId)
+		}
 	}
 
 	private tournamnetHandling(game: Game, playerId: string){

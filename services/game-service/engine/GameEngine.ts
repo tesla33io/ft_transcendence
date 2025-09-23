@@ -12,6 +12,7 @@ export abstract class GameEngine {
 
 	public onGameStatusUpdate?: (game: Game) => void
 	public declareWinner?: (game:Game, playerId: string) => void
+	public disconnectClient?: (playerId: string) => void
 
 	public startGame(gameId: string){
 		const game = this.activeGames.get(gameId)
