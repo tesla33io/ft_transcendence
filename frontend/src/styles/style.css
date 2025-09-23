@@ -263,3 +263,21 @@ body {
 .label{
 	font-size: 16px;
 }
+
+.h4{
+    font-size: 16px;
+}
+
+.h3{
+    font-size: 16px; 
+}
+
+.avatar-option {
+    border: 2px solid transparent;
+    border-radius: 4px;
+    transition: border 0.2s;
+}
+
+.avatar-option.selected {
+    border: 2px solid blue;
+}

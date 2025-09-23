@@ -72,18 +72,5 @@ export class Renderer {
         this.ctx.fill();
     }
 
-    private drawScores(gameState: GameState): void {
-        this.ctx.font =  GAME_CONFIG.SCORE.FONT;
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillText(
-            gameState.player.score.toString(),
-            GAME_CONFIG.SCORE.RIGHT_X,
-            GAME_CONFIG.SCORE.OFFSET_Y
-        );
-        this.ctx.fillText(
-            gameState.opponet.score.toString(),
-            GAME_CONFIG.SCORE.LEFT_X,
-            GAME_CONFIG.SCORE.OFFSET_Y
-        );
-    }
+    
 }

@@ -100,7 +100,7 @@ export function gameView(router: Router) {
 	backToMenuBtn.className = "button";
 
 	backToMenuBtn.addEventListener("click", () => {
-		router.navigate("/")
+		router.navigate("/desktop")
 	});
 
 	// Assemble the components

@@ -7,6 +7,7 @@ import usergreen from './images/users_green.png'
 import network from './images/network.png'
 import spider from './images/spider.png'
 import phone from './images/phone.png'
+import mail from './images/mail.png'
 
 // Define the type for icons
 type IconData = {
@@ -36,8 +37,10 @@ export function desktopView(router: Router) {
 	{ id: "friends", title: "friends.exe", img: phone, x: 100, y: 400 },
 	{ id: "Ai", title: "Ai_Pong.exe", img: spider, x: 100, y: 400 },
 	{ id: "profile", title: "Profile.exe", img: usergreen, x: 100, y: 600 },
+  { id: "chat", title: "chat.exe", img: mail, x: 100, y: 700 },
 	{ id: "tournament", title: "Tornament.exe", img: network, x: 100, y: 500 }
-  ];
+  
+];
 
   //render icons
   icons.forEach(icon => {
@@ -80,7 +83,11 @@ export function desktopView(router: Router) {
 		case "profile":
           router.navigate("/profile");
           break;
+    	case "chat":
+          router.navigate("/tournament");
+          break;
       }
+      
     });
 
 
