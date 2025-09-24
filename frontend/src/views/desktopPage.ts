@@ -8,6 +8,7 @@ import network from './images/network.png'
 import spider from './images/spider.png'
 import phone from './images/phone.png'
 import mail from './images/mail.png'
+import gear from './images/gears.png'
 
 // Define the type for icons
 type IconData = {
@@ -32,13 +33,14 @@ export function desktopView(router: Router) {
   //icons
   const icons: IconData[] = [
     { id: "local_game", title: "local_Pong.exe", img: joystickIcon, x: 100, y: 100 },
-    { id: "logout", title: "logout.exe", img: padlock  , x: 100, y: 200 },
-    { id: "Remotepong", title: "Online_Pong.exe", img: remote, x: 100, y: 300 },
-	{ id: "friends", title: "friends.exe", img: phone, x: 100, y: 400 },
-	{ id: "Ai", title: "Ai_Pong.exe", img: spider, x: 100, y: 400 },
-	{ id: "profile", title: "Profile.exe", img: usergreen, x: 100, y: 600 },
-  { id: "chat", title: "chat.exe", img: mail, x: 100, y: 700 },
-	{ id: "tournament", title: "Tornament.exe", img: network, x: 100, y: 500 }
+    { id: "Remotepong", title: "Online_Pong.exe", img: remote, x: 100, y: 200 },
+    { id: "Ai", title: "Ai_Pong.exe", img: spider, x: 100, y: 300 },
+	  { id: "tournament", title: "Tornament.exe", img: network, x: 100, y: 400 }, 
+	  { id: "profile", title: "Profile.exe", img: usergreen, x: 100, y: 500 },
+    { id: "friends", title: "friends.exe", img: phone, x: 100, y: 600 },
+    { id: "chat", title: "chat.exe", img: mail, x: 100, y: 700 },
+    { id: "settings", title: "settings.exe", img: gear, x: 100, y: 800 },
+    { id: "logout", title: "logout.exe", img: padlock  , x: 100, y: 900 }
   
 ];
 
@@ -82,6 +84,9 @@ export function desktopView(router: Router) {
           break;
 		case "profile":
           router.navigate("/profile");
+          break;
+    case "settings":
+          router.navigate("/setings");
           break;
     	case "chat":
           router.navigate("/tournament");

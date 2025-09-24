@@ -1,5 +1,9 @@
 
 @import './vendor/98.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 
 @font-face {
   font-family: "WinFont";

@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	router.register("/profile",() => profileView(router));
 	router.register("/register",() => registerView(router));
 	router.register("/tournament", () => tournamentView(router));
-	router.register("/tournamentRoom",() => tournamentRoomView());
+	router.register("/tournament/id=1",() => tournamentRoomView(router));
 	router.register("/guest", () => guestDesktopView(router));
 	router.register("/desktop", () => desktopView(router));
 

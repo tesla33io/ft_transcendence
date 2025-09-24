@@ -155,10 +155,7 @@ export function registerView(router: Router) {
         const email = (content.querySelector<HTMLInputElement>("#email")!).value;
         const password = (content.querySelector<HTMLInputElement>("#password")!).value;
         const repeatPassword = (content.querySelector<HTMLInputElement>("#repeat_password")!).value;
-
-        // FIX: get selected 2FA option properly
         const twoFactor = (content.querySelector<HTMLInputElement>('input[name="twofactor"]:checked')!)?.value === "yes";
-
         const bio = (content.querySelector<HTMLTextAreaElement>("#profileBio")!).value;
         const avatar = (content.querySelector<HTMLInputElement>("#avatar")!).value;
 
@@ -173,11 +170,7 @@ export function registerView(router: Router) {
         console.log("Prepared registration data:", data);
 
         // TODO: send to backend
-        router.navigate("/desktop");
+        router.navigate("/desktop"); //navigate to login 
     });
-
-    
     root.append(simpleWindow);
-
-
 }
