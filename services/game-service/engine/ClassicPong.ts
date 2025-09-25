@@ -73,6 +73,8 @@ export class ClassicPong extends GameEngine {
 
 	public allPlayerReady(gameId: string, playerId: string): boolean {
 		const game = this.activeGames.get(gameId)
+		if (!game)
+			return false
 
 		if (game && game.player1.id === playerId)
 			game.player1.ready = true

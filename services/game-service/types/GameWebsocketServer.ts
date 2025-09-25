@@ -14,7 +14,7 @@ export class GameWebSocketServer{
 	}
 
 	public onPaddleMove?: (gameId: string, playerId: string, paddleY: number) => void
-	public clientReady?: (gameId: string, playerId: string) => void
+	public clientReady?: (gameId: string, playerId: string, tournamentId?: string) => void
 	public clientDisconnect?: (playerId: string) => void
 
 	private setupWebsocketServer(){
@@ -51,8 +51,8 @@ export class GameWebSocketServer{
 			this.onPaddleMove(message.gameId, playerId, message.deltaY)
 		}
 		else if (message.type === 'ready' && this.clientReady){
-			console.log(`Player ${message.playerId} is ready`)
-			this.clientReady(message.gameId, message.playerId)
+			console.log(`Player ${message.playerId} is ready, gameId ${message.gameId}, tournament ${message.tournamentId}`)
+			this.clientReady(message.gameId, message.playerId, message.tournamentId)
 		}
 		else if (message.type === 'disconnect' && this.clientDisconnect){
 			console.log(`handleClientmessage: Player ${playerId} explicitly disconnecting from game ${message.gameId}`)

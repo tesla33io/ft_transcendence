@@ -139,9 +139,8 @@ export class TournamentPong extends ClassicPong{
 		return this.createMatchGame(tournamentId)
 	}
 
-	public tournamentAllPlayersReady(gameId: string, playerId: string): boolean{
-		console.log(`Client sent id: ${gameId}`)
-		const tournamentId = this.findTournamentId(gameId)
+	public tournamentAllPlayersReady(tournamentId: string, playerId: string): boolean{
+		console.log(`Client sent id: ${tournamentId}`)
 
 		if (tournamentId === undefined)
 			return false

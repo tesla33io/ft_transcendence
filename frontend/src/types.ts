@@ -43,6 +43,21 @@ export interface GameData {
     player2?: Player;      // Second player data
 }
 
+export interface TournamentBracket {
+    id: string;
+    gameMode: string;
+    status: string;
+    players: Player[];
+    bracket: {
+        id: string;
+        tournamentId: string;
+        status: string;
+        player1: Player;
+        player2: Player;
+        winner: string | null;
+    } [];
+}
+
 // Interface for ongoing game state
 export interface GameState {
     status: string;        // Current game status
@@ -74,6 +89,7 @@ export interface Ball {
 export interface WebSocketMessage {
     type: string;         // Message type from MessageType enum
     gameId: string;       // Game identifier
+    tournamentId?: string;
     playerId: string | number;  // Player identifier
     deltaY?: number;      // Optional paddle movement amount
 }

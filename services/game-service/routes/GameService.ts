@@ -34,10 +34,20 @@ export class GameService{
 		this.webSocketServer.onPaddleMove = (gameId: string, playerId: string, deltaY: number) =>{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
-		this.webSocketServer.clientReady = (gameId: string, playerId: string) => {
+		this.webSocketServer.clientReady = (gameId: string, playerId: string, tournamentId?: string) => {
+			if (tournamentId){
+					if (this.gameEngine instanceof TournamentPong &&
+						this.gameEngine.tournamentAllPlayersReady(tournamentId, playerId))
+					console.log(`Tournament players are ready: true`)
+					if (tournamentId)
+						this.startTournament(tournamentId)
+					return
+				}
+
 			if (this.gameEngine.allPlayerReady(gameId, playerId)){
 				console.log(`Classic players are ready: true`)
 				this.gameEngine.startGame(gameId)
+				return
 			}
 		}
 		this.webSocketServer.clientDisconnect = (playerId: string) => {
