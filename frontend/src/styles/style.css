@@ -283,3 +283,50 @@ body {
 .avatar-option.selected {
     border: 2px solid blue;
 }
+
+.desktop-icon {
+  width: 48px; /* Default size */
+  height: 48px;
+  padding: 10px; /* Default padding */
+  transition: all 0.2s ease; /* Smooth resizing */
+}
+
+.desktop-icon + .mt-2 {
+  font-size: 40px; /* Default title size */
+}
+
+@media (max-height: 1200px) {
+  .desktop-icon {
+    width: 48px;
+    height: 48px;
+    padding: 5px; /* Smaller padding */
+  }
+
+  .desktop-icon + .mt-2 {
+    font-size: 12px; /* Smaller title size */
+  }
+}
+
+@media (max-height: 768px) {
+  .desktop-icon {
+    width: 32px;
+    height: 32px;
+    padding: 3px; /* Even smaller padding */
+  }
+
+  .desktop-icon + .mt-2 {
+    font-size: 10px; /* Even smaller title size */
+  }
+}
+
+@media (max-height: 480px) {
+  .desktop-icon {
+    width: 32px;
+    height: 32px;
+    padding: 4px; /* Minimal padding */
+  }
+
+  .desktop-icon + .mt-2 {
+    font-size: 8px; /* Minimal title size */
+  }
+}

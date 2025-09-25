@@ -22,14 +22,21 @@ type IconData = {
 
 // Export a function that renders the desktop
 export function desktopView(router: Router) {
-  //Clear the mount element (previous page disappears)
-  const root = document.getElementById("app")!;
-    root.innerHTML = "";
+	//Clear the mount element (previous page disappears)
+	const root = document.getElementById("app")!;
+		root.innerHTML = "";
 
-  // the desktop container
-  const desktop = document.createElement("div");
-  desktop.className = "relative w-full h-full  select-none p-4";
-  root.appendChild(desktop);
+	// the desktop container
+	const desktop = document.createElement("div");
+	desktop.className = "desktop";
+	desktop.style.display = "flex";
+	desktop.style.flexWrap = "wrap"; // Allows wrapping to a new column
+	desktop.style.flexDirection = "column"; // Stack items top-to-bottom first
+	desktop.style.alignItems = "flex-start"; // Align items to the left
+	desktop.style.justifyContent = "flex-start"; // Align items to the top
+	desktop.style.gap = "5px"; // Add spacing between icons
+	desktop.style.padding = "5px"; // Add padding around the desktop
+	root.appendChild(desktop);
 
   //icons
   const icons: IconData[] = [
@@ -48,7 +55,7 @@ export function desktopView(router: Router) {
   //render icons
   icons.forEach(icon => {
     const iconDiv = document.createElement("div");
-    iconDiv.className = "flex flex-col items-start w-fit mb-6";
+    iconDiv.className = "flex flex-col items-start w-fit ";
     //iconDiv.style.left = `${icon.x}px`;
     //iconDiv.style.top = `${icon.y}px`;
 
@@ -56,7 +63,7 @@ export function desktopView(router: Router) {
     const img = document.createElement("img");
     img.src = icon.img;
     img.alt = icon.title;
-	img.className = "w-16 h-16 hover:scale-110 transition-transform"
+	img.className = "desktop-icon"
     iconDiv.appendChild(img);
 
     // Title
