@@ -86,12 +86,13 @@ export class ClassicPong extends GameEngine {
 		if (game.ball.x <= game.player1.X + PADDLE_WIDTH ||
 			game.ball.x >= game.player2.X - PADDLE_WIDTH) {
 
+			const K = 4
 			if ((game.ball.y >= game.player1.Y - 5 &&
 				game.ball.y <= game.player1.Y + 5 ) ||
 
 				(game.ball.y >= game.player2.Y - 5 &&
 				game.ball.y <= game.player2.Y + 5 )){
-				game.ball.vx = game.ball.vx < 0 ? -2 :  2
+				game.ball.vx = game.ball.vx < 0 ? -2 : 2
 				game.ball.vx *= -1
 			}
 
@@ -101,7 +102,7 @@ export class ClassicPong extends GameEngine {
 				(game.ball.y === game.player2.Y - PADDLE_HEIGHT / 2 &&
 				game.ball.y === game.player2.Y + PADDLE_HEIGHT / 2)){
 
-				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - 4 : game.ball.vx + 4
+				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
 				game.ball.vx *= -1
 				game.ball.vy *= -1
 			}
@@ -112,7 +113,7 @@ export class ClassicPong extends GameEngine {
 				(game.ball.y >= game.player2.Y - PADDLE_HEIGHT / 2 &&
 				game.ball.y <= game.player2.Y + PADDLE_HEIGHT / 2)){
 
-				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - 2 : game.ball.vx + 2
+				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
 				game.ball.vx *= -1
 			}
 		}

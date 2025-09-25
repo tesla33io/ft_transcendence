@@ -108,10 +108,11 @@ export class GameWebSocketServer{
 			gameMode: 'tournament',
 			status: 'ready',
 			id: tournament.id,
-			player1: tournament.players[0],
-			player2: tournament.players[1],
-			player3: tournament.players[2],
-			player4: tournament.players[3]
+			bracket: tournament.bracket,
+			player1: tournament.players[0].name,
+			player2: tournament.players[1].name,
+			player3: tournament.players[2].name,
+			player4: tournament.players[3].name,
 		})
 
 		for (let player of tournament.players){

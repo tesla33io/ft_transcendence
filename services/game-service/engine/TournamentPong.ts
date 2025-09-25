@@ -1,11 +1,6 @@
 import { ClassicPong } from "../engine/ClassicPong"
-import { Player, generateGameId, Tournament, TournamentMatch, Game, generateBallPos } from "../types/types"
-
-/**
- Maybe TournamentPong will be the extension of the Classicpong
- make the logic to par the winners until there will be
- only one player left
- */
+import { Player, Tournament, TournamentMatch, Game } from "../types/types"
+import { generateGameId, generateBallPos } from "../types/types"
 
 export class TournamentPong extends ClassicPong{
 	private activeTournament: Map<string, Tournament> = new Map()
@@ -29,6 +24,8 @@ export class TournamentPong extends ClassicPong{
 		let bracket: TournamentMatch[] = []
 
 		for (let i = 0; i < players.length; i+=2 ){
+			players[i].ready = false
+			players[i + 1]. ready = false
 			bracket.push({
 				id: generateGameId(),
 				tournamentId: tournamentId,
@@ -122,7 +119,7 @@ export class TournamentPong extends ClassicPong{
 
 		const winners = tournament.bracket.filter(match => match.winner !== null).map(match => match.winner!)
 
-		console.log(`Round complete. Winner: ${winners}`)
+		console.log(`Round complete. Winner: `, winners)
 
 		if (winners.length === 1){
 			tournament.status = 'finished'

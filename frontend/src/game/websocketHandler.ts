@@ -47,7 +47,7 @@ export class WebSocketHandler {
         'status' in data &&
         //'gameid' in data &&
         'player' in data &&
-        'opponent' in data && // Note: keeping the misspelling to match server
+        'opponent' in data &&
         'ball' in data
     );
 	}
