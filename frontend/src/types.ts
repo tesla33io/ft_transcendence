@@ -35,6 +35,7 @@ export enum MessageType {
 // Interface for initial game setup data
 export interface GameData {
     id?: string;           // Unique game identifier
+    gameMode?: string;
     status: string;        // Game status (waiting/connected/playing)
     playerId?: string;     // Player's unique identifier
     message?: string;      // Optional status message

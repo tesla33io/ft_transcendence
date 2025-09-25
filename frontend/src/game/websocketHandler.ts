@@ -21,9 +21,11 @@ export class WebSocketHandler {
 			data &&
 			typeof data === 'object' &&
 			'status' in data &&
+            'gameMode' in data &&
 			'id' in data &&
 			'player1' in data &&
-			'player2' in data
+			'player2' in data &&
+            data.status === 'connected'
 		);
 	}
 
@@ -111,6 +113,7 @@ export class WebSocketHandler {
 				data = rawData;
 			}
 
+                console.log("Data from server: ", data) // NEED TO DO: add handler for tournament annoucer
             if (this.isGameState(data)) {
                 this.handleInitialGameState(data);
             }

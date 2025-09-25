@@ -74,15 +74,19 @@ export class GameWebSocketServer{
 		const player2Ws = this.connectedClients.get(gameData.player2.id)
 
 		const messagePlayer1 = JSON.stringify({
+			type: 'classic_notification',
 			status: 'connected',
 			id: gameData.id,
+			gameMode: gameData.gameMode,
 			player1: gameData.player1,
 			player2: gameData.player2
 		})
 
 		const messagePlayer2 = JSON.stringify({
+			type: 'classic_notification',
 			status: 'connected',
 			id: gameData.id,
+			gameMode: gameData.gameMode,
 			player1: gameData.player2,
 			player2: gameData.player1
 		})
@@ -105,14 +109,12 @@ export class GameWebSocketServer{
 
 	public notifyTournamentReady(tournament: Tournament){
 		const message = JSON.stringify({
-			gameMode: 'tournament',
+			type: 'tournament_notification',
 			status: 'ready',
+			gameMode: 'tournament',
 			id: tournament.id,
 			bracket: tournament.bracket,
-			player1: tournament.players[0].name,
-			player2: tournament.players[1].name,
-			player3: tournament.players[2].name,
-			player4: tournament.players[3].name,
+			players: tournament.players,
 		})
 
 		for (let player of tournament.players){
@@ -128,8 +130,11 @@ export class GameWebSocketServer{
 		if (!tournament.winner)
 			return
 		const gameResult = {
+			type: 'tournament_notification',
 			status: 'finished',
 			gameMode: 'tournament',
+			id: tournament.id,
+			bracket: tournament.bracket,
 			winner: tournament.winner.id
 		}
 
@@ -140,6 +145,7 @@ export class GameWebSocketServer{
 	public sendGameState(gameState: Game){
 
 		let player1State = JSON.stringify({
+			type: 'game_state',
 			status: 'playing',
 			player: {
 				id: gameState.player1.id,
@@ -165,6 +171,7 @@ export class GameWebSocketServer{
 		})
 
 		const player2State = JSON.stringify({
+			type: 'game_state',
 			status: 'playing',
 			player:gameState.player2,
 			opponent: gameState.player1,
@@ -177,6 +184,7 @@ export class GameWebSocketServer{
 
 	public winnerAnnounce(game: Game, winnerId: string){
 		const gameResult = {
+			type: 'classic_notification',
 			status: 'finished',
 			gameMode: game.gameMode,
 			player1Score: game.player1.score,

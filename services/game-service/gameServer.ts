@@ -16,6 +16,10 @@ server.register(require('@fastify/cors'), {
 	credentials: true
 })
 
+server.get("/test", async (req, reply) => {
+	return {test: 'OK'}
+})
+
 server.post("/join-classic", async (req, reply) => {
 	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
 	return result

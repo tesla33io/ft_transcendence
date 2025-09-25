@@ -30,8 +30,8 @@ export class TournamentPong extends ClassicPong{
 				id: generateGameId(),
 				tournamentId: tournamentId,
 				status: 'waiting',
-				player1: players[i],
-				player2: players[i + 1],
+				player1: players[i], //null
+				player2: players[i + 1], //null
 				winner: null
 			})
 		}
@@ -43,9 +43,10 @@ export class TournamentPong extends ClassicPong{
 		const tournament = this.activeTournament.get(tournamentId)
 		if (!tournament)
 			return
-		if (tournament.bracket.length > 0){
+		const brackets = tournament.bracket.filter(bracket => bracket.status !== 'finished')
+		if (brackets.length > 0){
 			let games: Game[] = []
-			tournament.bracket.forEach(match => {
+			brackets.forEach(match => {
 				match.player1.ready = false
 				match.player2.ready = false
 				const game: Game = {
@@ -129,7 +130,9 @@ export class TournamentPong extends ClassicPong{
 		}
 
 		const nextRoundBracket = this.generateBracket(tournamentId, winners)
-		tournament.bracket = nextRoundBracket
+		nextRoundBracket.forEach(bracket => {
+			tournament.bracket.push(bracket)
+		})
 
 		console.log(`Next round with ${winners.length} players: `, winners)
 
