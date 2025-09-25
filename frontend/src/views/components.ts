@@ -365,3 +365,96 @@ export class Stats {
     ctx.stroke();
   }
 }
+
+
+import start from './images/windows-0.png'
+import volumepic from './images/loudspeaker.png';
+import networkPic from './images/gps.png';
+
+//task bar 
+interface TaskbarOptions {
+  startButton?: {
+    label: string;
+    onClick: () => void;
+  };
+  tasks?: { id: string; label: string; onClick: () => void }[];
+  systemTrayIcons?: { id: string; icon: string; onClick: () => void }[];
+  clock?: boolean; // Whether to show the clock
+}
+
+export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; taskArea: HTMLElement } {
+  // Create the taskbar container
+  const taskbar = document.createElement("div");
+  taskbar.className = "taskbar fixed bottom-0 left-0 w-full h-12 flex items-center bg-silver border-t-2 border-color#e7e9e6";
+  taskbar.style.backgroundColor = '#b6bbb7'; // Windows 98 silver color
+  taskbar.style.borderColor = '#e7e9e6'
+  taskbar.style.borderTop = '4px sold #e7e9e6'
+  // Start Button
+  if (options.startButton) {
+    const startButton = document.createElement("div");
+    startButton.className = "start-button flex items-center px-4 py-2 bg-win98-button text-win98-text cursor-pointer hover:bg-gray-600";
+    startButton.style.border = "2px solid #a5a9a6"; // Outer border
+    startButton.style.boxShadow = "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #808080"; // 3D effect
+    startButton.style.padding = "4px 8px"; // Add padding for spacing
+    startButton.style.margin = "4px"; // Add spacing around the button
+    startButton.innerHTML = `
+      <img src="${start}" alt="Start" class="w-6 h-6 mr-2">
+      <span>${options.startButton.label}</span>
+    `;
+    startButton.addEventListener("click", options.startButton.onClick);
+    taskbar.appendChild(startButton);
+  }
+
+  // Task Area (Dynamic Content)
+  const taskArea = document.createElement("div");
+  taskArea.className = "task-area flex-1 flex items-center px-4 space-x-4";
+  taskbar.appendChild(taskArea);
+
+  // System Tray (Fixed Content)
+  const systemTray = document.createElement("div");
+  systemTray.className = "system-tray flex items-center space-x-4 px-4";
+  systemTray.style.border = "2px solid #a5a9a6"; // Outer border
+  systemTray.style.boxShadow = "inset 2px 2px 0px #ffffff, inset -2px -2px 0px #808080"; // 3D effect
+  systemTray.style.padding = "4px"; // Add padding for spacing
+  systemTray.style.marginLeft = "auto"; // Push the system tray to the right
+
+  // Volume Icon
+  const volumeIcon = document.createElement("img");
+  volumeIcon.className = "tray-icon w-4 h-4";
+  volumeIcon.src = volumepic;
+  volumeIcon.style.backgroundSize = "cover";
+  volumeIcon.addEventListener("click", () => alert("Volume Clicked!"));
+  systemTray.appendChild(volumeIcon);
+
+  // Network Icon
+  const networkIcon = document.createElement("img");
+  networkIcon.className = "tray-icon w-8 h-8";
+  networkIcon.src = networkPic;
+  networkIcon.style.backgroundSize = "cover";
+  networkIcon.addEventListener("click", () => alert("Network Clicked!"));
+  systemTray.appendChild(networkIcon);
+
+  // Clock
+  if (options.clock) {
+    const clock = document.createElement("div");
+    clock.className = "clock text-black";
+    clock.style.marginLeft = "8px"; // Add spacing between icons and clock
+    systemTray.appendChild(clock);
+
+    // Update the clock dynamically
+    function updateClock() {
+      const now = new Date();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const ampm = hours >= 12 ? "PM" : "AM";
+      clock.textContent = `${hours % 12 || 12}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+  }
+
+  taskbar.appendChild(systemTray);
+
+  // Return the taskbar and task area for dynamic updates
+  return { taskbar, taskArea };
+}

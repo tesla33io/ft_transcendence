@@ -25,6 +25,7 @@ export function tournamentView(router: Router) {
 			</div>
 			</fieldset>
 			
+			
 		`;
 
 		const buttonContainer = document.createElement("div");

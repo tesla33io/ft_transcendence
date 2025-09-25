@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 
+
 export default defineConfig({
   server: {
     port: 5173,      // The port your Vite dev server runs on
@@ -19,7 +20,9 @@ export default defineConfig({
       '/ws': {
         target: 'ws://gateway-service:3000', // Use ws:// scheme for WebSockets
         ws: true,                            // Enable WebSocket proxying
-      }
+      }///home/leschenb/sgoinfre
     }
-  }
+  },
+
+  
 })

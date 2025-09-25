@@ -1,9 +1,6 @@
 
 @import './vendor/98.css';
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+@import "tailwindcss";
 
 @font-face {
   font-family: "WinFont";
@@ -39,7 +36,8 @@ html, body {
 }
 
 body {
-    background: url('src/views/images/Desktop.png') no-repeat center center fixed;
+    /*background: url('src/views/images/Desktop.png') no-repeat center center fixed;*/
+	background-color: #008776;
     background-size: cover;
     padding: 16px;
     box-sizing: border-box; /* Include padding in height calculation */
