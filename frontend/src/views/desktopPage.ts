@@ -76,7 +76,7 @@ export function desktopView(router: Router) {
     iconDiv.addEventListener("dblclick", () => {
       switch(icon.id) {
         case "local_game":
-          router.navigate("/test");   // navigate to testsite compartment
+          router.navigate("/localgame");   // navigate to testsite compartment
           break;
         case "logout":
           router.navigate("/login");   // add some disconect handelinh here
