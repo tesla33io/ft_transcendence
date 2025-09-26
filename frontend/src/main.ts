@@ -11,6 +11,9 @@ import {tournamentView} from './views/tournamentPage'
 import {tournamentRoomView} from './views/tournamentRoomPage'
 import {guestDesktopView} from './views/guestDesktop'
 import {desktopView} from './views/desktopPage'
+import {localGameView} from './views/localGamePage'
+import {localGameSetupView} from './views/localGameSetupPage'
+
 
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -28,6 +31,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	router.register("/tournament/id=1",() => tournamentRoomView(router));
 	router.register("/guest", () => guestDesktopView(router));
 	router.register("/desktop", () => desktopView(router));
+	router.register("/localgame", () => localGameSetupView(router));
+	router.register("/localgame/play", () => localGameView(router));
 
 	router.navigate(location.pathname || "/");
 });
