@@ -46,7 +46,7 @@ export class User {
     twofaEnabled = false;
 
     @Property({ nullable: true })
-    twofaSecretEncrypted?: string;
+    twofaSecretEncrypted?: string | null;
 
     @Property({ default: 1 })
     version: number = 1;

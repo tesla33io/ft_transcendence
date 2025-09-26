@@ -5,7 +5,7 @@ import { User } from './User';
 @Entity()
 @Index({ properties: ['expiresAt'] })
 @Index({ properties: ['used'] })
-export class RecoveryToken {
+export class RecoveryCode {
     @PrimaryKey()
     id!: number;
 
@@ -16,7 +16,7 @@ export class RecoveryToken {
     //userId!: number;
 
     @Property()
-    tokenHash!: string;
+    codeHash!: string;
 
     @Property({ onCreate: () => new Date() })
     createdAt = new Date();

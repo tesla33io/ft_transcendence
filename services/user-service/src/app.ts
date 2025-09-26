@@ -3,6 +3,7 @@ import Fastify from 'fastify';
 import { MikroORM } from '@mikro-orm/core';
 import mikroConfig from '../mikro-orm.config';
 import userRoutes from './routes/users';
+import { setup2FARoutes } from './routes/2fa';
 
 async function buildServer() {
     const app = Fastify();
@@ -18,6 +19,7 @@ async function buildServer() {
     });
 
     await app.register(userRoutes, { prefix: '/users' });
+    await app.register(setup2FARoutes, { prefix: 'auth' });
 
     return app;
 }
