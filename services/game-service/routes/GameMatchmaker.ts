@@ -125,7 +125,7 @@ export class GameMatchmaker {
 			setTimeout(() => {
 				if (gameService) {
 					const tournament: Tournament = gameService.createTournament(players)
-					gameService.notifyTournamentReady(tournament) //need some change in client loggic
+					gameService.notifyTournamentReady(tournament) //TO DO: fix the notifyTournament somehow the games do not stop when ended
 					// gameService.startTournament(tournament.id)
 				} else {
 					console.error('GameService not initialized!')

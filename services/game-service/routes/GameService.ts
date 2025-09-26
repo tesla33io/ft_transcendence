@@ -35,6 +35,13 @@ export class GameService{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
 		this.webSocketServer.clientReady = (gameId: string, playerId: string, tournamentId?: string) => {
+
+			if (this.gameEngine.allPlayerReady(gameId, playerId)){
+				console.log(`Classic players are ready: true`)
+				this.gameEngine.startGame(gameId)
+				return
+			}
+
 			if (tournamentId){
 					if (this.gameEngine instanceof TournamentPong &&
 						this.gameEngine.tournamentAllPlayersReady(tournamentId, playerId))
@@ -43,12 +50,6 @@ export class GameService{
 						this.startTournament(tournamentId)
 					return
 				}
-
-			if (this.gameEngine.allPlayerReady(gameId, playerId)){
-				console.log(`Classic players are ready: true`)
-				this.gameEngine.startGame(gameId)
-				return
-			}
 		}
 		this.webSocketServer.clientDisconnect = (playerId: string) => {
 			const game = this.gameEngine.findPlayerInGame(playerId)
@@ -118,10 +119,11 @@ export class GameService{
 	public startTournament(tournamentId: string){
 		if (this.gameEngine instanceof TournamentPong){
 			const games = this.gameEngine.createMatchGame(tournamentId)
-			if (games)
+			if (games){
 				games.forEach(game => {
 					this.webSocketServer.notifyGameMatched(game)
 				})
+			}
 		}
 	}
 }
