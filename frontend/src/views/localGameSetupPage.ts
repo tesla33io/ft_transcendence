@@ -1,4 +1,5 @@
 import { Router } from '../router';
+import { GAME_MODES } from '../constants';
 
 export function localGameSetupView(router: Router) {
     const app = document.getElementById('app');
@@ -6,6 +7,9 @@ export function localGameSetupView(router: Router) {
         console.error("App element not found!");
         return;
     }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode') || GAME_MODES.CLASSIC;
 
     const setupContainer = document.createElement('div');
     setupContainer.className = 'flex flex-col items-center justify-center h-screen bg-gray-900 text-white';
@@ -25,7 +29,8 @@ export function localGameSetupView(router: Router) {
     const input = document.createElement('input');
     input.type = 'number';
     input.id = 'winning-score';
-    input.value = '5';
+    // Retrieve last score for this mode from session storage, or default to 5
+    input.value = sessionStorage.getItem(`lastScore_${mode}`) || '5';
     input.min = '1';
     input.max = '21';
     input.className = 'w-24 text-center bg-white border border-gray-600 rounded-md p-2 text-black';
@@ -38,7 +43,10 @@ export function localGameSetupView(router: Router) {
     form.addEventListener('submit', (e) => {
         e.preventDefault();
         const score = input.value;
-        router.navigate(`/localgame/play?score=${score}`);
+        
+        // Store the score for this mode in session storage for next time
+        sessionStorage.setItem(`lastScore_${mode}`, score);
+        router.navigate(`/localgame/play?mode=${mode}&score=${score}`);
     });
 
     form.append(title, label, input, startButton);

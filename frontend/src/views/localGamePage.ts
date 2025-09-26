@@ -1,6 +1,7 @@
 import { LocalPongGame } from '../game/LocalPongGame';
 import { GAME_CONFIG } from '../types';
 import { Router } from '../router';
+import { GAME_MODES } from '../constants';
 
 export function localGameView(router: Router) {
     const app = document.getElementById('app');
@@ -9,9 +10,13 @@ export function localGameView(router: Router) {
         return { dispose: () => {} };
     }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode') || GAME_MODES.CLASSIC;
+    const winningScore = parseInt(urlParams.get('score') || '5', 10);
+
     // Create the main container for the local game
     const gameContainer = document.createElement('div');
-    gameContainer.className = 'relative flex flex-col items-center justify-center h-screen bg-gray-900 text-white';
+    gameContainer.className = 'relative flex flex-col items-center h-screen bg-gray-900 text-white py-8 overflow-y-auto';
 
     // Back to Desktop link
     const backLink = document.createElement('a');
@@ -36,6 +41,16 @@ export function localGameView(router: Router) {
         <span id="player1-score">0</span> - <span id="player2-score">0</span>
     `;
 
+    // Resource Display (for Pellet Mode)
+    const resourceDisplay = document.createElement('div');
+    resourceDisplay.className = 'text-sm text-gray-400 mb-2 flex justify-between w-full max-w-4xl px-4';
+    if (mode === GAME_MODES.PELLET) {
+        resourceDisplay.innerHTML = `
+            <span id="player1-resources"></span>
+            <span id="player2-resources"></span>
+        `;
+    }
+
     // Canvas for the game
     const canvas = document.createElement('canvas');
     canvas.id = 'local-pong-canvas';
@@ -46,20 +61,23 @@ export function localGameView(router: Router) {
 
     // Instructions
     const instructions = document.createElement('div');
-    instructions.className = 'mt-4 text-sm text-gray-400';
+    instructions.className = 'mt-4 text-sm text-gray-400 text-center';
     instructions.innerHTML = `
-        <p>Player 1: W (Up) / S (Down) | Player 2: ArrowUp / ArrowDown</p>
+        <p>P1 Move: W/S | P2 Move: ArrowUp/Down</p>
     `;
+    if (mode === GAME_MODES.PELLET) {
+        instructions.innerHTML += `
+            <p>P1 Shoot: D | P2 Shoot: ArrowLeft</p>
+            <p>P1 Magnet: A | P2 Magnet: ArrowRight</p>
+        `;
+    }
 
-    gameContainer.append(backLink, title, scoreBoard, canvas, instructions);
+    gameContainer.append(backLink, title, scoreBoard, resourceDisplay, canvas, instructions);
     app.innerHTML = ''; // Clear previous content
     app.appendChild(gameContainer);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const winningScore = parseInt(urlParams.get('score') || '5', 10);
-
     // Initialize and start the game
-    const game = new LocalPongGame(canvas, winningScore);
+    const game = new LocalPongGame(canvas, winningScore, mode);
     game.start();
 
     // Return a dispose function to clean up when navigating away
