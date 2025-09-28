@@ -3,7 +3,6 @@ import { UserStatistics } from './UserStatistics';
 import { MatchHistory } from './MatchHistory';
 import { UsernameHistory } from './UsernameHistory';
 import { UserSessions } from './UserSessions';
-import { EmailVerification } from './EmailVerification';
 import { UserPreferences } from './UserPreferences';
 
 // Enums for type safety and data validation
@@ -41,7 +40,6 @@ export enum MatchHistoryVisibility {
 
 @Entity()
 @Index({ properties: ['username'], options: { collate: 'NOCASE' } })
-@Index({ properties: ['email'], options: { collate: 'NOCASE' } })
 @Index({ properties: ['onlineStatus'] })
 @Index({ properties: ['lastSeen'] })
 @Index({ properties: ['createdAt'] })
@@ -53,8 +51,6 @@ export class User {
   @Property({ unique: true, length: 30 })
   username!: string;
 
-  @Property({ unique: true, length: 255 })
-  email!: string;
 
   @Property({ columnType: 'text' })
   passwordHash!: string;
@@ -141,8 +137,6 @@ export class User {
   @Property()
   updatedAt!: Date;
 
-  @Property({ nullable: true })
-  emailVerifiedAt?: Date;
 
   @Property({ nullable: true })
   lastLogin?: Date;
@@ -160,8 +154,6 @@ export class User {
   @OneToMany(() => UserSessions, (session) => session.user)
   sessions = new Collection<UserSessions>(this);
 
-  @OneToMany(() => EmailVerification, (verification: any) => verification.user)
-  emailVerifications = new Collection<EmailVerification>(this);
 
   @OneToMany(() => UserPreferences, (preferences: any) => preferences.user)
   preferences = new Collection<UserPreferences>(this);

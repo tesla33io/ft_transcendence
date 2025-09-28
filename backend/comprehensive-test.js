@@ -25,7 +25,6 @@ db.serialize(async () => {
       CREATE TABLE "user" (
         "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
         "username" varchar(30) NOT NULL,
-        "email" varchar(255) NOT NULL,
         "password_hash" text NOT NULL,
         "display_name" varchar(50) NULL,
         "first_name" varchar(50) NULL,
@@ -52,7 +51,6 @@ db.serialize(async () => {
         "match_history_visibility" varchar(20) NOT NULL DEFAULT 'friends',
         "created_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updated_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "email_verified_at" datetime NULL,
         "last_login" datetime NULL
       );
     `);
@@ -160,7 +158,6 @@ db.serialize(async () => {
         "game_effects" boolean NOT NULL DEFAULT true,
         "auto_ready" boolean NOT NULL DEFAULT false,
         "spectator_mode" boolean NOT NULL DEFAULT true,
-        "email_notifications" boolean NOT NULL DEFAULT true,
         "push_notifications" boolean NOT NULL DEFAULT true,
         "friend_requests" boolean NOT NULL DEFAULT true,
         "tournament_notifications" boolean NOT NULL DEFAULT true,
@@ -223,7 +220,6 @@ function createTable(db, tableName, sql) {
 async function createIndexes(db) {
   const indexes = [
     'CREATE UNIQUE INDEX "user_username_unique" ON "user" ("username");',
-    'CREATE UNIQUE INDEX "user_email_unique" ON "user" ("email");',
     'CREATE INDEX "user_online_status_index" ON "user" ("online_status");',
     'CREATE INDEX "user_last_seen_index" ON "user" ("last_seen");',
     'CREATE INDEX "user_created_at_index" ON "user" ("created_at");',
@@ -255,7 +251,6 @@ async function insertTestData(db) {
   const users = [
     {
       username: 'alice_gamer',
-      email: 'alice@example.com',
       password_hash: 'hashed_password_123',
       display_name: 'Alice the Gamer',
       first_name: 'Alice',
@@ -265,7 +260,6 @@ async function insertTestData(db) {
     },
     {
       username: 'bob_champion',
-      email: 'bob@example.com',
       password_hash: 'hashed_password_456',
       display_name: 'Bob Champion',
       first_name: 'Bob',
@@ -275,7 +269,6 @@ async function insertTestData(db) {
     },
     {
       username: 'admin_user',
-      email: 'admin@example.com',
       password_hash: 'hashed_password_789',
       display_name: 'Admin User',
       role: 'admin'
@@ -286,11 +279,11 @@ async function insertTestData(db) {
     await new Promise((resolve, reject) => {
       db.run(`
         INSERT INTO "user" (
-          username, email, password_hash, display_name, 
+          username, password_hash, display_name, 
           first_name, last_name, online_status, role
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `, [
-        user.username, user.email, user.password_hash, user.display_name,
+        user.username, user.password_hash, user.display_name,
         user.first_name, user.last_name, user.online_status, user.role
       ], function(err) {
         if (err) {
@@ -353,10 +346,10 @@ async function testQueries(db) {
   console.log('\n📊 Test 1: Online Users');
   await new Promise((resolve, reject) => {
     db.all(`
-      SELECT username, display_name, online_status, last_seen
+      SELECT username, display_name, online_status, created_at
       FROM "user" 
       WHERE online_status != 'offline'
-      ORDER BY last_seen DESC
+      ORDER BY created_at DESC
     `, (err, rows) => {
       if (err) {
         console.error('❌ Query failed:', err.message);
@@ -472,8 +465,8 @@ async function testConstraints(db) {
   console.log('\n🔒 Testing Unique Username Constraint');
   await new Promise((resolve, reject) => {
     db.run(`
-      INSERT INTO "user" (username, email, password_hash)
-      VALUES ('alice_gamer', 'duplicate@example.com', 'hash')
+      INSERT INTO "user" (username, password_hash)
+      VALUES ('alice_gamer', 'hash')
     `, (err) => {
       if (err) {
         console.log('✅ Unique username constraint working - duplicate rejected');

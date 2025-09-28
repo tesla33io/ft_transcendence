@@ -25,7 +25,6 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS "user" (
       "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
       "username" varchar(30) NOT NULL,
-      "email" varchar(255) NOT NULL,
       "password_hash" text NOT NULL,
       "display_name" varchar(50) NULL,
       "first_name" varchar(50) NULL,
@@ -52,7 +51,6 @@ db.serialize(() => {
       "match_history_visibility" varchar(20) NOT NULL DEFAULT 'friends',
       "created_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updated_at" datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      "email_verified_at" datetime NULL,
       "last_login" datetime NULL
     );
   `, (err) => {
@@ -68,7 +66,6 @@ db.serialize(() => {
   
   const indexes = [
     'CREATE UNIQUE INDEX "user_username_unique" ON "user" ("username");',
-    'CREATE UNIQUE INDEX "user_email_unique" ON "user" ("email");',
     'CREATE INDEX "user_online_status_index" ON "user" ("online_status");',
     'CREATE INDEX "user_last_seen_index" ON "user" ("last_seen");',
     'CREATE INDEX "user_created_at_index" ON "user" ("created_at");'
@@ -139,10 +136,10 @@ db.serialize(() => {
   
   db.run(`
     INSERT INTO "user" (
-      username, email, password_hash, display_name, 
+      username, password_hash, display_name, 
       first_name, last_name, online_status, role
     ) VALUES (
-      'testuser', 'test@example.com', 'hashedpassword123', 'Test User',
+      'testuser', 'hashedpassword123', 'Test User',
       'Test', 'User', 'online', 'user'
     );
   `, function(err) {
@@ -167,11 +164,11 @@ db.serialize(() => {
           
           // Test the query after statistics are inserted
           db.all(`
-            SELECT u.username, u.email, u.online_status, 
-                   s.current_rating, s.total_games
-            FROM "user" u
-            LEFT JOIN "user_statistics" s ON u.id = s.user_id
-            WHERE u.username = 'testuser';
+    SELECT u.username, u.online_status, 
+           s.current_rating, s.total_games
+    FROM "user" u
+    LEFT JOIN "user_statistics" s ON u.id = s.user_id
+    WHERE u.username = 'testuser';
           `, (err, rows) => {
             if (err) {
               console.error('❌ Error querying test data:', err.message);

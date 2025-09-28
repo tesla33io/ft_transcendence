@@ -32,7 +32,6 @@ async function main() {
     try {
         user = new User();
         user.username = 'Foo';
-        user.email = 'foo@bar.com';
         user.passwordHash = 'hashed_password';
         user.displayName
         user.avatarUrl = 'http://example.com/avatar.png';
