@@ -63,6 +63,7 @@ export class TournamentPong extends ClassicPong{
 				games.push(game)
 				console.log(`Tournament Match start ${game.player1.id} VS ${game.player2.id}`)
 			})
+			tournament.status = 'playing'
 			return games
 		}
 	}
@@ -99,7 +100,7 @@ export class TournamentPong extends ClassicPong{
 
 			bracket.status = 'finished'
 			bracket.winner = player
-			console.log("Bracket winner is: ", bracket.winner)
+			// console.log("Bracket winner is: ", bracket.winner)
 		}
 	}
 
@@ -114,7 +115,7 @@ export class TournamentPong extends ClassicPong{
 
 		const allMatchesFinished = tournament.bracket.every(match => match.status === 'finished')
 		if (!allMatchesFinished){
-			console.log(`Not all matches in current round are finished`, allMatchesFinished)
+			console.log(`Not all matches in current round are finished`, tournament.bracket)
 			return undefined
 		}
 

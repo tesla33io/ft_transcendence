@@ -36,20 +36,23 @@ export class GameService{
 		}
 		this.webSocketServer.clientReady = (gameId: string, playerId: string, tournamentId?: string) => {
 
+			if (tournamentId && !gameId){
+					if (this.gameEngine instanceof TournamentPong &&
+						this.gameEngine.tournamentAllPlayersReady(tournamentId, playerId)){
+							console.log(`Tournament players are ready: true`)
+							setTimeout(() => {}, 5000)
+							this.startTournament(tournamentId)
+							return
+					}
+				}
+
 			if (this.gameEngine.allPlayerReady(gameId, playerId)){
 				console.log(`Classic players are ready: true`)
 				this.gameEngine.startGame(gameId)
 				return
 			}
 
-			if (tournamentId){
-					if (this.gameEngine instanceof TournamentPong &&
-						this.gameEngine.tournamentAllPlayersReady(tournamentId, playerId))
-					console.log(`Tournament players are ready: true`)
-					if (tournamentId)
-						this.startTournament(tournamentId)
-					return
-				}
+
 		}
 		this.webSocketServer.clientDisconnect = (playerId: string) => {
 			const game = this.gameEngine.findPlayerInGame(playerId)
@@ -117,7 +120,11 @@ export class GameService{
 	}
 
 	public startTournament(tournamentId: string){
+		console.log(`Tournament start as Tournament Pong: ${this.gameEngine instanceof TournamentPong}`)
 		if (this.gameEngine instanceof TournamentPong){
+			const tournament = this.gameEngine.getTournament(tournamentId)
+			if (tournament?.status === 'playing')
+				return
 			const games = this.gameEngine.createMatchGame(tournamentId)
 			if (games){
 				games.forEach(game => {

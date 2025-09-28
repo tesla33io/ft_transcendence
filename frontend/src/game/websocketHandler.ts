@@ -60,6 +60,7 @@ export class WebSocketHandler {
     );
 	}
 
+
     // Handle different types of messages
     private handleInitialGameState(data: GameData): void {
         console.log('=== INITIAL GAME STATE ===');
@@ -117,7 +118,7 @@ export class WebSocketHandler {
             gameId: this.gameId,
             playerId: this.playerId
         };
-        setTimeout(() => this.sendMessage(readyMsg), 1000);
+        setTimeout(() => this.sendMessage(readyMsg), 5000);
     }
 
     private handleWebSocketMessage(rawData: any): void {
