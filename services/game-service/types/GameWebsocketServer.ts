@@ -119,7 +119,7 @@ export class GameWebSocketServer{
 
 		for (let player of tournament.players){
 			const playerWs = this.connectedClients.get(player.id)
-			if (playerWs){
+			if (playerWs && player.ready === false){
 				playerWs.send(message)
 				console.log(`Sent tournament data to player: ${player.id}`)
 			}

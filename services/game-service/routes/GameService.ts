@@ -40,8 +40,9 @@ export class GameService{
 					if (this.gameEngine instanceof TournamentPong &&
 						this.gameEngine.tournamentAllPlayersReady(tournamentId, playerId)){
 							console.log(`Tournament players are ready: true`)
-							setTimeout(() => {}, 5000)
-							this.startTournament(tournamentId)
+							const tournament = this.gameEngine.getTournament(tournamentId)
+							if (tournament?.status !== 'playing')
+								this.startTournament(tournamentId)
 							return
 					}
 				}
@@ -60,6 +61,15 @@ export class GameService{
 				this.stopGame(game.id);
 				const winnerId = playerId === game.player1.id ? game.player2.id : game.player1.id
 				this.webSocketServer.winnerAnnounce(game, winnerId)
+				if (this.gameMode === 'tournament'){
+					if (this.gameEngine instanceof TournamentPong){
+						// const tournament = this.gameEngine.getTournament(game.id)
+						// let bracket = tournament?.bracket.find( bracket => bracket.id === game.id)
+						// if (bracket)
+						// 	bracket.winner = game.player1.id === winnerId ? game.player1 : game.player2
+						// this.tournamnetHandling(game, playerId)
+					}
+				}
 			}
 			else{
 				if (this.matchmaker)
@@ -74,17 +84,17 @@ export class GameService{
 	private tournamnetHandling(game: Game, playerId: string){
 		if (this.gameEngine instanceof TournamentPong){
 			this.gameEngine.bracketWinner(game.id, playerId)
-
+			const tournament = this.gameEngine.getTournament(game.id)
 			const nextRoundGames = this.gameEngine.pairTheWinners(game.id)
 
 			if (nextRoundGames && nextRoundGames.length > 0){
-				nextRoundGames.forEach(newGame => {
-					this.webSocketServer.notifyGameMatched(newGame)
-				})
-				console.log(`Started next tournament round with ${nextRoundGames.length} games`)
+				this.webSocketServer.notifyTournamentReady(tournament!)
+					nextRoundGames.forEach(newGame => {
+						this.webSocketServer.notifyGameMatched(newGame)
+					})
+					console.log(`Started next tournament round with ${nextRoundGames.length} games`)
 			}
 			else if (this.gameEngine instanceof TournamentPong) {
-				const tournament = this.gameEngine.getTournament(game.id)
 				if (tournament?.status === 'finished'){
 					console.log(`Tournament ${tournament.id} completed`)
 					this.webSocketServer.notifyTournamentComplete(tournament)

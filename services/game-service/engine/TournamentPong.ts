@@ -160,6 +160,7 @@ export class TournamentPong extends ClassicPong{
 			let player = tournament.players.find(player => player.id === playerId)
 			if (player)
 				player.ready = true
+			console.log(`Player ${player!.id} sent Players ready: `, tournament.players)
 			// console.log("list of non ready players: ", tournament.players.filter(player => player.ready === false))
 			if (tournament.players.filter(player => player.ready === false).length === 0)
 				return true
