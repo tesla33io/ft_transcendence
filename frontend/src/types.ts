@@ -35,11 +35,27 @@ export enum MessageType {
 // Interface for initial game setup data
 export interface GameData {
     id?: string;           // Unique game identifier
+    gameMode?: string;
     status: string;        // Game status (waiting/connected/playing)
     playerId?: string;     // Player's unique identifier
     message?: string;      // Optional status message
     player1?: Player;      // First player data
     player2?: Player;      // Second player data
+}
+
+export interface TournamentBracket {
+    id: string;
+    gameMode: string;
+    status: string;
+    players: Player[];
+    bracket: {
+        id: string;
+        tournamentId: string;
+        status: string;
+        player1: Player;
+        player2: Player;
+        winner: string | null;
+    } [];
 }
 
 // Interface for ongoing game state
@@ -72,7 +88,8 @@ export interface Ball {
 // WebSocket message format
 export interface WebSocketMessage {
     type: string;         // Message type from MessageType enum
-    gameId: string;       // Game identifier
+    gameId?: string;       // Game identifier
+    tournamentId?: string;
     playerId: string | number;  // Player identifier
     deltaY?: number;      // Optional paddle movement amount
 }

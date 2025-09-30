@@ -1,7 +1,7 @@
 import fastify from 'fastify'
 import { GameMatchmaker} from "./routes/GameMatchmaker"
 import { GameServiceManager } from './routes/GameServiceManager'
-import { JoinGameRequest } from './types/types'
+import { JoinGameRequest, GameMode } from './types/types'
 
 const server = fastify({ logger: true })
 const PORT = 5000
@@ -14,6 +14,10 @@ gameServiceManager.setMatchmaker(gameMatchmaker)
 server.register(require('@fastify/cors'), {
 	origin: true,
 	credentials: true
+})
+
+server.get("/test", async (req, reply) => {
+	return {test: 'OK'}
 })
 
 server.post("/join-classic", async (req, reply) => {
@@ -30,6 +34,14 @@ server.get('/join-classic', async (req, reply) => {
 	return { message: 'Use POST method to join game' }
 })
 
+server.get("/get-gameMode-port", async (req, reply) =>{
+	const url = new URL(req.url!, 'http://game-service')
+	const gameMode = url.searchParams.get('gameMode')
+	if (gameMode !== 'classic' && gameMode !== 'tournament')
+		return {status: 404, port: undefined}
+	const result = await gameServiceManager.getGameModePort(gameMode as GameMode)
+	return {status: 200, port: result }
+})
 
 const start = async () => {
 	try {

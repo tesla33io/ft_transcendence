@@ -4,9 +4,11 @@ import { Renderer } from "./renderCanvas";
 export class WebSocketHandler {
     private ws?: WebSocket;
     private gameId: string = '';
+    private tournamentId: string = '';
 
     constructor(
         private playerId: string,
+        private gameMode: string,
         private onGameStart: (data: GameData) => void,
         private onGameUpdate: (state: GameState) => void,
 		private onGameResult: (result: GameResult) => void,
@@ -19,12 +21,19 @@ export class WebSocketHandler {
 		return(
 			data &&
 			typeof data === 'object' &&
-			'status' in data &&
-			'id' in data &&
-			'player1' in data &&
-			'player2' in data
+			data.type === 'classic_notification' &&
+            data.status === 'connected'
 		);
 	}
+
+    private isTournamentNotification(data: any) {
+        return (
+            data &&
+            typeof data === 'object' &&
+            data.type === 'tournament_notification' &&
+            data.status === 'ready'
+        )
+    }
 
 	private isGameResult(data:any): data is GameResult{
 		return(
@@ -46,17 +55,18 @@ export class WebSocketHandler {
         'status' in data &&
         //'gameid' in data &&
         'player' in data &&
-        'opponent' in data && // Note: keeping the misspelling to match server
+        'opponent' in data &&
         'ball' in data
     );
 	}
+
 
     // Handle different types of messages
     private handleInitialGameState(data: GameData): void {
         console.log('=== INITIAL GAME STATE ===');
         this.gameId = data.id || '';
         this.onGameStart(data);
-
+        console.log(`client sent ready from classic handle`)
         // Send ready message
         const readyMsg: WebSocketMessage = {
             type: MessageType.PLAYER_READY,
@@ -74,7 +84,7 @@ export class WebSocketHandler {
 			player1Score: data.player1Score,
 			player2Score: data.player2Score,
 			winner: data.winner,
-			loser: data.loser //loser: data.loser
+			loser: data.loser
 		};
 
 		this.onGameResult(gameResult);
@@ -97,6 +107,19 @@ export class WebSocketHandler {
         this.onGameUpdate(gameState);
     }
 
+    private handleTournamentNotification(data: any){
+        //present the bracket data
+        this.tournamentId = data.id
+
+        console.log(`client sent ready to tournament ${this.tournamentId}`)
+        const readyMsg: WebSocketMessage = {
+            type: MessageType.PLAYER_READY,
+            tournamentId: this.tournamentId,
+            playerId: this.playerId
+        };
+        setTimeout(() => this.sendMessage(readyMsg), 5000);
+    }
+
     private handleWebSocketMessage(rawData: any): void {
         try {
 			let data;
@@ -109,8 +132,13 @@ export class WebSocketHandler {
 			else{
 				data = rawData;
 			}
-
-            if (this.isGameState(data)) {
+            if (data && data.type === 'classic_notification')
+                console.log("Data from server: ", data)
+            if (this.isTournamentNotification(data)){
+                console.log("tournament Notification", data)
+                this.handleTournamentNotification(data)
+            }
+            else if (this.isGameState(data)) {
                 this.handleInitialGameState(data);
             }
             else if (this.isGameUpdate(data)) {
@@ -130,7 +158,7 @@ export class WebSocketHandler {
     // WebSocket connection management
     private connect(): void {
         console.log(`Attempting to connect WebSocket with playerId: ${this.playerId}`);
-        this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws?playerId=${this.playerId}`)
+        this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws/${this.gameMode}?playerId=${this.playerId}`)
 
         this.ws.onopen = () => {
             console.log('WebSocket connected successfully');
@@ -155,8 +183,7 @@ export class WebSocketHandler {
     public sendMessage(message: WebSocketMessage): void {
         if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(message));
-            console.log('Sent to server:', message);
-        } else {
+       } else {
             console.error('WebSocket is not connected');
         }
     }
