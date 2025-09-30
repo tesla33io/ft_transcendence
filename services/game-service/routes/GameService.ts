@@ -89,10 +89,7 @@ export class GameService{
 
 			if (nextRoundGames && nextRoundGames.length > 0){
 				this.webSocketServer.notifyTournamentReady(tournament!)
-					nextRoundGames.forEach(newGame => {
-						this.webSocketServer.notifyGameMatched(newGame)
-					})
-					console.log(`Started next tournament round with ${nextRoundGames.length} games`)
+				console.log(`Started next tournament round with ${nextRoundGames.length} games`)
 			}
 			else if (this.gameEngine instanceof TournamentPong) {
 				if (tournament?.status === 'finished'){

@@ -88,7 +88,7 @@ export interface Ball {
 // WebSocket message format
 export interface WebSocketMessage {
     type: string;         // Message type from MessageType enum
-    gameId: string;       // Game identifier
+    gameId?: string;       // Game identifier
     tournamentId?: string;
     playerId: string | number;  // Player identifier
     deltaY?: number;      // Optional paddle movement amount

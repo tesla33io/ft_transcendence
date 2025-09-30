@@ -115,7 +115,6 @@ export class WebSocketHandler {
         const readyMsg: WebSocketMessage = {
             type: MessageType.PLAYER_READY,
             tournamentId: this.tournamentId,
-            gameId: this.gameId,
             playerId: this.playerId
         };
         setTimeout(() => this.sendMessage(readyMsg), 5000);

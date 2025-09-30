@@ -105,7 +105,7 @@ export class GameWebSocketServer{
 		}
 		else
 			console.log(`Websocket for player2 ${gameData.player2.id} not found`)
-}
+	}
 
 	public notifyTournamentReady(tournament: Tournament){
 		const message = JSON.stringify({
