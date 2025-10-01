@@ -1,5 +1,5 @@
 import { ClassicPong } from "../engine/ClassicPong"
-import { Player, Tournament, TournamentMatch, Game } from "../types/types"
+import { Player, Tournament, TournamentMatch, Game } from "../types/interfaces"
 import { generateGameId, generateBallPos } from "../types/types"
 
 export class TournamentPong extends ClassicPong{

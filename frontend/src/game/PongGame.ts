@@ -23,7 +23,7 @@ export class PongGame {
 		playerId: string,
 		gameMode: string, //classic or Tournament
 		router: Router
-		
+
     ) {
 		this.playerName = playerName;
 		this.playerId = playerId;
