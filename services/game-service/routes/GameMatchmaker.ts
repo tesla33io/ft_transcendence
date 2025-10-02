@@ -125,11 +125,9 @@ export class GameMatchmaker {
 			setTimeout(() => {
 				if (gameService) {
 					const tournament: Tournament = gameService.createTournament(players)
-					// gameService.notifyTournamentReady(tournament) need some change in client loggic
-					gameService.startTournament(tournament.id)
-				} else {
+					gameService.notifyTournamentReady(tournament)
+				} else
 					console.error('GameService not initialized!')
-				}
 			}, 100)
 
 			return {

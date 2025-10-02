@@ -1,5 +1,4 @@
 import fastify from 'fastify'
-
 const server = fastify({logger: true})
 const PORT = 3000
 
@@ -16,7 +15,14 @@ server.register(require('@fastify/http-proxy'), {
 
 server.register(require('@fastify/http-proxy'), {
 	upstream: 'http://game-service:5005',
-	prefix: '/ws',
+	prefix: '/ws/classic',
+	websocket: true,
+	http2: false
+})
+
+server.register(require('@fastify/http-proxy'), {
+	upstream: 'http://game-service:5006',
+	prefix: '/ws/tournament',
 	websocket: true,
 	http2: false
 })

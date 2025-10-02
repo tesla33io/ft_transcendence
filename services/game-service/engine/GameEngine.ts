@@ -12,6 +12,7 @@ export abstract class GameEngine {
 
 	public onGameStatusUpdate?: (game: Game) => void
 	public declareWinner?: (game:Game, playerId: string) => void
+	public disconnectClient?: (playerId: string) => void
 
 	public startGame(gameId: string){
 		const game = this.activeGames.get(gameId)
@@ -44,10 +45,12 @@ export abstract class GameEngine {
 		if (game.ball.y <= 10){
 			game.ball.y = 10
 			game.ball.vy *= -1
+			game.ball.vx = game.ball.vx < 0 ? --game.ball.vx : ++game.ball.vx
 		}
 		else if(game.ball.y >= GAME_HEIGHT - 10){
 			game.ball.y = GAME_HEIGHT - 10
 			game.ball.vy *= -1
+			game.ball.vx = game.ball.vx < 0 ? --game.ball.vx : ++game.ball.vx
 		}
 		this.collisionCheck(game)
 	}

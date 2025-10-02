@@ -1,15 +1,11 @@
 import { ClassicPong } from "../engine/ClassicPong"
-import { Player, generateGameId, Tournament, TournamentMatch, Game, generateBallPos } from "../types/types"
-
-/**
- Maybe TournamentPong will be the extension of the Classicpong
- make the logic to par the winners until there will be
- only one player left
- */
+import { Player, Tournament, TournamentMatch, Game } from "../types/types"
+import { generateGameId, generateBallPos } from "../types/types"
 
 export class TournamentPong extends ClassicPong{
 	private activeTournament: Map<string, Tournament> = new Map()
 	private gameIdToTournamentId: Map<string, string> = new Map()
+	private bracketWinners: Map<string, Player[]> = new Map()
 
 	public createTournament(players: Player[]): Tournament{
 		const tournamentId = generateGameId()
@@ -29,6 +25,8 @@ export class TournamentPong extends ClassicPong{
 		let bracket: TournamentMatch[] = []
 
 		for (let i = 0; i < players.length; i+=2 ){
+			players[i].ready = false
+			players[i + 1].ready = false
 			bracket.push({
 				id: generateGameId(),
 				tournamentId: tournamentId,
@@ -46,9 +44,10 @@ export class TournamentPong extends ClassicPong{
 		const tournament = this.activeTournament.get(tournamentId)
 		if (!tournament)
 			return
-		if (tournament.bracket.length > 0){
+		const brackets = tournament.bracket.filter(bracket => bracket.status !== 'finished')
+		if (brackets.length > 0){
 			let games: Game[] = []
-			tournament.bracket.forEach(match => {
+			brackets.forEach(match => {
 				match.player1.ready = false
 				match.player2.ready = false
 				const game: Game = {
@@ -65,41 +64,94 @@ export class TournamentPong extends ClassicPong{
 				games.push(game)
 				console.log(`Tournament Match start ${game.player1.id} VS ${game.player2.id}`)
 			})
+			tournament.status = 'playing'
 			return games
 		}
 	}
 
-	private findTournament(gameId: string): string | undefined{
+	private findTournamentId(gameId: string): string | undefined{
 		const tournamentId = this.gameIdToTournamentId.get(gameId)
 		return tournamentId
 	}
 
-	public bracketWinner(gameId: string, playerId: string){
-		const tournamentId = this.findTournament(gameId)
+	public getTournament(gameId: string): Tournament | undefined{
+		const tournamentId = this.findTournamentId(gameId)
+		if (!tournamentId)
+			return undefined
+		return this.activeTournament.get(tournamentId)
+	}
+
+	public bracketWinner(gameId: string, winnerId: string){
+		const tournamentId = this.findTournamentId(gameId)
 		if (tournamentId != undefined){
+
 			const tournament = this.activeTournament.get(tournamentId)
 			if (!tournament)
 				return
-			let bracket = tournament.bracket.find(match => match.player1.id === playerId || match.player2.id === playerId)
+			let bracket = tournament.bracket.find(match => match.id === gameId)
 			if (!bracket)
 				return
-			const player = bracket.player1.id === playerId ? bracket.player1 : bracket.player2
+
+			const isPlayer1Winner = bracket.player1.id === winnerId;
+			const player = isPlayer1Winner ? bracket.player1 : bracket.player2;
+
+			if (this.disconnectClient) {
+				const loserId = isPlayer1Winner ? bracket.player2.id : bracket.player1.id;
+				this.disconnectClient(loserId);
+			}
+
 			bracket.status = 'finished'
 			bracket.winner = player
-			console.log("Winner is: ", bracket.winner)
+			console.log(`Bracket winner: ${winnerId} game ID: ${gameId} => ${tournamentId}`, bracket)
 		}
 	}
 
-	public pairTheWinners(gameId: string){
-		const tournamentId = this.findTournament(gameId)
+	public pairTheWinners(gameId: string): Game[] | undefined{
+		const tournamentId = this.findTournamentId(gameId)
+		if(!tournamentId)
+			return undefined
 
+		const tournament = this.activeTournament.get(tournamentId)
+		if (!tournament)
+			return undefined
 
+		let winner = tournament.bracket.find(match => match.id === gameId)?.winner
+		if (winner){
+			winner.ready = false
+			if (this.bracketWinners.has(tournamentId)){
+				this.bracketWinners.get(tournamentId)!.push(winner)
+			}
+			else{
+				this.bracketWinners.set(tournamentId, [winner])
+			}
+		}
+
+		const allMatchesFinished = tournament.bracket.every(match => match.status === 'finished')
+		if (!allMatchesFinished){
+			console.log(`Not all matches in current round are finished`, tournament.bracket)
+			return undefined
+		}
+
+		let winners = this.bracketWinners.get(tournamentId)
+		if (winners && winners.length === 1){
+			tournament.status = 'finished'
+			tournament.winner = winners[0]
+			console.log(`Tournament champion is ${winners[0].id}`)
+			return undefined
+		}
+
+		const nextRoundBracket = this.generateBracket(tournamentId, winners!)
+		nextRoundBracket.forEach(bracket => {
+			tournament.bracket.push(bracket)
+		})
+		console.log(`Next round with ${winners!.length} players: `, winners)
+		this.bracketWinners.set(tournamentId, [])
+
+		return this.createMatchGame(tournamentId)
 	}
 
-	public tournamentAllPlayersReady(gameId: string, playerId: string): boolean{
-		console.log(`Client sent id: ${gameId}`)
-		const tournamentId = this.findTournament(gameId)
-
+	public tournamentAllPlayersReady(tournamentId: string, playerId: string): boolean{
+		console.log(`Client sent id: ${tournamentId}`)
 		if (tournamentId === undefined)
 			return false
 
@@ -108,13 +160,19 @@ export class TournamentPong extends ClassicPong{
 			let player = tournament.players.find(player => player.id === playerId)
 			if (player)
 				player.ready = true
-			console.log("list of non ready players: ", tournament.players.filter(player => player.ready === false))
-			if (tournament.players.filter(player => player.ready === false).length > 0)
-				return false
-			else
+			console.log(`Player ${player!.id} sent Players ready: `, tournament.players)
+			// console.log("list of non ready players: ", tournament.players.filter(player => player.ready === false))
+			if (tournament.players.filter(player => player.ready === false).length === 0)
 				return true
 		}
 		return false
 	}
 
+	public tournamentCleanup(tournamentId: string): void{
+		this.activeGames.delete(tournamentId)
+		for (const [gameId, tId] of this.gameIdToTournamentId.entries()){
+			if (tId === tournamentId)
+				this.gameIdToTournamentId.delete(gameId)
+		}
+	}
 }
