@@ -1,5 +1,6 @@
 import { GameEngine } from "./GameEngine";
-import { Game, GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH, PLAYER_OFFSET } from "../types/types";
+import { GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH, PLAYER_OFFSET } from "../types/types";
+import { Game, Player} from "../types/types"
 
 export class ClassicPong extends GameEngine {
 	public initializeGameState(game: Game){
@@ -87,47 +88,33 @@ export class ClassicPong extends GameEngine {
 	protected collisionCheck(game: Game): void {
 		const K = 4
 		if (game.ball.x <= game.player1.X + PADDLE_WIDTH){
-			if ((game.ball.y >= game.player1.Y - 2 &&
-				game.ball.y <= game.player1.Y + 2 )){
-				game.ball.vx = game.ball.vx < 0 ? -2 : 2
-				game.ball.vx *= -1
-			}
-
-			else if ((game.ball.y === game.player1.Y - PADDLE_HEIGHT / 2 ||
-				game.ball.y === game.player1.Y + PADDLE_HEIGHT / 2)){
-				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
-				game.ball.vx *= -1
-				game.ball.vy *= -1
-			}
-
-			else if ((game.ball.y >= game.player1.Y - PADDLE_HEIGHT / 2 &&
-				game.ball.y <= game.player1.Y + PADDLE_HEIGHT / 2)){
-				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
-				game.ball.vx *= -1
-			}
+			this.paddleCollision(game, game.player1)
 		}
 
 		else if (game.ball.x >= game.player2.X - PADDLE_WIDTH) {
+			this.paddleCollision(game, game.player2)
+		}
+	}
 
-			if ((game.ball.y >= game.player2.Y - 2 &&
-				game.ball.y <= game.player2.Y + 2 )){
-				game.ball.vx = game.ball.vx < 0 ? -2 : 2
-				game.ball.vx *= -1
-			}
+	private paddleCollision(game: Game, player: Player){
+		const K = 4
+		if ((game.ball.y >= player.Y - 2 &&
+			game.ball.y <= player.Y + 2 )){
+			game.ball.vx = game.ball.vx < 0 ? -2 : 2
+			game.ball.vx *= -1
+		}
 
-			else if ((game.ball.y === game.player2.Y - PADDLE_HEIGHT / 2 ||
-				game.ball.y === game.player2.Y + PADDLE_HEIGHT / 2)){
+		else if ((game.ball.y === player.Y - PADDLE_HEIGHT / 2 ||
+			game.ball.y === player.Y + PADDLE_HEIGHT / 2)){
+			game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
+			game.ball.vx *= -1
+			game.ball.vy *= -1
+		}
 
-				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
-				game.ball.vx *= -1
-				game.ball.vy *= -1
-			}
-
-			else if ((game.ball.y >= game.player2.Y - PADDLE_HEIGHT / 2 &&
-				game.ball.y <= game.player2.Y + PADDLE_HEIGHT / 2)){
-				game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
-				game.ball.vx *= -1
-			}
+		else if ((game.ball.y >= player.Y - PADDLE_HEIGHT / 2 &&
+			game.ball.y <= player.Y + PADDLE_HEIGHT / 2)){
+			game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
+			game.ball.vx *= -1
 		}
 	}
 }

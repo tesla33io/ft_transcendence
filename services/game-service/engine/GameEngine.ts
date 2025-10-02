@@ -4,7 +4,7 @@ export abstract class GameEngine {
 	protected activeGames: Map<string, Game> = new Map()
 	protected gameLoops: Map<string, NodeJS.Timeout> = new Map()
 	protected FRAME_TIME = 1000 / FPS
-	protected GAME_SCORE = 3
+	protected GAME_SCORE = 10
 
 	constructor(){
 		console.log('GameEngine initialized')
@@ -42,12 +42,12 @@ export abstract class GameEngine {
 		game.ball.x += game.ball.vx
 		game.ball.y += game.ball.vy
 
-		if (game.ball.y <= 10){
+		if (game.ball.y <= 0){
 			game.ball.y = 10
 			game.ball.vy *= -1
 			game.ball.vx = game.ball.vx < 0 ? --game.ball.vx : ++game.ball.vx
 		}
-		else if(game.ball.y >= GAME_HEIGHT - 10){
+		else if(game.ball.y >= GAME_HEIGHT){
 			game.ball.y = GAME_HEIGHT - 10
 			game.ball.vy *= -1
 			game.ball.vx = game.ball.vx < 0 ? --game.ball.vx : ++game.ball.vx
