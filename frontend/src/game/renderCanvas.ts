@@ -1,9 +1,9 @@
-import { type GameState, type Ball, GAME_CONFIG } from '../types';
+import { type GameState, type Ball, GAME_CONFIG, type Paddle } from '../types';
 
 export class Renderer {
     private ctx: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
-	private isInitialized: boolean = false;
+    private isInitialized: boolean = false;
 
 
     constructor(canvas: HTMLCanvasElement) {
@@ -17,7 +17,7 @@ export class Renderer {
 
   }
 
-	public initializeCanvas() {
+    public initializeCanvas() {
         // Initialize canvas with game dimensions
         this.canvas.height = GAME_CONFIG.CANVAS.HEIGHT;
         this.canvas.width = GAME_CONFIG.CANVAS.WIDTH;
@@ -28,10 +28,17 @@ export class Renderer {
         return this.isInitialized;
     }
 
-    public render(gameState: GameState): void {
+    public render(gameState: GameState & { extra_balls?: Ball[], player: { paddleHeight: number }, opponet: { paddleHeight: number } }): void {
         this.clear();
         this.drawPaddles(gameState);
         this.drawBall(gameState.ball);
+
+        // Draw extra balls if they exist (for multi-ball mode)
+        if (gameState.extra_balls) {
+            gameState.extra_balls.forEach(ball => {
+                this.drawBall(ball);
+            });
+        }
         //this.drawScores(gameState);
     }
 
@@ -40,25 +47,25 @@ export class Renderer {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
-    private drawPaddles(gameState: GameState): void {
+    private drawPaddles(gameState: GameState & { player: { paddleHeight: number }, opponet: { paddleHeight: number } }): void {
         this.ctx.fillStyle = 'white';
         // Player paddle
         // Player paddle - centered around paddleY
-    	this.ctx.fillRect(
+        this.ctx.fillRect(
         gameState.player.X,
-        gameState.player.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
+        gameState.player.Y - (gameState.player.paddleHeight / 2), // Subtract half height to center
         GAME_CONFIG.PADDLE.WIDTH,
-        GAME_CONFIG.PADDLE.HEIGHT
-    	);
+        gameState.player.paddleHeight
+        );
 
     // Opponent paddle - centered around paddleY
-    	this.ctx.fillRect(
+        this.ctx.fillRect(
         gameState.opponet.X,
-        gameState.opponet.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
+        gameState.opponet.Y - (gameState.opponet.paddleHeight / 2), // Subtract half height to center
         GAME_CONFIG.PADDLE.WIDTH,
-        GAME_CONFIG.PADDLE.HEIGHT
-    	);
-	}
+        gameState.opponet.paddleHeight
+        );
+    }
     private drawBall(ball: Ball): void {
         this.ctx.beginPath();
         this.ctx.arc(
@@ -72,5 +79,13 @@ export class Renderer {
         this.ctx.fill();
     }
 
-    
+    public drawText(text: string, x: number, y: number): void {
+        this.ctx.fillStyle = 'white';
+        this.ctx.font = '30px "Press Start 2P", sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(text, x, y);
+    }
+
+
 }

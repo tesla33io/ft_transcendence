@@ -49,6 +49,11 @@ export function localGameView(router: Router) {
             <span id="player1-resources"></span>
             <span id="player2-resources"></span>
         `;
+    } else if (mode === GAME_MODES.MULTIBALL) {
+        resourceDisplay.innerHTML = `
+            <span id="player1-abilities"></span>
+            <span id="player2-abilities"></span>
+        `;
     }
 
     // Canvas for the game
@@ -70,14 +75,27 @@ export function localGameView(router: Router) {
             <p>P1 Shoot: D | P2 Shoot: ArrowLeft</p>
             <p>P1 Magnet: A | P2 Magnet: ArrowRight</p>
         `;
+    } else if (mode === GAME_MODES.MULTIBALL) {
+        instructions.innerHTML += `
+            <p>P1 Speed: A, Grow: D | P2 Speed: ArrowRight, Grow: ArrowLeft</p>
+        `;
     }
 
-    gameContainer.append(backLink, title, scoreBoard, resourceDisplay, canvas, instructions);
+    const gameCanvasContainer = document.createElement('div');
+    gameCanvasContainer.className = 'relative'; // For positioning the overlay
+    gameCanvasContainer.append(canvas, instructions);
+
+    gameContainer.append(backLink, title, scoreBoard, resourceDisplay, gameCanvasContainer);
     app.innerHTML = ''; // Clear previous content
     app.appendChild(gameContainer);
 
+    // Use a timeout to scroll the canvas into view after the page has rendered.
+    setTimeout(() => {
+        canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+
     // Initialize and start the game
-    const game = new LocalPongGame(canvas, winningScore, mode);
+    const game = new LocalPongGame(canvas, winningScore, mode, router, gameCanvasContainer);
     game.start();
 
     // Return a dispose function to clean up when navigating away

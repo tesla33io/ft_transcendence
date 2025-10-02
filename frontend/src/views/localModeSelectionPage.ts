@@ -45,7 +45,16 @@ export function localModeSelectionView(router: Router) {
         router.navigate(`/localgame/setup?mode=${GAME_MODES.PELLET}`);
     });
 
-    modesContainer.append(classicButton, futureModeButton, pelletModeButton);
+    // Multi-Ball Mode Button
+    const multiBallButton = document.createElement('button');
+    multiBallButton.textContent = 'Multi-Ball Mode';
+    multiBallButton.className = 'px-8 py-4 bg-red-600 hover:bg-red-700 rounded-md font-bold text-xl';
+    multiBallButton.addEventListener('click', () => {
+        // Navigate to the setup page for multi-ball mode
+        router.navigate(`/localgame/setup?mode=${GAME_MODES.MULTIBALL}`);
+    });
+
+    modesContainer.append(classicButton, futureModeButton, pelletModeButton, multiBallButton);
     selectionContainer.append(title, modesContainer);
 
     app.innerHTML = '';
