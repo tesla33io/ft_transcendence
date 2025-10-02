@@ -2,5 +2,6 @@ export const GAME_MODES = {
     CLASSIC: 'classic',
     SPEED: 'speed',
     PELLET: 'pellet',
-    MULTIBALL: 'multiball'
+    MULTIBALL: 'multiball',
+    TWOD: '2d'
 };

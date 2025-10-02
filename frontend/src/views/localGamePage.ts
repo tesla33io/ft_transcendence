@@ -89,14 +89,14 @@ export function localGameView(router: Router) {
     app.innerHTML = ''; // Clear previous content
     app.appendChild(gameContainer);
 
+    // Initialize the game
+    const game = new LocalPongGame(canvas, winningScore, mode, router, gameCanvasContainer);
+
     // Use a timeout to scroll the canvas into view after the page has rendered.
     setTimeout(() => {
         canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        game.start(); // Start the game (and its countdown) after scrolling
     }, 100);
-
-    // Initialize and start the game
-    const game = new LocalPongGame(canvas, winningScore, mode, router, gameCanvasContainer);
-    game.start();
 
     // Return a dispose function to clean up when navigating away
     return {

@@ -35,6 +35,9 @@ export class LocalPongGame {
     private playerOriginalPaddleHeight: number = GAME_CONFIG.PADDLE.HEIGHT;
     private opponentOriginalPaddleHeight: number = GAME_CONFIG.PADDLE.HEIGHT;
 
+    // Countdown state
+    private countdown: number = 3; // 3, 2, 1...
+
     constructor(
         private canvas: HTMLCanvasElement, 
         private winningScore: number, 
@@ -56,7 +59,7 @@ export class LocalPongGame {
 
     private createInitialState(): ExtendedGameState {
         return {
-            status: 'playing',
+            status: 'countdown', // Start in countdown mode
             gameid: 'local',
             player: {
                 name: 'Player 1',
@@ -97,17 +100,31 @@ export class LocalPongGame {
     }
 
     public start(): void {
-        this.initializeEventListeners();
         this.renderer.initializeCanvas();
         this.updateResourceDisplay(); // Ensure initial resource counts are shown
         this.updateMultiBallResourceDisplay();
+        this.startCountdown();
+    }
 
+    private startCountdown(): void {
+        const countdownInterval = setInterval(() => {
+            this.countdown--;
+            if (this.countdown <= 0) {
+                clearInterval(countdownInterval);
+                this.startGame();
+            }
+        }, 1000); // User requested 2 seconds, so 3 ticks: 2, 1, start.
+        this.gameLoop();
+    }
+
+    private startGame(): void {
+        this.gameState.status = 'playing';
+        this.initializeEventListeners();
         if (this.mode === GAME_MODES.MULTIBALL) {
             this.multiBallInterval = window.setInterval(() => {
                 this.spawnExtraBall();
             }, 1000);
         }
-        this.gameLoop();
     }
 
     private initializeEventListeners(): void {
@@ -213,6 +230,30 @@ export class LocalPongGame {
         }
         if (this.keysPressed['arrowdown']) {
             this.gameState.opponet.Y += opponentPaddleSpeed;
+        }
+
+        // Horizontal movement for 2D mode
+        if (this.mode === GAME_MODES.TWOD) {
+            // Player 1 (A/D)
+            if (this.keysPressed['a']) {
+                this.gameState.player.X -= playerPaddleSpeed;
+            }
+            if (this.keysPressed['d']) {
+                this.gameState.player.X += playerPaddleSpeed;
+            }
+
+            // Player 2 (ArrowLeft/ArrowRight)
+            if (this.keysPressed['arrowleft']) {
+                this.gameState.opponet.X -= opponentPaddleSpeed;
+            }
+            if (this.keysPressed['arrowright']) {
+                this.gameState.opponet.X += opponentPaddleSpeed;
+            }
+
+            // Clamp horizontal positions for 2D mode
+            const midPoint = GAME_CONFIG.CANVAS.WIDTH / 2.05; // Use 2.05 to create a gap from the true center
+            this.gameState.player.X = Math.max(0, Math.min(midPoint - GAME_CONFIG.PADDLE.WIDTH, this.gameState.player.X));
+            this.gameState.opponet.X = Math.max(GAME_CONFIG.CANVAS.WIDTH - midPoint, Math.min(GAME_CONFIG.CANVAS.WIDTH - GAME_CONFIG.PADDLE.WIDTH, this.gameState.opponet.X));
         }
 
         // Clamp paddle positions to stay within the canvas
@@ -478,21 +519,27 @@ export class LocalPongGame {
     }
 
     private gameLoop = (): void => {
-        if (this.gameState.status !== 'playing') {
-            return;
-        }
-        this.updatePellets();
-        this.updatePaddles();
-        this.updateBall();
-
-        if (this.mode === GAME_MODES.MULTIBALL) {
-            this.updateExtraBalls();
-        }
-
+        // Always render the current state
         this.renderer.render(this.gameState);
-        this.drawPellets(); // Drawing pellets after the main render
-        // Initial display is now handled in start()
+
+        if (this.gameState.status === 'countdown') {
+            const text = this.countdown > 1 ? `${this.countdown - 1}` : 'Go!';
+            this.renderer.drawText(text, this.canvas.width / 2, this.canvas.height / 2 - 80);
+        } else if (this.gameState.status === 'playing') {
+            this.updatePellets();
+            this.updatePaddles();
+            this.updateBall();
+
+            if (this.mode === GAME_MODES.MULTIBALL) {
+                this.updateExtraBalls();
+            }
+            this.drawPellets(); // Drawing pellets after the main render
+        }
+
+        // Continue the loop as long as the game is not finished
+        if (this.gameState.status !== 'finished') {
         this.animationFrameId = requestAnimationFrame(this.gameLoop);
+        }
     };
 
     private drawPellets(): void {
@@ -513,6 +560,7 @@ export class LocalPongGame {
         this.multiBallInterval = null;
         cancelAnimationFrame(this.animationFrameId);
         this.removeEventListeners();
+        document.addEventListener('keydown', this.handleGameOverKeyDown);
         this.displayGameOver(winner);
     }
 
@@ -561,11 +609,21 @@ export class LocalPongGame {
         this.gameContainer.appendChild(overlay);
     }
 
+    private handleGameOverKeyDown = (event: KeyboardEvent): void => {
+        if (event.code === 'Space') {
+            event.preventDefault();
+            // Remove the listener to prevent multiple triggers
+            document.removeEventListener('keydown', this.handleGameOverKeyDown);
+            this.router.navigate(window.location.pathname + window.location.search);
+        }
+    };
+
     public dispose(): void {
         if (this.multiBallInterval) clearInterval(this.multiBallInterval);
         this.multiBallInterval = null;
         cancelAnimationFrame(this.animationFrameId);
         this.removeEventListeners();
+        document.removeEventListener('keydown', this.handleGameOverKeyDown);
         console.log("Local game disposed.");
     }
 }

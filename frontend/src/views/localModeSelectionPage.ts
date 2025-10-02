@@ -54,7 +54,15 @@ export function localModeSelectionView(router: Router) {
         router.navigate(`/localgame/setup?mode=${GAME_MODES.MULTIBALL}`);
     });
 
-    modesContainer.append(classicButton, futureModeButton, pelletModeButton, multiBallButton);
+    // 2D Mode Button
+    const twoDButton = document.createElement('button');
+    twoDButton.textContent = '2D Mode';
+    twoDButton.className = 'px-8 py-4 bg-yellow-500 hover:bg-yellow-600 rounded-md font-bold text-xl';
+    twoDButton.addEventListener('click', () => {
+        router.navigate(`/localgame/setup?mode=${GAME_MODES.TWOD}`);
+    });
+
+    modesContainer.append(classicButton, futureModeButton, pelletModeButton, multiBallButton, twoDButton);
     selectionContainer.append(title, modesContainer);
 
     app.innerHTML = '';

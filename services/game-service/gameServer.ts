@@ -19,11 +19,6 @@ server.post("/join-classic", async (req, reply) => {
 	return result
 })
 
-server.post("/join-multiball", async (req, reply) => {
-	const result = await classicMatchmaker.joinGameHandler(req.body as JoinGameRequest)
-	return result
-})
-
 server.post("/join-tournament", async (req, reply) => {
 
 	return { message: 'WIP' }
