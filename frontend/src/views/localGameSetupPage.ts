@@ -1,4 +1,5 @@
 import { Router } from '../router';
+import { createWindow } from './components';
 
 export function localGameSetupView(router: Router) {
     const app = document.getElementById('app');
@@ -7,28 +8,40 @@ export function localGameSetupView(router: Router) {
         return;
     }
 
-    const setupContainer = document.createElement('div');
-    setupContainer.className = 'flex flex-col items-center justify-center h-screen bg-gray-900 text-white';
+    // --- Setup Form Content ---
+    const content = document.createElement('div');
+    content.className = 'flex flex-col items-center justify-center';
 
     const form = document.createElement('form');
-    form.className = 'flex flex-col items-center gap-4 p-8 bg-gray-800 rounded-lg';
+    form.className = 'flex flex-col items-center gap-4 p-8 rounded-lg';
 
-    const title = document.createElement('h1');
-    title.className = 'text-3xl font-bold mb-4';
-    title.textContent = 'Local Game Setup';
+    const title = document.createElement('header');
+    title.className = 'text-[14px]  ';
+    title.textContent = 'Set up your 1 vs 1';
 
     const label = document.createElement('label');
     label.htmlFor = 'winning-score';
     label.textContent = 'Score to Win:';
     label.className = 'text-lg';
 
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.id = 'winning-score';
-    input.value = '5';
-    input.min = '1';
-    input.max = '21';
-    input.className = 'w-24 text-center bg-white border border-gray-600 rounded-md p-2 text-black';
+    // Use a select styled with 98.css
+    const select = document.createElement('select');
+    select.id = 'winning-score';
+    select.className = 'select'; // 98.css style
+
+    const options = [
+	  { value: '10', text: '10 - Extra long Game' },
+      { value: '5', text: '5 - Full game' },
+      { value: '3', text: '3 - Quick Round' },
+      { value: '1', text: '1 - ultra short Round' },
+    ];
+
+    options.forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt.value;
+      option.textContent = opt.text;
+      select.appendChild(option);
+    });
 
     const startButton = document.createElement('button');
     startButton.type = 'submit';
@@ -36,14 +49,28 @@ export function localGameSetupView(router: Router) {
     startButton.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-bold';
 
     form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const score = input.value;
-        router.navigate(`/localgame/play?score=${score}`);
+      e.preventDefault();
+      const score = select.value;
+      router.navigate(`/localgame/play?score=${score}`);
     });
 
-    form.append(title, label, input, startButton);
-    setupContainer.appendChild(form);
+    form.append(title, label, select, startButton);
+    content.appendChild(form);
+
+    // --- Use createWindow ---
+    const setupWindow = createWindow({
+        title: "Local Game Setup",
+        width: "400px",
+        content: content,
+        titleBarControls: {
+            help: true,
+			close: true,
+			onClose: () => {
+    			router.navigate("/desktop")//make dependend on if in guest mode or not 
+			}
+		}
+    });
 
     app.innerHTML = '';
-    app.appendChild(setupContainer);
+    app.appendChild(setupWindow);
 }
