@@ -1,33 +1,12 @@
 import { Router } from "../router";
-
+import { createWindow } from "./components";
 
 export function gameView(router: Router) {
     const root = document.getElementById("app")!;
     root.innerHTML = "";
 
-    // Main window container
-    const container = document.createElement("div");
-    container.className = "game-window";
-    container.style.position = "absolute";  // required for dragging
-    container.style.top = "50px";
-    container.style.left = "50px";
-
-    // Title bar
-    const titlebar = document.createElement("div");
-    titlebar.className = "title-bar";
-    titlebar.innerHTML = `
-        <div class="title-bar-text">Pong Game</div>
-        <div class="title-bar-controls">
-            <button aria-label="Close">×</button>
-        </div>
-    `;
-    container.appendChild(titlebar);
-
-    // Close button functionality
-    const closeBtn = titlebar.querySelector("button")!;
-    closeBtn.addEventListener("click", () => {
-       window.history.back(); //go back to per window
-    });
+    // Create the main content for the window
+    const content = document.createElement("div");
 
     // Header with scores
     const header = document.createElement("div");
@@ -35,20 +14,50 @@ export function gameView(router: Router) {
 
     const scoreBoard = document.createElement("div");
     scoreBoard.className = "score-board";
-    scoreBoard.innerHTML = `
-        <div class="player-info">
-            <span id="opponent-name">Opponent</span>
-            <span id="opponent-score">0</span>
-        </div>
-        <div class="vs">VS</div>
-        <div class="player-info">
-            <span id="player-name">Player</span>
-            <span id="player-score">0</span>
-        </div>
-    `;
-    header.appendChild(scoreBoard);
 
-    container.appendChild(header);
+    // Create opponent info
+    const opponentInfo = document.createElement("div");
+    opponentInfo.className = "player-info";
+
+    const opponentName = document.createElement("span");
+    opponentName.id = "opponent-name";
+    opponentName.textContent = "Opponent";
+
+    const opponentScore = document.createElement("span");
+    opponentScore.id = "opponent-score";
+    opponentScore.textContent = "0";
+
+    opponentInfo.appendChild(opponentName);
+    opponentInfo.appendChild(opponentScore);
+
+    // Create VS text
+    const vsText = document.createElement("div");
+    vsText.className = "vs";
+    vsText.textContent = "VS";
+
+    // Create player info
+    const playerInfo = document.createElement("div");
+    playerInfo.className = "player-info";
+
+    const playerName = document.createElement("span");
+    playerName.id = "player-name";
+    playerName.textContent = "Player";
+
+    const playerScore = document.createElement("span");
+    playerScore.id = "player-score";
+    playerScore.textContent = "0";
+
+    playerInfo.appendChild(playerName);
+    playerInfo.appendChild(playerScore);
+
+    // Assemble the scoreboard
+    scoreBoard.appendChild(opponentInfo);
+    scoreBoard.appendChild(vsText);
+    scoreBoard.appendChild(playerInfo);
+
+    header.appendChild(scoreBoard);
+    content.appendChild(header);
+
     // Game canvas container
     const gameContainer = document.createElement("div");
     gameContainer.className = "game-container";
@@ -59,117 +68,75 @@ export function gameView(router: Router) {
     canvas.height = 550;
     gameContainer.appendChild(canvas);
 
-	container.appendChild(gameContainer);
+    content.appendChild(gameContainer);
 
+    // Create the main game window
+    const gameWindow = createWindow({
+        title: "Pong Game",
+        width: "920px",
+        height: "620px",
+        content: content,
+        titleBarControls: {
+            close: true,
+            onClose: () => {
+                window.history.back();
+            }
+        }
+    });
 
-	// Result window
-	const resultWindow = document.createElement("div");
-	resultWindow.className = "window result-window hidden";
-	resultWindow.style.position = "absolute";
-	resultWindow.style.top = "50%";
-	resultWindow.style.left = "50%";
-	resultWindow.style.transform = "translate(-50%, -50%)";
+    root.appendChild(gameWindow);
 
-	// Create title bar for result window
-	const resultTitleBar = document.createElement("div");
-	resultTitleBar.className = "title-bar";
+    // Result window (separate window)
+    let resultWindow: HTMLElement | null = null;
 
-	// Create title text
-	const resultTitleText = document.createElement("div");
-	resultTitleText.className = "title-bar-text";
-	resultTitleText.id = "result-title";
+    const showGameResult = (isWin: boolean, finalScore: string) => {
+        // Create result content
+        const resultContent = document.createElement("div");
+        resultContent.className = "window-body";
 
-	// Create controls container
-	const resultControls = document.createElement("div");
-	resultControls.className = "title-bar-controls";
+        const resultScore = document.createElement("p");
+        resultScore.textContent = finalScore;
 
-	// Create close button
-	const closeResultBtn = document.createElement("button");
-	closeResultBtn.setAttribute("aria-label", "Close");
+        const backToMenuBtn = document.createElement("button");
+        backToMenuBtn.textContent = "Menu";
+        backToMenuBtn.className = "button";
+        backToMenuBtn.addEventListener("click", () => {
+            router.navigate("/desktop");
+        });
 
-	// Create window body
-	const resultBody = document.createElement("div");
-	resultBody.className = "window-body";
+        resultContent.appendChild(resultScore);
+        resultContent.appendChild(backToMenuBtn);
 
-	const resultScore = document.createElement("p");
-	resultScore.id = "result-score";
+        // Create result window
+        resultWindow = createWindow({
+            title: isWin ? "YOU WIN!" : "YOU LOSE!",
+            width: "300px",
+            height: "200px",
+            content: resultContent,
+            initialPosition: { x: 200, y: 150 },
+            titleBarControls: {
+                close: true,
+                onClose: () => {
+                    if (resultWindow) {
+                        resultWindow.remove();
+                        resultWindow = null;
+                    }
+                }
+            }
+        });
 
-	// back to menu button
-	const backToMenuBtn = document.createElement("button");
-	backToMenuBtn.textContent = "Menu";
-	backToMenuBtn.className = "button";
+        // Add high z-index with Tailwind
+        resultWindow.className += " z-50";
+        root.appendChild(resultWindow);
+    };
 
-	backToMenuBtn.addEventListener("click", () => {
-		router.navigate("/desktop")
-	});
+    const hideGameResult = () => {
+        if (resultWindow) {
+            resultWindow.remove();
+            resultWindow = null;
+        }
+    };
 
-	// Assemble the components
-	resultControls.appendChild(closeResultBtn);
-	resultTitleBar.append(resultTitleText, resultControls);
-	resultBody.append(resultScore,backToMenuBtn);
-	resultWindow.append(resultTitleBar, resultBody);
-
-	// Add to container
-	container.appendChild(resultWindow);
-
-	//gamewin dragable
-	let isDragging = false;
-	let offsetX = 0;
-	let offsetY = 0;
-
-	titlebar.addEventListener("mousedown", (e) => {
-		isDragging = true;
-		offsetX = e.clientX - container.offsetLeft;
-		offsetY = e.clientY - container.offsetTop;
-	});
-
-	document.addEventListener("mousemove", (e) => {
-		if (isDragging) {
-			container.style.left = `${e.clientX - offsetX}px`;
-			container.style.top = `${e.clientY - offsetY}px`;
-			container.style.transform = "none"; // remove any transform
-		}
-	});
-
-	document.addEventListener("mouseup", () => {
-		isDragging = false;
-	});
-
-
-
-	// result window draggable
-	let isResultDragging = false;
-	let resultOffsetX = 0;
-	let resultOffsetY = 0;
-
-
-
-	resultTitleBar.addEventListener("mousedown", (e) => {
-		isResultDragging = true;
-		resultOffsetX = e.clientX - resultWindow.offsetLeft;
-		resultOffsetY = e.clientY - resultWindow.offsetTop;
-	});
-
-	document.addEventListener("mousemove", (e) => {
-		if (isResultDragging) {
-			resultWindow.style.left = `${e.clientX - resultOffsetX}px`;
-			resultWindow.style.top = `${e.clientY - resultOffsetY}px`;
-			resultWindow.style.transform = "none"; // Remove center positioning
-		}
-	});
-
-	document.addEventListener("mouseup", () => {
-		isResultDragging = false;
-	});
-
-	// Close button functionality
-	closeResultBtn.addEventListener("click", () => {
-		resultWindow.classList.add("hidden");
-	});
-
-
-
-	root.appendChild(container);
     return {
         canvas,
         updateScore: (playerScore: number, opponentScore: number) => {
@@ -178,15 +145,9 @@ export function gameView(router: Router) {
         },
         updatePlayers: (playerName: string, opponentName: string) => {
             document.getElementById("player-name")!.textContent = playerName;
-        	   document.getElementById("opponent-name")!.textContent = opponentName;
+            document.getElementById("opponent-name")!.textContent = opponentName;
         },
-         showGameResult: (isWin: boolean, finalScore: string) => {
-        resultTitleText.textContent = isWin ? "YOU WIN!" : "YOU LOSE!";
-        resultScore.textContent = finalScore;
-        resultWindow.classList.remove("hidden");
-		},
-    	hideGameResult: () => {
-        	resultWindow.classList.add("hidden");
-    	}
+        showGameResult,
+        hideGameResult
     };
 }

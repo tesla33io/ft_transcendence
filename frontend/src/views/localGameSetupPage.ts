@@ -66,7 +66,7 @@ export function localGameSetupView(router: Router) {
             help: true,
 			close: true,
 			onClose: () => {
-    			router.navigate("/desktop")//make dependend on if in guest mode or not 
+    			window.history.back();
 			}
 		}
     });
