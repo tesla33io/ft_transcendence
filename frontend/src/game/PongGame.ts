@@ -8,11 +8,14 @@ export class PongGame {
     // Game state
     private gameId: string = '';
     private playerId: string = '';
-    private wsHandler?: WebSocketHandler;
+
     private renderer?: Renderer;
-    private gameState?: GameState;
 	private gameView?: ReturnType<typeof gameView>;
 	private router: Router
+
+    private gameMode: string = '';
+    private wsHandler?: WebSocketHandler;
+    private gameState?: GameState;
 
     constructor(
     	private readonly form: HTMLFormElement,
@@ -25,6 +28,20 @@ export class PongGame {
 		router: Router
     ) {
 		this.router = router;
+
+ /*       private readonly joinClassicBtn: HTMLButtonElement,
+        private readonly joinTournamentBtn: HTMLButtonElement,
+        private readonly loading: HTMLElement,
+        private readonly errorMessage: HTMLElement,
+        private readonly successMessage: HTMLElement,
+        private readonly canvas: HTMLCanvasElement
+    ) {
+
+        // Initialize game renderer
+        this.renderer = new Renderer(this.canvas);
+*/
+        // Set up event listeners
+
         this.initializeEventListeners();
     }
 
@@ -32,9 +49,11 @@ export class PongGame {
         this.wsHandler = new WebSocketHandler(
             playerId,
             // Game start callback
+
+            this.gameMode,
             (data: GameData) => this.handleGameStart(data),
             // Game update callback
-            (state: GameState) => this.handelGameState(state),
+            (state: GameState) => this.handleGameState(state),
 			// on Game end one player win
 			(result: GameResult) => this.handleGameResult(result),
             // Error callback
@@ -43,7 +62,21 @@ export class PongGame {
     }
 
     private initializeEventListeners(): void {
+
         // Form submission
+
+        // Button-specific event listeners
+        this.joinClassicBtn.addEventListener("click", (e: Event) => {
+            e.preventDefault();
+            this.handleJoinGame('classic');
+        });
+
+        this.joinTournamentBtn.addEventListener("click", (e: Event) => {
+            e.preventDefault();
+            this.handleJoinGame('tournament');
+        });
+
+
         // Input validation
         this.playerNameInput.addEventListener("input", () => {
             this.validatePlayerName();
@@ -70,7 +103,10 @@ export class PongGame {
         const name = this.playerNameInput.value.trim();
         const isValid = name.length >= 1 && name.length <= 20 && /^[a-zA-Z0-9_-]+$/.test(name);
 
-        this.joinBtn.disabled = !isValid;
+
+        this.joinClassicBtn.disabled = !isValid;
+        this.joinTournamentBtn.disabled = !isValid;
+
 
         if (name.length > 0 && !isValid) {
             this.showError('Name must be 2-20 characters, alphanumeric, underscore, or hyphen only');
@@ -81,14 +117,33 @@ export class PongGame {
         return isValid;
     }
 
+
 	/*entry point for starting game, Handels api call if succes->handelJoinSuccess function*/
-    public async joinGame(playerName:string): Promise<void> {
+//    public async joinGame(playerName:string): Promise<void> {
+//        try {
+//            this.setLoadingState(true);
+//            this.playerId = Math.random().toString().substring(2,7);
+//            console.log('PlayerID: ', this.playerId);
+
+//            const response = await fetch('/api/join-classic', {
+
+    private async handleJoinGame(gameMode = 'classic'): Promise<void> {
+        if (!this.validatePlayerName()) {
+            this.showError('Please enter a valid player name');
+            return;
+        }
+
+        const playerName = this.playerNameInput.value.trim();
+
         try {
+			this.form.style.display = 'none';
             this.setLoadingState(true);
             this.playerId = Math.random().toString().substring(2,7);
-            console.log('PlayerID: ', this.playerId);
+            console.log(`PlayerID: ${this.playerId} - ${gameMode}`);
+            this.gameMode = gameMode;
+            const apiEndpoint = gameMode === 'tournament' ? '/api/v1/game/join-tournament' : '/api/v1/game/join-classic'
 
-            const response = await fetch('/api/join-classic', {
+            const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -96,7 +151,8 @@ export class PongGame {
                 body: JSON.stringify({
                     playerName,
                     playerId: this.playerId,
-                    gameMode: 'classic',
+
+                    gameMode: gameMode,
                     timestamp: new Date().toISOString()
                 })
             });
@@ -104,26 +160,42 @@ export class PongGame {
             const data: GameData = await response.json();
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to join game');
-			}
+            }
+
             this.handleJoinSuccess(data);
+
         } catch (error) {
             console.error('Join game error:', error);
-            throw error;
+            this.showError(error instanceof Error ? error.message : 'Failed to join game. Please try again.');
+
         } finally {
             this.setLoadingState(false);
         }
     }
 
+
 	//manages game state transition and init websocket
+//    private handleJoinSuccess(data: GameData): void {
+//        console.log('Game data:', data);
+//        if (data.status === 'waiting') {
+//            this.showSuccess('Waiting for another player to join...');
+//            this.initializeWebSocket(data.playerId || this.playerId);
+
     private handleJoinSuccess(data: GameData): void {
         console.log('Game data:', data);
+
         if (data.status === 'waiting') {
             this.showSuccess('Waiting for another player to join...');
             this.initializeWebSocket(data.playerId || this.playerId);
+        } else if (data.status === 'connected') {
+            this.gameId = data.id || '';
+            this.showSuccess('Connecting to game...');
+
         }
     }
 
     private handleGameStart(data: GameData): void {
+
        console.log('Game start received, initializing view...');
     this.gameId = data.id || '';
 
@@ -188,11 +260,37 @@ export class PongGame {
     	 // render the final game state first
 		if (this.gameState) {
 			this.renderer?.render(this.gameState);
+/* FROM MAIN 
+        this.gameId = data.id || '';
+        this.showGameMatched(data);
+    }
+
+	private handleGameState(data: GameState): void{
+		this.gameState = data;
+        this.renderer.render(data);
+	}
+
+	private handleGameResult(data: GameResult): void{
+        console.log("Game result: ", data)
+        if (data.status && data.status === 'finished' &&
+            data.gameMode && data.gameMode === 'classic'){
+                this.wsHandler?.disconnect();
+                this.wsHandler = undefined;
+            }
+
+    	 // render the final game state first
+		if (this.gameState) {
+			this.renderer.render(this.gameState);
+>>>>>>> origin/main
+		*/
 		}
 
 		// then schedule the result screen on next frame
 		requestAnimationFrame(() => {
 			this.gameView.showGameResult(isWin, finalScore);
+
+			// this.renderer.showResultScreen(data, this.playerId);
+
 			//this.renderer.onPlayAgain = () => this.resetGame();
 		});
 }
@@ -233,7 +331,7 @@ export class PongGame {
     }, 1000); // shorter, cleaner transition
 
     console.log('Game started - both players ready');
-    }
+	}
 
     private setLoadingState(isLoading: boolean): void {
         this.loading.style.display = isLoading ? 'block' : 'none';

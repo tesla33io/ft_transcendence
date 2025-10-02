@@ -1,3 +1,4 @@
+
 export type RouteHandler = () => void;
 
 export class Router {
@@ -7,6 +8,7 @@ export class Router {
   constructor(rootId: string) {
     // find the DOM element that will hold views (e.g. <div id="app"></div>)
     const el = document.getElementById(rootId);
+
     if (!el) throw new Error(`Root element #${rootId} not found`);
     this.root = el;
 

@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket } from "ws"
-import {Game, GAME_WIDTH, GAME_HEIGHT} from "./types"
+import {Game, GAME_WIDTH, Tournament} from "./types"
 
 export class GameWebSocketServer{
 
@@ -14,7 +14,8 @@ export class GameWebSocketServer{
 	}
 
 	public onPaddleMove?: (gameId: string, playerId: string, paddleY: number) => void
-	public clientReady?: (gameId: string, playerId: string) => void
+	public clientReady?: (gameId: string, playerId: string, tournamentId?: string) => void
+	public clientDisconnect?: (playerId: string) => void
 
 	private setupWebsocketServer(){
 		this.wss.on('connection', (ws: WebSocket, req) =>{
@@ -23,7 +24,7 @@ export class GameWebSocketServer{
 
 			if (playerId) {
 				this.connectedClients.set(playerId, ws)
-				console.log(`Player ${playerId} connected via WebSocket`)
+				console.log(`Player ${playerId} connected via WebSocket [Port ${this.wss.options.port}]`)
 
 				ws.on('message', (data:string) =>{
 					try {
@@ -35,13 +36,11 @@ export class GameWebSocketServer{
 					}
 				})
 
-				/**
-				 * add check when the player disconnect and game already start
-				 * then make other player win
-				 */
 				ws.on('close', () => {
 					this.connectedClients.delete(playerId)
 					console.log(`Player ${playerId} disconnected`)
+					if (this.clientDisconnect)
+						this.clientDisconnect(playerId)
 				})
 			}
 		})
@@ -52,8 +51,12 @@ export class GameWebSocketServer{
 			this.onPaddleMove(message.gameId, playerId, message.deltaY)
 		}
 		else if (message.type === 'ready' && this.clientReady){
-			console.log(`Player ${message.playerId} is ready`)
-			this.clientReady(message.gameId, message.playerId)
+			console.log(`Player ${message.playerId} is ready, gameId ${message.gameId}, tournament ${message.tournamentId}`)
+			this.clientReady(message.gameId, message.playerId, message.tournamentId)
+		}
+		else if (message.type === 'disconnect' && this.clientDisconnect){
+			console.log(`handleClientmessage: Player ${playerId} explicitly disconnecting from game ${message.gameId}`)
+			this.clientDisconnect(playerId)
 		}
 	}
 
@@ -71,15 +74,19 @@ export class GameWebSocketServer{
 		const player2Ws = this.connectedClients.get(gameData.player2.id)
 
 		const messagePlayer1 = JSON.stringify({
+			type: 'classic_notification',
 			status: 'connected',
 			id: gameData.id,
+			gameMode: gameData.gameMode,
 			player1: gameData.player1,
 			player2: gameData.player2
 		})
 
 		const messagePlayer2 = JSON.stringify({
+			type: 'classic_notification',
 			status: 'connected',
 			id: gameData.id,
+			gameMode: gameData.gameMode,
 			player1: gameData.player2,
 			player2: gameData.player1
 		})
@@ -89,15 +96,56 @@ export class GameWebSocketServer{
 			player1Ws.send(messagePlayer1)
 			console.log(`Sent game_matched to player1: ${gameData.player1.id}`)
 		}
+		else
+			console.log(`Websocket for player1 ${gameData.player1.id} not found`)
+
 		if (player2Ws) {
 			player2Ws.send(messagePlayer2)
 			console.log(`Sent game_matched to player2: ${gameData.player2.id}`)
 		}
+		else
+			console.log(`Websocket for player2 ${gameData.player2.id} not found`)
+	}
+
+	public notifyTournamentReady(tournament: Tournament){
+		const message = JSON.stringify({
+			type: 'tournament_notification',
+			status: 'ready',
+			gameMode: 'tournament',
+			id: tournament.id,
+			bracket: tournament.bracket,
+			players: tournament.players,
+		})
+
+		for (let player of tournament.players){
+			const playerWs = this.connectedClients.get(player.id)
+			if (playerWs && player.ready === false){
+				playerWs.send(message)
+				console.log(`Sent tournament data to player: ${player.id}`)
+			}
+		}
+	}
+
+	public notifyTournamentComplete(tournament: Tournament){
+		if (!tournament.winner)
+			return
+		const gameResult = {
+			type: 'tournament_notification',
+			status: 'finished',
+			gameMode: 'tournament',
+			id: tournament.id,
+			bracket: tournament.bracket,
+			winner: tournament.winner.id
+		}
+
+		const msg = JSON.stringify(gameResult)
+		this.sendToPlayer(tournament.winner.id, msg)
 	}
 
 	public sendGameState(gameState: Game){
 
 		let player1State = JSON.stringify({
+			type: 'game_state',
 			status: 'playing',
 			player: {
 				id: gameState.player1.id,
@@ -107,7 +155,7 @@ export class GameWebSocketServer{
 				score: gameState.player1.score,
 				ready: gameState.player1.ready
 			},
-			opponet:{
+			opponent:{
 				id: gameState.player2.id,
 				name: gameState.player2.name,
 				Y:  gameState.player2.Y,
@@ -115,36 +163,45 @@ export class GameWebSocketServer{
 				score: gameState.player2.score,
 				ready: gameState.player2.ready
 			},
-			ball: gameState.ball
-		})
-
-		const player2State = JSON.stringify({
-			status: 'playing',
-			player:gameState.player2,
-			opponet: gameState.player1,
 			ball: {
 				x: GAME_WIDTH - gameState.ball.x,
 				y: gameState.ball.y,
 			}
+
+		})
+
+		const player2State = JSON.stringify({
+			type: 'game_state',
+			status: 'playing',
+			player:gameState.player2,
+			opponent: gameState.player1,
+			ball: gameState.ball
 		})
 
 		this.sendToPlayer(gameState.player1.id, player1State)
 		this.sendToPlayer(gameState.player2.id, player2State)
 	}
 
-	public winnerAnnouce(game: Game, winnerId: string){
-		let gameResult = {
+	public winnerAnnounce(game: Game, winnerId: string){
+		const gameResult = {
+			type: 'classic_notification',
 			status: 'finished',
+			gameMode: game.gameMode,
 			player1Score: game.player1.score,
 			player2Score: game.player2.score,
-			winner: game.player1.id,
+			winner: winnerId
 		}
-
-		if (game.player2.id === winnerId)
-			gameResult["winner"] = game.player2.id
 
 		const msg = JSON.stringify(gameResult)
 		this.sendToPlayer(game.player1.id, msg)
 		this.sendToPlayer(game.player2.id, msg)
+	}
+
+	public disconnectClient(playerId: string){
+		const ws = this.connectedClients.get(playerId)
+		if (ws && ws.readyState === WebSocket.OPEN){
+			ws.close(1000, 'Server initiated disconnect')
+		}
+		this.connectedClients.delete(playerId)
 	}
 }

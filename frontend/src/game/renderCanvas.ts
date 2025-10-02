@@ -1,9 +1,12 @@
+
 import { type GameState, type Ball, GAME_CONFIG } from '../types';
 
 export class Renderer {
     private ctx: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
+
 	private isInitialized: boolean = false;
+
 
 
     constructor(canvas: HTMLCanvasElement) {
@@ -53,8 +56,8 @@ export class Renderer {
 
     // Opponent paddle - centered around paddleY
     	this.ctx.fillRect(
-        gameState.opponet.X,
-        gameState.opponet.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
+        gameState.opponent.X,
+        gameState.opponent.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
         GAME_CONFIG.PADDLE.WIDTH,
         GAME_CONFIG.PADDLE.HEIGHT
     	);

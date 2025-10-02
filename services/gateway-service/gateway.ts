@@ -1,5 +1,8 @@
 import fastify from 'fastify'
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/main
 const server = fastify({logger: true})
 const PORT = 3000
 
@@ -8,24 +11,22 @@ server.register(require('@fastify/cors'),{
 	credentials: true
 })
 
-
-// server.addHook('preHandler', async (request, reply) => {
-// 	server.log.info(`Req: ${request.method} \n req: ${request.url}`)
-// })
-
-server.get('/test', async (req, reply) => {
-	return {message: 'test'}
-})
-
 server.register(require('@fastify/http-proxy'), {
 	upstream: 'http://game-service:5000',
-	prefix: '/api',
+	prefix: '/api/v1/game',
 	http2: false
 })
 
 server.register(require('@fastify/http-proxy'), {
-	upstream: 'http://game-service:5001',
-	prefix: '/ws',
+	upstream: 'http://game-service:5005',
+	prefix: '/ws/classic',
+	websocket: true,
+	http2: false
+})
+
+server.register(require('@fastify/http-proxy'), {
+	upstream: 'http://game-service:5006',
+	prefix: '/ws/tournament',
 	websocket: true,
 	http2: false
 })
@@ -33,7 +34,7 @@ server.register(require('@fastify/http-proxy'), {
 const start = async() =>{
 	try{
 		await server.listen({port:PORT, host:'0.0.0.0'})
-		console.log(`Gateway server start on port ${PORT}`)
+		console.log(`Gateway server started on port ${PORT}`)
 	}
 	catch (error){
 		server.log.error(error)

@@ -7,6 +7,8 @@ export default defineConfig({
     host: true,      // Listen on all network interfaces (important for Docker)
     strictPort: true, // Don't switch port if 5173 is taken
     open: false,      // Open browser automatically when true
+    allowedHosts: true,
+
     proxy: {
       // Proxy API requests to the gateway-service
       '/api': {

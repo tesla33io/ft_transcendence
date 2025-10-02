@@ -1,12 +1,13 @@
-export const GAME_HEIGHT = 550
-export const GAME_WIDTH = 900
-export const PADDLE_HEIGHT = 40
-export const PADDLE_WIDTH = 10
-export const FPS = 30
+export const GAME_HEIGHT = Number(process.env.GAME_HEIGHT || "550")
+export const GAME_WIDTH = Number(process.env.GAME_WIDTH || "900")
+export const PADDLE_HEIGHT = Number(process.env.PADDLE_HEIGHT || "50")
+export const PADDLE_WIDTH = Number(process.env.PADDLE_WIDTH || "10")
+export const FPS = Number(process.env.FPS || "60")
+export const PLAYER_OFFSET = Number(process.env.PLAYER_OFFSET || "20")
 
 export type GameMode = 'classic' | 'tournament'
 
-export const generateId = (): string => {
+export const generateGameId = (): string => {
 	return Math.random().toString(36).substring(2, 15);
 }
 
@@ -20,7 +21,7 @@ export enum GAME_STATE {
 	WAITING = 2,
 	READY = 3,
 	PLAYING = 4,
-	FINISED = 5
+	FINISHED = 5
 }
 
 export interface JoinGameRequest {
@@ -47,8 +48,8 @@ export interface Ball {
 
 export const generateBallPos = (): Ball => {
 	let ball = {
-		x: Math.floor(Math.random() * GAME_HEIGHT),
-		y: Math.floor(Math.random() * GAME_WIDTH),
+		x: Math.floor(Math.random() * GAME_WIDTH),
+		y: Math.floor(Math.random() * GAME_HEIGHT),
 		vx: Math.floor(Math.random() * 10),
 		vy: Math.floor(Math.random() * 10)
 	}
@@ -57,10 +58,28 @@ export const generateBallPos = (): Ball => {
 
 export interface Game {
 		id: string
-		status: 'waiting' | 'playing' | 'finished' | 'ready'
+		gameMode: string
+		status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
 		player1: Player
 		player2: Player
 		ball: Ball
+}
+
+export interface Tournament {
+	id: string
+	status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
+	players: Player[]
+	bracket: TournamentMatch[]
+	winner: Player | null
+}
+
+export interface TournamentMatch {
+	id: string
+	tournamentId: string
+	status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
+	player1: Player
+	player2: Player
+	winner: Player | null
 }
 
 

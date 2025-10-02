@@ -16,6 +16,14 @@ export const GAME_CONFIG = {
             Y: 2
         }
     },
+
+    SCORE: {//can i probaply delete 
+        FONT: '32px Arial',
+        OFFSET_Y: 50,
+        LEFT_X: 50,
+        RIGHT_X: 850
+    }
+
 };
 
 
@@ -29,6 +37,7 @@ export enum MessageType {
 // Interface for initial game setup data
 export interface GameData {
     id?: string;           // Unique game identifier
+    gameMode?: string;
     status: string;        // Game status (waiting/connected/playing)
     playerId?: string;     // Player's unique identifier
     message?: string;      // Optional status message
@@ -36,12 +45,29 @@ export interface GameData {
     player2?: Player;      // Second player data
 }
 
+
+export interface TournamentBracket {
+    id: string;
+    gameMode: string;
+    status: string;
+    players: Player[];
+    bracket: {
+        id: string;
+        tournamentId: string;
+        status: string;
+        player1: Player;
+        player2: Player;
+        winner: string | null;
+    } [];
+}
+
 // Interface for ongoing game state
 export interface GameState {
     status: string;        // Current game status
     gameid: string;        // Game identifier
     player: Player;        // Current player data
-    opponet: Player;       // Opponent data (keeping server's spelling)
+    opponent: Player;       // Opponent data (keeping server's spelling)
+
     ball: Ball;           // Ball position and velocity
 }
 
@@ -66,7 +92,8 @@ export interface Ball {
 // WebSocket message format
 export interface WebSocketMessage {
     type: string;         // Message type from MessageType enum
-    gameId: string;       // Game identifier
+    gameId?: string;       // Game identifier
+    tournamentId?: string;
     playerId: string | number;  // Player identifier
     deltaY?: number;      // Optional paddle movement amount
 }
@@ -74,8 +101,10 @@ export interface WebSocketMessage {
 
 export interface GameResult{
 	myPlayerid:  string;
+    status?: string,
+    gameMode?: string,
 	player1Score: number;
 	player2Score: number;
 	winner: string;
-	losser: number; //with typo change later to loser
+	loser: number;
 }

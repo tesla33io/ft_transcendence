@@ -1,18 +1,65 @@
+// src/pages/GamePage.ts
 import { PongGame } from "../game/PongGame";
-import {Router} from "../router"
-import { createWindow } from "./components";
 
-export function testingPage(router: Router) {
-    const root = document.getElementById("app")!;
-    root.innerHTML = "";
+export function testingPage() {
+	const root = document.getElementById("app")!;
 
-    // --- content for window body ---
-    const content = document.createElement("div");
+    root.innerHTML = ""; // clear existing content
+
+    // Container
+    const container = document.createElement("div");
+    container.className = "container";
+
+    // Logo
+    const logo = document.createElement("div");
+    logo.className = "logo";
+    logo.textContent = "PONG";
+    container.appendChild(logo);
+
+    // Subtitle
+    const subtitle = document.createElement("div");
+    subtitle.className = "subtitle";
+    subtitle.textContent = "ft_transcendence";
+    container.appendChild(subtitle);
+
+    // Game Canvas
+    const gameContainer = document.createElement("div");
+    gameContainer.id = "gameContainer";
+
+    const canvas = document.createElement("canvas");
+    canvas.id = "gameCanvas";
+    canvas.width = 900;
+    canvas.height = 550;
+    gameContainer.appendChild(canvas);
+    container.appendChild(gameContainer);
+
+    // Result screen
+    const resultScreen = document.createElement("div");
+    resultScreen.id = "result-screen";
+    resultScreen.className = "hidden";
+
+    const resultContent = document.createElement("div");
+    resultContent.className = "result-content";
+
+    const resultTitle = document.createElement("h1");
+    resultTitle.id = "result-title";
+    resultTitle.textContent = "You Win!";
+
+    const resultScore = document.createElement("p");
+    resultScore.id = "result-score";
+    resultScore.textContent = "0 : 0";
+
+    const playAgainBtn = document.createElement("button");
+    playAgainBtn.id = "play-again-btn";
+    playAgainBtn.textContent = "Play Again";
+
+    resultContent.append(resultTitle, resultScore, playAgainBtn);
+    resultScreen.appendChild(resultContent);
+    container.appendChild(resultScreen);
 
     // Form
     const form = document.createElement("form");
     form.id = "joinGameForm";
-    form.className = "joinGameForm";
 
     const formGroup = document.createElement("div");
     formGroup.className = "form-group";
@@ -30,91 +77,75 @@ export function testingPage(router: Router) {
     input.maxLength = 20;
     input.required = true;
 
-    const joinBtn = document.createElement("button");
-    joinBtn.type = "submit";
-    joinBtn.id = "joinBtn";
-    joinBtn.textContent = "Join Game";
-
     formGroup.append(label, input);
-    form.append(formGroup, joinBtn);
-    content.appendChild(form);
+    const buttonGroup = document.createElement("div");
+    buttonGroup.className = "button-group";
 
-    // Canvas
-    const canvas = document.createElement("canvas");
-    canvas.id = "gameCanvas";
-    canvas.width = 900;
-    canvas.height = 500;
-    content.appendChild(canvas);
+    const joinClassicBtn = document.createElement("button");
+    joinClassicBtn.type = "button";  // IMPORTANT: Not "submit"
+    joinClassicBtn.className = "join-btn";
+    joinClassicBtn.id = "joinClassicBtn";
+    joinClassicBtn.textContent = "Join Classic Game";
+
+    const joinTournamentBtn = document.createElement("button");
+    joinTournamentBtn.type = "button";  // Not "submit"
+    joinTournamentBtn.className = "join-btn";
+    joinTournamentBtn.id = "joinTournamentBtn";
+    joinTournamentBtn.textContent = "Join Tournament";
+
+    buttonGroup.appendChild(joinClassicBtn);
+    buttonGroup.appendChild(joinTournamentBtn);
+
+    form.append(formGroup, buttonGroup);
+    container.appendChild(form);
+
 
     // Loading
     const loading = document.createElement("div");
     loading.id = "loading";
     loading.className = "loading";
-    loading.textContent = "Loading...";
-    loading.style.display = "none";
-    content.appendChild(loading);
+
+    const spinner = document.createElement("div");
+    spinner.className = "spinner";
+
+    const loadingText = document.createElement("p");
+    loadingText.textContent = "Joining game...";
+
+    loading.append(spinner, loadingText);
+    container.appendChild(loading);
 
     // Error and success messages
     const errorMessage = document.createElement("div");
     errorMessage.id = "errorMessage";
     errorMessage.className = "error-message";
-    errorMessage.style.display = "none";
 
     const successMessage = document.createElement("div");
     successMessage.id = "successMessage";
     successMessage.className = "success-message";
-    successMessage.style.display = "none";
 
-    content.append(errorMessage, successMessage);
+    container.append(errorMessage, successMessage);
 
-    // --- create window ---
-    const testWindow = createWindow({
-        title: "Pong Game",
-        width: "600px",
-        content: content,
-        titleBarControls: {
-            close: true,
-            onClose: () => {
-                router.navigate("/desktop");
-            }
-        }
-    });
+    // Dev log
+    const devLog = document.createElement("div");
+    devLog.id = "devLogOutput";
+    devLog.setAttribute("role", "log");
+    devLog.setAttribute("aria-live", "polite");
+    container.appendChild(devLog);
 
-    root.append(testWindow);
+    // Append everything to root
+    root.appendChild(container);
 
-    // --- form submit handler ---
-    form.addEventListener("submit", async (e: Event) => {
-        e.preventDefault();
-        const playerName = input.value.trim();
-        if (!playerName) return;
-
-        joinBtn.disabled = true;
-        joinBtn.textContent = "Waiting for opponent...";
-        loading.style.display = "block";
-        errorMessage.style.display = "none";
-        successMessage.style.display = "none";
-
-        try {
-            const game = new PongGame(
-                form,
-                input,
-                joinBtn,
-                loading,
-                errorMessage,
-                successMessage,
-                canvas,
-                router
-            );
-            await game.joinGame(playerName);
-        } catch (error) {
-            console.error("Failed to join game:", error);
-            errorMessage.textContent = "Failed to join game";
-            errorMessage.style.display = "block";
-
-            // reset button
-            joinBtn.disabled = false;
-            joinBtn.textContent = "Join Game";
-            loading.style.display = "none";
-        }
-    });
+     new PongGame(
+        form,
+        input,
+        joinClassicBtn,
+        joinTournamentBtn,
+        loading,
+        errorMessage,
+        successMessage,
+        canvas
+    );
 }
+
+
+

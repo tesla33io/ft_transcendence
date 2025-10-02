@@ -1,3 +1,4 @@
+
 import './styles/style.css'
 import {Router} from './router'
 import {testingPage} from './views/testing_page'
@@ -18,7 +19,6 @@ import {localGameSetupView} from './views/localGameSetupPage'
 
 document.addEventListener("DOMContentLoaded", () => {
 	const router = new Router("app");
-
 	router.register("/", () => loginView(router));
 	router.register("/test", () => testingPage(router));
 	router.register("/game", () => gameView(router));
@@ -33,6 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	router.register("/desktop", () => desktopView(router));
 	router.register("/localgame", () => localGameSetupView(router));
 	router.register("/localgame/play", () => localGameView(router));
+
+
 
 	router.navigate(location.pathname || "/");
 });

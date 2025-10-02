@@ -141,3 +141,4 @@ vite.config.ts.timestamp-*
 #ignore
 .dockerignore
 .gitignore
+.vite
