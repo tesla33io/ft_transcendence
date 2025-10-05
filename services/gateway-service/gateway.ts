@@ -1,8 +1,5 @@
 import fastify from 'fastify'
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
 const server = fastify({logger: true})
 const PORT = 3000
 

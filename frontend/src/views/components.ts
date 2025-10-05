@@ -458,3 +458,5 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
   // Return the taskbar and task area for dynamic updates
   return { taskbar, taskArea };
 }
+
+

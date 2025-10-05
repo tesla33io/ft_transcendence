@@ -82,7 +82,7 @@ export function desktopView(router: Router) {
           router.navigate("/login");   // add some disconect handelinh here
           break;
         case "Remotepong":
-          router.navigate("/test");
+          router.navigate("/og");
           break;
 		case "friends":
           router.navigate("/friends");

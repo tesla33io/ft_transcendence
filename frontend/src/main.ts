@@ -14,13 +14,14 @@ import {guestDesktopView} from './views/guestDesktop'
 import {desktopView} from './views/desktopPage'
 import {localGameView} from './views/localGamePage'
 import {localGameSetupView} from './views/localGameSetupPage'
-
+import {remoteGameSetupView} from './views/remoteGameSetup'
 
 
 document.addEventListener("DOMContentLoaded", () => {
 	const router = new Router("app");
 	router.register("/", () => loginView(router));
-	router.register("/test", () => testingPage(router));
+	router.register("/og", () => remoteGameSetupView(router));
+	router.register("/test", () => testingPage());
 	router.register("/game", () => gameView(router));
 	router.register("/friends",() => friendsView(router));
 	router.register("/friendsProfile", () => friendsProfileView(router));
