@@ -1,105 +1,117 @@
-import { Router } from "../router";
-import { createWindow } from "./components";
+import { Router } from '../router';
+import { createWindow } from './components';
+import { PongGame } from '../game/PongGame';
 
 export function tournamentView(router: Router) {
-  const root = document.getElementById("app")!;
-  root.innerHTML = "";
+	const root = document.getElementById("app")!;
+	root.innerHTML = "";
 
-  // Create the main content container
-  const content = document.createElement("div");
-  content.style.textAlign = "center"; // Center-align content for better layout
+	// --- Window Content ---
+	const content = document.createElement("div");
 
-  // --- Join Tournament Button ---
-  
-  const joinTournamentBtn = document.createElement("button");
-  joinTournamentBtn.id = "joinTournamentBtn";
-  joinTournamentBtn.textContent = "Join Tournament";
-  joinTournamentBtn.style.marginBottom = "20px"; // Add spacing below the button
-  joinTournamentBtn.style.marginTop = "20px"
-  content.appendChild(joinTournamentBtn);
-  
- 
-  // --- Waiting for Players Section ---
-  const waitingText = document.createElement("div");
-  waitingText.id = "waitingText";
-  waitingText.textContent = "Waiting for players...";
-  waitingText.style.display = "none"; // Initially hidden
-  waitingText.style.marginTop = "20px";
-  waitingText.style.marginBottom = "15px"
-  content.appendChild(waitingText);
+	//maybe add some statistics winn streak elo gain ? 
 
-  // --- Progress Indicator ---
-  const progressIndicator = document.createElement("div");
-  progressIndicator.className = "progress-indicator segmented ";
-  progressIndicator.style.display = "none"; // Initially hidden
+	// Form
+	const form = document.createElement("form");
+	form.id = "joinOnlineGameForm";
+	form.className = "join-game-form";
 
-  const progressBar = document.createElement("span");
-  progressBar.className = "progress-indicator-bar";
-  progressBar.style.width = "0%"; // Start at 0%
-  progressIndicator.appendChild(progressBar);
+	const label = document.createElement("label");
+	label.htmlFor = "playerName";
+	label.textContent = "Player Name";
 
-  content.appendChild(progressIndicator);
+	const input = document.createElement("input");
+	input.type = "text";
+	input.id = "playerName";
+	input.name = "playerName";
+	input.placeholder = "Enter your name ";
+	input.minLength = 1;
+	input.maxLength = 20;
+	input.required = true;
 
-  // --- Join Tournament Button Click Event ---
-  joinTournamentBtn.addEventListener("click", async () => {
-    joinTournamentBtn.disabled = true; // Disable the button to prevent multiple clicks
-    waitingText.style.display = "block"; // Show the waiting text
-    progressIndicator.style.display = "block"; // Show the progress bar
+	const joinClassicBtn = document.createElement("button");
+	joinClassicBtn.type = "submit";
+	joinClassicBtn.id = "joinBtn";
+	joinClassicBtn.textContent = "Join Online Game";
 
-    try {
-      // Simulate API call to join the tournament
-      const playersConnected = await joinTournamentAPI();
+	form.append(label, input, joinClassicBtn);
+	content.appendChild(form);
 
-      // Update the progress bar as players join
-      updateProgressBar(playersConnected, progressBar);//implement so logic in websocket handler to call these functions
+	// Canvas (hidden until game starts)
+	const canvas = document.createElement("canvas");
+	canvas.id = "gameCanvas";
+	canvas.width = 900;
+	canvas.height = 500;
+	canvas.style.display = "none";
+	content.appendChild(canvas);
 
-      // Navigate to the tournament room once all players are connected
-      if (playersConnected === 4) {
-    		router.navigate("/tournament/id=1");
-      }
-    } catch (error) {
-      console.error("Error joining tournament:", error);
-      joinTournamentBtn.disabled = false; // Re-enable the button on error
-    }
-  });
+	// Loading, error, success messages
+	const loading = document.createElement("div");
+	loading.id = "loading";
+	loading.className = "loading";
+	loading.textContent = "Loading...";
+	loading.style.display = "none";
+	content.appendChild(loading);
 
-  // --- Create the Window ---
-  const simpleWindow = createWindow({
-    title: "Tournament Room",
-    width: "400px",
-    content: content,
-    titleBarControls: {
-      close: true,
-      onClose: () => {
-        router.navigate("/desktop");
-      },
-    },
-  });
+	const errorMessage = document.createElement("div");
+	errorMessage.id = "errorMessage";
+	errorMessage.className = "error-message";
+	errorMessage.style.display = "none";
+	content.appendChild(errorMessage);
 
-  joinTournamentBtn.addEventListener("click", () => {
-	//send join que api call 
-	console.log("join Tournament");
-  });
-  root.append(simpleWindow);
-}
+	const successMessage = document.createElement("div");
+	successMessage.id = "successMessage";
+	successMessage.className = "success-message";
+	successMessage.style.display = "none";
+	content.appendChild(successMessage);
 
+	
+	const setupWindow = createWindow({
+		title: "Tournament Setup",
+		width: "400px",
+		content: content,
+		titleBarControls: {
+			help: true,
+			close: true,
+			onClose: () => {
+				router.navigate("/desktop");
+			}
+		}
+	});
 
+	root.appendChild(setupWindow);
 
-// Simulate API call to join the tournament
-async function joinTournamentAPI(): Promise<number> {
-  let playersConnected = 1;
+	// --- Form Submit Handler ---
+	form.addEventListener("submit", async (e: Event) => {
+		e.preventDefault();
+		const playerName = input.value.trim();
+		if (!playerName) return;
 
-  // Simulate waiting for players to join
-  while (playersConnected < 4) {
-    await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 2 seconds
-    playersConnected++;
-  }
+		joinClassicBtn.disabled = true;
+		joinClassicBtn.textContent = "Waiting for opponent...";
+		loading.style.display = "block";
+		errorMessage.style.display = "none";
+		successMessage.style.display = "none";
 
-  return playersConnected;
-}
+		// Generate a random playerId for testing later switch with the values from backend
+		const playerId = Math.random().toString().substring(2, 7);
 
-// Update the progress bar based on the number of players connected
-function updateProgressBar(playersConnected: number, progressBar: HTMLElement) {
-  const progressPercentage = (playersConnected / 4) * 100;
-  progressBar.style.width = `${progressPercentage}%`;
+		try {
+			const game = new PongGame(
+				playerName,
+				playerId,
+				'tournament',
+				canvas,
+				router
+			);
+			await game.joinGame(); // You can stub this for testing
+		} catch (error) {
+			console.error("Failed to join game:", error);
+			errorMessage.textContent = "Failed to join game";
+			errorMessage.style.display = "block";
+			joinClassicBtn.disabled = false;
+			joinClassicBtn.textContent = "Join Online Game";
+			loading.style.display = "none";
+		}
+	});
 }

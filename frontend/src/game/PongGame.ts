@@ -80,7 +80,7 @@ export class PongGame {
 
 //            const response = await fetch('/api/join-classic', {
 
-    private async joinGame(): Promise<void> {
+     async joinGame(): Promise<void> {
         try {
             console.log(`PlayerID: ${this.playerId} - ${this.gameMode}`);
             const apiEndpoint = this.gameMode === 'tournament' ? '/api/v1/game/join-tournament' : '/api/v1/game/join-classic'

@@ -9,6 +9,8 @@ export function remoteGameSetupView(router: Router) {
     // --- Window Content ---
     const content = document.createElement("div");
 
+	//maybe add some statistics winn streak elo gain ? 
+
     // Form
     const form = document.createElement("form");
     form.id = "joinOnlineGameForm";
@@ -102,7 +104,7 @@ export function remoteGameSetupView(router: Router) {
                 canvas,
                 router
             );
-            await game.joinGame(playerName); // You can stub this for testing
+            await game.joinGame(); // You can stub this for testing
         } catch (error) {
             console.error("Failed to join game:", error);
             errorMessage.textContent = "Failed to join game";
