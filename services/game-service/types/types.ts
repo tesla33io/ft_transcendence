@@ -27,7 +27,8 @@ export enum GAME_STATE {
 export interface JoinGameRequest {
 	playerName: string,
 	playerId: string,
-	gameMode?: GameMode
+	gameMode?: GameMode,
+	aiBotMode?: boolean
 }
 
 export interface Player {
@@ -54,6 +55,18 @@ export const generateBallPos = (): Ball => {
 		vy: Math.floor(Math.random() * 10)
 	}
 	return ball
+}
+
+export const generateDefaultPlayer = (playerName: string, playerId: string): Player => {
+	let player = {
+		id: playerId,
+		name: playerName,
+		score: 0,
+		Y: 0,
+		X: 0,
+		ready: false
+	}
+	return player
 }
 
 export interface Game {

@@ -3,14 +3,14 @@ package app.AIbot;
 import java.util.HashMap;
 
 public class AIbotManager {
-	HashMap<String, String> instances = new HashMap<>();
+	HashMap<String, String> instance = new HashMap<>();
 
 	public String getIntance(String botId){
-		if (instances.containsKey(botId))
-			return instances.get(botId);
+		if (instance.containsKey(botId))
+			return instance.get(botId);
 		else {
-			String bot = "testBOT";
-			instances.put(botId, bot);
+			String bot = AIbotBuilder.createBot("easy");
+			instance.put(botId, bot);
 			return bot;
 		}
 	}

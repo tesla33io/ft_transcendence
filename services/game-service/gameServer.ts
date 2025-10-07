@@ -30,6 +30,11 @@ server.post("/join-tournament", async (req, reply) => {
 	return result
 })
 
+server.post("/bot-classic", async(req, reply) => {
+	// const result = await
+	return {message: 'WIP'}
+})
+
 server.get('/join-classic', async (req, reply) => {
 	return { message: 'Use POST method to join game' }
 })
