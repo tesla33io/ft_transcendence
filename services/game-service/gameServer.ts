@@ -35,19 +35,6 @@ server.post("/bot-classic", async(req, reply) => {
 	return result
 })
 
-server.get('/join-classic', async (req, reply) => {
-	return { message: 'Use POST method to join game' }
-})
-
-server.get("/get-gameMode-port", async (req, reply) =>{
-	const url = new URL(req.url!, 'http://game-service')
-	const gameMode = url.searchParams.get('gameMode')
-	if (gameMode !== 'classic' && gameMode !== 'tournament')
-		return {status: 404, port: undefined}
-	const result = await gameServiceManager.getGameModePort(gameMode as GameMode)
-	return {status: 200, port: result }
-})
-
 const start = async () => {
 	try {
 		await server.listen({ port: PORT, host: '0.0.0.0' })
