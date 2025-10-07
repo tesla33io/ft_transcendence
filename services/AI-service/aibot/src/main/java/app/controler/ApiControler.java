@@ -14,7 +14,7 @@ public class ApiControler {
 		return "Connection reached";
 	}
 
-	@GetMapping("/classic")
+	@GetMapping("/classic") //the request JSON will send the 
 	public String Aibot (@RequestBody String rawJson){
 		return "Bot connection reached";
 	}
