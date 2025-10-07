@@ -8,7 +8,6 @@ import usergreen from './images/users_green.png'
 import network from './images/network.png'
 import spider from './images/spider.png'
 import phone from './images/phone.png'
-import mail from './images/mail.png'
 import gear from './images/gears.png'
 
 // Define the type for icons
@@ -46,7 +45,6 @@ export function desktopView(router: Router) {
 	  { id: "tournament", title: "Tornament.exe", img: network, x: 0, y: 0 }, 
 	  { id: "profile", title: "Profile.exe", img: usergreen, x: 0, y: 0 },
     { id: "friends", title: "friends.exe", img: phone, x: 0, y: 0 },
-    { id: "chat", title: "chat.exe", img: mail, x: 0, y: 0 },
     { id: "settings", title: "settings.exe", img: gear, x: 0, y: 0 },
     { id: "logout", title: "logout.exe", img: padlock  , x: 0, y: 0 }
   
@@ -95,9 +93,6 @@ export function desktopView(router: Router) {
           break;
     case "settings":
           router.navigate("/setings");
-          break;
-    	case "chat":
-          router.navigate("/tournament");
           break;
       }
       

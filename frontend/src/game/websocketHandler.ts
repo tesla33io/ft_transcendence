@@ -5,6 +5,8 @@ export class WebSocketHandler {
     private gameId: string = '';
 
 	private isReady: boolean = false;
+	private tournamentId: string = '';
+
 
     constructor(
         private playerId: string,
@@ -12,7 +14,8 @@ export class WebSocketHandler {
         private onGameStart: (data: GameData) => void,
         private onGameUpdate: (state: GameState) => void,
 		private onGameResult: (result: GameResult) => void,
-        private onError: (message: string) => void
+        private onError: (message: string) => void,
+		private onTournamentNotification?: (data: any) => void
     ) {
         this.connect();
     }
@@ -73,6 +76,24 @@ export class WebSocketHandler {
         this.isReady = true;
     }
 
+	public setTournamentId(id: string) {
+    this.tournamentId = id;
+	}
+
+    public sendTournamentReady(): void {
+        console.log('send Tournament ready message with tournament id',this.tournamentId, 'and player id', this.playerId);
+		if (!this.tournamentId) {
+            console.error("No tournamentId set for ready message!");
+            return;
+        }
+        const readyMsg = {
+            type: "ready",
+            tournamentId: this.tournamentId,
+            playerId: this.playerId
+        };
+        this.sendMessage(readyMsg);
+    }
+
     private handleInitialGameState(data: GameData): void {
         //console.log('=== INITIAL GAME STATE ===');
 		console.log(data)
@@ -113,15 +134,7 @@ export class WebSocketHandler {
 
     private handleTournamentNotification(data: any){
         //present the bracket data
-        this.tournamentId = data.id
 
-        console.log(`client sent ready to tournament ${this.tournamentId}`)
-        const readyMsg: WebSocketMessage = {
-            type: MessageType.PLAYER_READY,
-            tournamentId: this.tournamentId,
-            playerId: this.playerId
-        };
-        setTimeout(() => this.sendMessage(readyMsg), 5000);
     }
 
     private handleWebSocketMessage(rawData: any): void {
@@ -139,8 +152,11 @@ export class WebSocketHandler {
             if (data && data.type === 'classic_notification')
                 console.log("Data from server: ", data)
             if (this.isTournamentNotification(data)){
-                console.log("tournament Notification", data)
-                this.handleTournamentNotification(data)
+                console.log("tournament Notification", data);
+                if (this.onTournamentNotification) {
+                    this.onTournamentNotification(data);
+                }
+                this.handleTournamentNotification(data);
             }
             else if (this.isGameState(data)) {
                 this.handleInitialGameState(data);

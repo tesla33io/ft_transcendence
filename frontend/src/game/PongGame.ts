@@ -3,6 +3,8 @@ import { Renderer } from "./renderCanvas";
 import { WebSocketHandler } from "./websocketHandler";
 import { gameView} from "../views/gamePage";
 import { Router} from "../router";
+import { tournamentRoomView } from "../views/tournamentRoomPage";
+
 
 export class PongGame {
     private playerName: string;
@@ -46,8 +48,12 @@ export class PongGame {
             (state: GameState) => this.handleGameUpdate(state),
 			// on Game end one player win
 			(result: GameResult) => this.handleGameResult(result),
-            // Error callback
-            (message: string) => this.showError(message)
+
+			(message: string) => this.showError(message),
+
+			(tournamentData:any) => this.handleTournamentNotification(tournamentData)
+
+
         );
     }
 
@@ -196,8 +202,11 @@ export class PongGame {
 	private handleGameResult(data: GameResult): void{
 		const isWin = data.winner === this.playerId;
         const finalScore = `${data.player1Score} - ${data.player2Score}`;
-		this.wsHandler?.disconnect();
-		 this.wsHandler = undefined;
+		if(this.gameMode != 'tournament'){
+			this.wsHandler?.disconnect();
+			this.wsHandler = undefined;
+		}
+		
 
     	 // render the final game state first
 		if (this.gameState) {
@@ -217,6 +226,23 @@ export class PongGame {
 		console.log('game matched');
 	}
 
+	private handleTournamentNotification(data: any): void {
+		console.log('Tournament notification received, initializing tournament room...');
+		// Save tournament id if needed
+		this.gameId = data.id || '';
+
+		if (this.wsHandler) {
+       		this.wsHandler.setTournamentId(data.id);
+    	}
+
+		// Navigate to the tournament room page
+		this.router.navigate("/tournamentroom");
+
+		// Wait for navigation to complete, then render the room
+		requestAnimationFrame(() => {
+			tournamentRoomView(this.router, data, this.wsHandler!);
+		});
+	}
 
 
     private startGame(){//gameData: GameData): void {
