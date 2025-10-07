@@ -1,5 +1,4 @@
 package app.AIbot.level;
-package app.AIbot;
 
 import app.AIbot.AIbot;
 import app.AIbot.model.BotAction;
