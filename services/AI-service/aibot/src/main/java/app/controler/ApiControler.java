@@ -6,8 +6,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ApiControler {
 
-	@GetMapping("/test")
+	@GetMapping("/api/v1/aibot/test")
 	public String test(){
-		return "Test";
+		return "Connection reached";
+	}
+
+	@GetMapping("/api/v1/aibot/classic")
+	public String Aibot (){
+		return "Bot connection reached";
 	}
 }
