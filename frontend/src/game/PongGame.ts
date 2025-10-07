@@ -11,7 +11,6 @@ export class PongGame {
     private playerId: string;
     private gameMode: string;
     private gameId: string = '';
-	private canvas: HTMLCanvasElement;
 	private router: Router;
 	// External modules
     private renderer?: Renderer;
@@ -23,14 +22,12 @@ export class PongGame {
     	playerName: string,
 		playerId: string,
 		gameMode: string, //classic or Tournament
-        canvas: HTMLCanvasElement,
 		router: Router
 		
     ) {
 		this.playerName = playerName;
 		this.playerId = playerId;
 		this.gameMode = gameMode;
-		this.canvas = canvas;
 		this.router = router;
 		this.gameId = '';
 
@@ -142,18 +139,24 @@ export class PongGame {
     }
 
     private handleGameStart(data: GameData): void {
-
-       console.log('Game start received, initializing view...');
-    this.gameId = data.id || '';
-
-    // First navigate to game view
-    this.router.navigate("/game");
-
-    // Wait for navigation to complete
-    requestAnimationFrame(() => {
-        // 3. Create game view
+		console.log('Game start received, initializing view...');
+		this.gameId = data.id || '';
+		// Set the game ID in WebSocket handler and reset ready flag
+		if (this.wsHandler) {
+			this.wsHandler.setGameId(this.gameId);  // <-- Add this!
+		}
+		// First navigate to game view
+		this.router.navigate("/game");
+		// Wait for navigation to complete
+		requestAnimationFrame(() => {
+			// Remove old canvas if it exists
+        const oldCanvas = document.getElementById("gameCanvas");
+        if (oldCanvas) {
+			console.log("Removing old canvas:", oldCanvas);
+			oldCanvas.remove();
+		}
+		// 3. Create game view
         this.gameView = gameView(this.router);
-
         // Verify view creation
         if (!this.gameView?.canvas) {
             console.error('Failed to create game view');
@@ -170,9 +173,9 @@ export class PongGame {
 
             // Send ready message only after everything is set up
             if (this.renderer.isReady() && this.wsHandler) {
-                console.log('View ready, sending ready message');
-                this.wsHandler.sendReadyMessage();
-				this.canvas.style.display = "block";
+                console.log('View Render ready, sending ready message');
+                this.wsHandler.sendReadyMessage();  // <-- This now uses the correct game ID
+				this.gameView.canvas.style.display = "block";
             }
         } catch (error) {
             console.error('Failed to initialize renderer:', error);
@@ -181,11 +184,7 @@ export class PongGame {
     }
 
 	private handleGameUpdate(data: GameState): void{
-		 // If this is the first game state update (both players ready)
-		if (data.status === 'playing' && !this.gameState) {
-			// Start the actual game
-			this.startGame();
-		}
+		//console.log("Game update received:", data);
 		this.gameState = data;
 		this.gameView?.updatePlayers(
 			data.player.name,
@@ -215,7 +214,13 @@ export class PongGame {
 
 		// then schedule the result screen on next frame
 		requestAnimationFrame(() => {
-			this.gameView.showGameResult(isWin, finalScore);
+			this.gameView?.showGameResult(isWin, finalScore);
+
+			if (this.gameMode === 'tournament') {
+				this.gameView = undefined;
+				this.renderer = undefined;
+				this.gameState = undefined;
+			}
 		});
 }
 
@@ -245,23 +250,13 @@ export class PongGame {
 	}
 
 
-    private startGame(){//gameData: GameData): void {
-    // Fade out the game info with animation
-    //his.successMessage.classList.add('fade-out');
-
-    setTimeout(() => {
-        //this.successMessage.style.display = 'none';
-        //this.successMessage.classList.remove('fade-out');
-        this.canvas.style.display = 'block';
-    }, 1000); // shorter, cleaner transition
-
-    console.log('Game started - both players ready');
-	}
-
-
     // Cleanup method
-    public dispose(): void {
-        this.wsHandler?.disconnect();
-        document.removeEventListener("keydown", this.handleKeyPress.bind(this));
-    }
+   public dispose(): void {
+    // Only disconnect if not in tournament mode
+    if (this.gameMode !== "tournament") {
+			this.wsHandler?.disconnect();
+			this.wsHandler = undefined;
+		}
+		document.removeEventListener("keydown", this.handleKeyPress.bind(this));
+	}
 }

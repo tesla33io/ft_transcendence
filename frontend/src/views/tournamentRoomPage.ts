@@ -17,59 +17,99 @@ export function tournamentRoomView(
   const semifinals = document.createElement("div");
   semifinals.className = "flex flex-col items-center";
   semifinals.innerHTML = `<h4 class="text-sm font-bold mb-2">Semifinals</h4>`;
+  
+  const match0 = tournamentData.bracket[0];
+  const match1 = tournamentData.bracket[1];
+  
   semifinals.appendChild(createMatch(
-    tournamentData.bracket[0]?.player1?.name ?? null,
-    tournamentData.bracket[0]?.player2?.name ?? null,
-    "joined", "joined"
+    match0?.player1?.name ?? null,
+    match0?.player2?.name ?? null,
+    match0?.winner?.id === match0?.player1?.id ? "win" : match0?.status === "finished" ? "loss" : "joined",
+    match0?.winner?.id === match0?.player2?.id ? "win" : match0?.status === "finished" ? "loss" : "joined"
   ));
   semifinals.appendChild(createMatch(
-    tournamentData.bracket[1]?.player1?.name ?? null,
-    tournamentData.bracket[1]?.player2?.name ?? null,
-    "joined", "joined"
+    match1?.player1?.name ?? null,
+    match1?.player2?.name ?? null,
+    match1?.winner?.id === match1?.player1?.id ? "win" : match1?.status === "finished" ? "loss" : "joined",
+    match1?.winner?.id === match1?.player2?.id ? "win" : match1?.status === "finished" ? "loss" : "joined"
   ));
 
   // Final
   const final = document.createElement("div");
   final.className = "flex flex-col items-center justify-center self-center";
   final.innerHTML = `<h4 class="text-sm font-bold mb-2">Final</h4>`;
+  
+  const finalMatch = tournamentData.bracket[2];
   final.appendChild(createMatch(
-    tournamentData.final?.player1?.name ?? null,
-    tournamentData.final?.player2?.name ?? null,
-    "placeholder", "placeholder"
+    finalMatch?.player1?.name ?? null,
+    finalMatch?.player2?.name ?? null,
+    finalMatch?.winner?.id === finalMatch?.player1?.id ? "win" : finalMatch?.status === "finished" ? "loss" : "placeholder",
+    finalMatch?.winner?.id === finalMatch?.player2?.id ? "win" : finalMatch?.status === "finished" ? "loss" : "placeholder"
   ));
 
-  // Champion
+  // Champion - Find and display the winner's name
   const champion = document.createElement("div");
   champion.className = "flex flex-col items-center justify-center self-center";
+  
+  let championName = "Winner of Final";
+  let isFinished = false;
+  
+  if (tournamentData.status === "finished" && tournamentData.winner) {
+    isFinished = true;
+    // Find the winner's name from the bracket
+    const winnerPlayer = tournamentData.bracket
+      .flatMap((match: any) => [match.player1, match.player2])
+      .find((player: any) => player?.id === tournamentData.winner);
+    championName = winnerPlayer?.name || `Player ${tournamentData.winner}`;
+  }
+  
   champion.innerHTML = `<h4 class="text-sm font-bold mb-2">Champion</h4>
-    <div class="winner-slot border border-gray-400 p-2 w-32 text-center text-gray-500">
-      ${tournamentData.champion?.name ?? "Winner of Final"}
+    <div class="winner-slot border border-gray-400 p-2 w-32 text-center ${
+      isFinished ? " font-bold text-black" : "text-gray-500"
+    }">
+      ${championName}
     </div>`;
 
   content.appendChild(semifinals);
   content.appendChild(final);
   content.appendChild(champion);
 
-  // Ready Button
-  const readyButton = document.createElement("button");
-  readyButton.textContent = "Ready";
-  readyButton.className = "button";
-  readyButton.style.position = "absolute";
-  readyButton.style.bottom = "20px";
-  readyButton.style.right = "20px";
-  readyButton.style.padding = "8px 16px";
+  // Ready Button or Back Button
+  if (tournamentData.status !== "finished") {
+    const readyButton = document.createElement("button");
+    readyButton.textContent = "Ready";
+    readyButton.className = "button";
+    readyButton.style.position = "absolute";
+    readyButton.style.bottom = "20px";
+    readyButton.style.right = "20px";
+    readyButton.style.padding = "8px 16px";
 
-  readyButton.addEventListener("click", () => {
-    wsHandler.sendTournamentReady();
-    readyButton.disabled = true;
-    readyButton.textContent = "Ready!";
-    readyButton.style.color = "#010081";
-  });
+    readyButton.addEventListener("click", () => {
+      wsHandler.sendTournamentReady();
+      readyButton.disabled = true;
+      readyButton.textContent = "Ready!";
+      readyButton.style.color = "#010081";
+    });
 
-  content.appendChild(readyButton);
+    content.appendChild(readyButton);
+  } else {
+    const backButton = document.createElement("button");
+    backButton.textContent = "Back to Menu";
+    backButton.className = "button";
+    backButton.style.position = "absolute";
+    backButton.style.bottom = "20px";
+    backButton.style.right = "20px";
+    backButton.style.padding = "8px 16px";
+
+    backButton.addEventListener("click", () => {
+      router.navigate("/desktop");
+    });
+
+    content.appendChild(backButton);
+  }
 
   const bracketsWindow = createWindow({
-    title: "Tournament",
+    title: tournamentData.status === "finished" ? "Tournament Complete! 🏆" : "Tournament",
     width: "700px",
     content: content,
     titleBarControls: {
@@ -96,10 +136,17 @@ function createMatch(
   const p1 = document.createElement("div");
   p1.textContent = player1 || "Winner of Semifinal";
   p1.classList.add("slot", state1, "text-center", "mb-2", "w-full", "p-1", player1 ? "bg-color" : "text-gray-500");
+  
+  // Add visual styling for winners/losers
+  if (state1 === "win") p1.classList.add( "font-bold");
+  if (state1 === "loss") p1.classList.add( "line-through");
 
   const p2 = document.createElement("div");
   p2.textContent = player2 || "Winner of Semifinal";
   p2.classList.add("slot", state2, "text-center", "w-full", "p-1", player2 ? "bg-gray-500" : "text-gray-500");
+  
+  if (state2 === "win") p2.classList.add( "font-bold");
+  if (state2 === "loss") p2.classList.add( "line-through");
 
   match.appendChild(p1);
   match.appendChild(p2);

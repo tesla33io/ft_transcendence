@@ -101,7 +101,6 @@ export function remoteGameSetupView(router: Router) {
                 playerName,
                 playerId,
                 'classic',
-                canvas,
                 router
             );
             await game.joinGame(); // You can stub this for testing

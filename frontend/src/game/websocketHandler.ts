@@ -3,7 +3,6 @@ import { type GameData,type GameResult, type GameState, MessageType, type WebSoc
 export class WebSocketHandler {
     private ws?: WebSocket;
     private gameId: string = '';
-
 	private isReady: boolean = false;
 	private tournamentId: string = '';
 
@@ -34,7 +33,7 @@ export class WebSocketHandler {
             data &&
             typeof data === 'object' &&
             data.type === 'tournament_notification' &&
-            data.status === 'ready'
+            (data.status === 'ready' || data.status === 'finished')
         )
     }
 
@@ -55,12 +54,21 @@ export class WebSocketHandler {
 		    return (
         data &&
         typeof data === 'object' &&
-        'status' in data &&
-        //'gameid' in data &&
-        'player' in data &&
-        'opponent' in data &&
-        'ball' in data
+        data.type === 'game_state' &&  // <-- Add this check!
+        data.status === 'playing' //&&
+        //'player' in data &&
+        //'opponent' in data &&
+        //'ball' in data
     );
+	}
+
+	public setGameId(id:string){
+		this.gameId = id;
+		this.isReady = false;
+	}
+
+	public setTournamentId(id: string) {
+   		this.tournamentId = id;
 	}
 
     public sendReadyMessage(): void {
@@ -76,10 +84,6 @@ export class WebSocketHandler {
         this.isReady = true;
     }
 
-	public setTournamentId(id: string) {
-    this.tournamentId = id;
-	}
-
     public sendTournamentReady(): void {
         console.log('send Tournament ready message with tournament id',this.tournamentId, 'and player id', this.playerId);
 		if (!this.tournamentId) {
@@ -87,7 +91,7 @@ export class WebSocketHandler {
             return;
         }
         const readyMsg = {
-            type: "ready",
+            type: MessageType.PLAYER_READY,
             tournamentId: this.tournamentId,
             playerId: this.playerId
         };
@@ -132,10 +136,6 @@ export class WebSocketHandler {
         this.onGameUpdate(gameState);
     }
 
-    private handleTournamentNotification(data: any){
-        //present the bracket data
-
-    }
 
     private handleWebSocketMessage(rawData: any): void {
         try {
@@ -156,7 +156,7 @@ export class WebSocketHandler {
                 if (this.onTournamentNotification) {
                     this.onTournamentNotification(data);
                 }
-                this.handleTournamentNotification(data);
+                //this.handleTournamentNotification(data);
             }
             else if (this.isGameState(data)) {
                 this.handleInitialGameState(data);

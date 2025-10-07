@@ -79,7 +79,8 @@ export function gameView(router: Router) {
         titleBarControls: {
             close: true,
             onClose: () => {
-                window.history.back();
+				router.navigate("/desktop");
+                // put back for local game later window.history.back();
             }
         }
     });

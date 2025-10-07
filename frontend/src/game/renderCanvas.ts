@@ -32,7 +32,8 @@ export class Renderer {
     }
 
     public render(gameState: GameState): void {
-        this.clear();
+        //console.log("Rendering frame", gameState);
+		this.clear();
         this.drawPaddles(gameState);
         this.drawBall(gameState.ball);
         //this.drawScores(gameState);

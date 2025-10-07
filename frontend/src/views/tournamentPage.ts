@@ -2,6 +2,8 @@ import { Router } from '../router';
 import { createWindow } from './components';
 import { PongGame } from '../game/PongGame';
 
+let currentPongGame: PongGame | undefined = undefined;
+
 export function tournamentView(router: Router) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
@@ -93,7 +95,12 @@ export function tournamentView(router: Router) {
 		errorMessage.style.display = "none";
 		successMessage.style.display = "none";
 
-		// Generate a random playerId for testing later switch with the values from backend
+		// Dispose of previous game if it exists
+		if (currentPongGame) {
+			currentPongGame.dispose();
+			currentPongGame = undefined;
+		}
+
 		const playerId = Math.random().toString().substring(2, 7);
 
 		try {
@@ -101,10 +108,10 @@ export function tournamentView(router: Router) {
 				playerName,
 				playerId,
 				'tournament',
-				canvas,
 				router
 			);
-			await game.joinGame(); // You can stub this for testing
+			currentPongGame = game; // Save reference for later disposal
+			await game.joinGame();
 		} catch (error) {
 			console.error("Failed to join game:", error);
 			errorMessage.textContent = "Failed to join game";
