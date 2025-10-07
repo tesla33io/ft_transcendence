@@ -1,12 +1,13 @@
 package app.AIbot;
+import app.AIbot.level.EasyAI;
 
 public class AIbotBuilder {
-	public static String createBot(String botDiff){
+	public static AIbot createBot(String botDiff){
 		switch (botDiff){
 			case "easy":
-				return "easy";
+				return new EasyAI();
 			default:
-				return "easy";
+				return new EasyAI();
 		}
 	}
 }
