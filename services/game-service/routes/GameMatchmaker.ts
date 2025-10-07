@@ -1,5 +1,5 @@
 import { TournamentPong } from "../engine/TournamentPong"
-import {Player, Game, generateGameId, generateBallPos, GameMode, Tournament} from "../types/types"
+import {Player, Game, generateGameId, generateBallPos, generateDefaultPlayer, GameMode, Tournament} from "../types/types"
 import { GameServiceManager } from "./GameServiceManager"
 
 
@@ -44,14 +44,7 @@ export class GameMatchmaker {
 		const { playerName, playerId, gameMode } = playerData as { playerName: string, playerId: string, gameMode: GameMode }
 		const gameService = this.gameServiceManager.getGameService(gameMode)
 
-		const player: Player = {
-			id: playerId,
-			name: playerName,
-			score: 0,
-			Y: 0,
-			X: 0,
-			ready: false
-		};
+		const player: Player = generateDefaultPlayer(playerName, playerId)
 
 		if (!this.waitingPlayers.has(gameMode))
 			this.waitingPlayers.set(gameMode, [])
@@ -144,5 +137,19 @@ export class GameMatchmaker {
 				message: `Waiting for player... (${tournamentWaitingPlayer.length}/${this.tournamentPlayerLimit})`
 			}
 		}
+	}
+
+	public async joinBotClassic(playerData:{
+		playerName: string,
+		playerId: string,
+		gameMode?: GameMode,
+		aiBotMode?: boolean
+	}){
+		const { playerName, playerId, gameMode } = playerData as {playerName: string, playerId: string, gameMode: GameMode}
+		const gameService = this.gameServiceManager.getGameService(gameMode)
+		const player: Player = generateDefaultPlayer(playerName, playerId)
+
+		//TO DO - need to generate bot from api call
+		const bot: Player = generateDefaultPlayer("bot1", "bot1")
 	}
 }
