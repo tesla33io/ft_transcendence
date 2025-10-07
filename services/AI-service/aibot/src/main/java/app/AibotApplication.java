@@ -13,12 +13,3 @@ public class AibotApplication {
 	}
 
 }
-
-// @RestController
-// class InnerAibotApplication {
-
-// 	@GetMapping("/test")
-// 	public String test(){
-// 		return "test";
-// 	}
-// }
