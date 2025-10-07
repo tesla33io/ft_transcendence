@@ -1,17 +1,31 @@
 package app.AIbot;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AIbotManager {
-	HashMap<String, String> instance = new HashMap<>();
+	private ConcurrentHashMap<String, AIbot> instance = new ConcurrentHashMap<>();
 
-	public String getIntance(String botId){
+	public synchronized String createBot(String gameId, String difficulty){
+		final String botId = generateBotId(gameId);
+
+		AIbot bot = AIbotBuilder.createBot("easy");
+		instance.put(botId, bot);
+		System.out.println("Created bot: " + botId + " for game: " + gameId);
+		return botId;
+	}
+
+	public AIbot getIntance(String botId){
 		if (instance.containsKey(botId))
 			return instance.get(botId);
-		else {
-			String bot = AIbotBuilder.createBot("easy");
-			instance.put(botId, bot);
-			return bot;
-		}
+		else
+			return null;
+	}
+
+	public void removeBot(String botId){
+		BotInstance
+	}
+
+	private String generateBotId(String gameId){
+		return "bot_" + gameId;
 	}
 }
