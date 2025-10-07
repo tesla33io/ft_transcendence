@@ -31,8 +31,8 @@ server.post("/join-tournament", async (req, reply) => {
 })
 
 server.post("/bot-classic", async(req, reply) => {
-	// const result = await
-	return {message: 'WIP'}
+	const result = await gameMatchmaker.joinBotClassic(req.body as JoinGameRequest)
+	return result
 })
 
 server.get('/join-classic', async (req, reply) => {

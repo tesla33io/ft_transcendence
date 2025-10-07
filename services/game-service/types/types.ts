@@ -58,7 +58,7 @@ export const generateBallPos = (): Ball => {
 }
 
 export const generateDefaultPlayer = (playerName: string, playerId: string): Player => {
-	let player = {
+	let player: Player = {
 		id: playerId,
 		name: playerName,
 		score: 0,
@@ -67,6 +67,18 @@ export const generateDefaultPlayer = (playerName: string, playerId: string): Pla
 		ready: false
 	}
 	return player
+}
+
+export const generateDefaultGame = (opponent: Player, player: Player): Game =>{
+	const game: Game ={
+		id: generateGameId(),
+		gameMode: 'classic',
+		status: 'connected',
+		player1: opponent,
+		player2: player,
+		ball: generateBallPos()
+	};
+	return game;
 }
 
 export interface Game {

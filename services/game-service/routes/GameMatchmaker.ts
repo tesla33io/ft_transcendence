@@ -1,5 +1,5 @@
-import { TournamentPong } from "../engine/TournamentPong"
-import {Player, Game, generateGameId, generateBallPos, generateDefaultPlayer, GameMode, Tournament} from "../types/types"
+import {Player, Game, GameMode, Tournament} from "../types/types"
+import {generateDefaultPlayer, generateDefaultGame} from "../types/types"
 import { GameServiceManager } from "./GameServiceManager"
 
 
@@ -43,7 +43,6 @@ export class GameMatchmaker {
 	}) {
 		const { playerName, playerId, gameMode } = playerData as { playerName: string, playerId: string, gameMode: GameMode }
 		const gameService = this.gameServiceManager.getGameService(gameMode)
-
 		const player: Player = generateDefaultPlayer(playerName, playerId)
 
 		if (!this.waitingPlayers.has(gameMode))
@@ -53,14 +52,7 @@ export class GameMatchmaker {
 
 		if (ClassicWaitingPlayer.length > 0){
 			const opponent = ClassicWaitingPlayer.shift()!
-			const game: Game = {
-				id: generateGameId(),
-				gameMode: 'classic',
-				status: 'connected',
-				player1: opponent,
-				player2: player,
-				ball: generateBallPos()
-			};
+			const game: Game = generateDefaultGame(opponent, player)
 
 			setTimeout(() => {
 				if (gameService) {
@@ -96,16 +88,7 @@ export class GameMatchmaker {
 	}){
 		const {playerName, playerId, gameMode} = playerData as {playerName: string, playerId: string, gameMode: GameMode}
 		const gameService = this.gameServiceManager.getGameService('tournament')
-
-		const player: Player = {
-			id: playerId,
-			name: playerName,
-			score: 0,
-			Y: 0,
-			X: 0,
-			ready: false
-
-		};
+		const player: Player = generateDefaultPlayer(playerName, playerId)
 
 		if (!this.waitingPlayers.has(gameMode))
 			this.waitingPlayers.set(gameMode, [])
@@ -151,5 +134,21 @@ export class GameMatchmaker {
 
 		//TO DO - need to generate bot from api call
 		const bot: Player = generateDefaultPlayer("bot1", "bot1")
+		const game: Game = generateDefaultGame(bot, player)
+		setTimeout(() => {
+			if (gameService){
+				gameService.initializeGame(game)
+				gameService.notifyGameMatched(game)
+			} else {
+				console.error('GameService not Initialized!')
+			}
+		})
+
+		return {
+			status: 'waitting',
+			playerId: player.id,
+			gameId: game.id,
+			message: 'Connecting to game...'
+		}
 	}
 }
