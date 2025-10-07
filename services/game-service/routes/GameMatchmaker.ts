@@ -1,4 +1,4 @@
-import {Player, Game, GameMode, Tournament} from "../types/types"
+import {Player, Game, GameMode, Tournament, JoinGameRequest} from "../types/types"
 import {generateDefaultPlayer, generateDefaultGame} from "../types/types"
 import { GameServiceManager } from "./GameServiceManager"
 
@@ -36,11 +36,7 @@ export class GameMatchmaker {
 		return false
 	}
 
-	public async joinClassicGame(playerData:{
-		playerName: string,
-		playerId: string,
-		gameMode?: GameMode
-	}) {
+	public async joinClassicGame(playerData: JoinGameRequest) {
 		const { playerName, playerId, gameMode } = playerData as { playerName: string, playerId: string, gameMode: GameMode }
 		const gameService = this.gameServiceManager.getGameService(gameMode)
 		const player: Player = generateDefaultPlayer(playerName, playerId)
@@ -81,11 +77,7 @@ export class GameMatchmaker {
 		}
 	}
 
-	public async joinTournament(playerData:{
-		playerName: string,
-		playerId: string,
-		gameMode?: GameMode
-	}){
+	public async joinTournament(playerData: JoinGameRequest){
 		const {playerName, playerId, gameMode} = playerData as {playerName: string, playerId: string, gameMode: GameMode}
 		const gameService = this.gameServiceManager.getGameService('tournament')
 		const player: Player = generateDefaultPlayer(playerName, playerId)
@@ -122,17 +114,14 @@ export class GameMatchmaker {
 		}
 	}
 
-	public async joinBotClassic(playerData:{
-		playerName: string,
-		playerId: string,
-		gameMode?: GameMode,
-		aiBotMode?: boolean
-	}){
+	public async joinBotClassic(playerData: JoinGameRequest){
 		const { playerName, playerId, gameMode } = playerData as {playerName: string, playerId: string, gameMode: GameMode}
 		const gameService = this.gameServiceManager.getGameService(gameMode)
 		const player: Player = generateDefaultPlayer(playerName, playerId)
 
-		//TO DO - need to generate bot from api call
+		//[TO DO] - need to generate bot from api call
+		// the request JSON should have the difficulity of the bot
+		// request to aibot service will return the ID of the bot (bot will connect to the server via websocket)
 		const bot: Player = generateDefaultPlayer("bot1", "bot1")
 		const game: Game = generateDefaultGame(bot, player)
 		setTimeout(() => {
