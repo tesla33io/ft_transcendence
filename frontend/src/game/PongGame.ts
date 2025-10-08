@@ -37,8 +37,6 @@ export class PongGame {
     private initializeWebSocket(playerId: string): void {
         this.wsHandler = new WebSocketHandler(
             playerId,
-            // Game start callback
-
             this.gameMode,
             (data: GameData) => this.handleGameStart(data),
             // Game update callback
@@ -49,8 +47,6 @@ export class PongGame {
 			(message: string) => this.showError(message),
 
 			(tournamentData:any) => this.handleTournamentNotification(tournamentData)
-
-
         );
     }
 
@@ -72,16 +68,6 @@ export class PongGame {
             });
         }
     }
-
-
-	/*entry point for starting game, Handels api call if succes->handelJoinSuccess function*/
-//    public async joinGame(playerName:string): Promise<void> {
-//        try {
-//            this.setLoadingState(true);
-//            this.playerId = Math.random().toString().substring(2,7);
-//            console.log('PlayerID: ', this.playerId);
-
-//            const response = await fetch('/api/join-classic', {
 
      async joinGame(): Promise<void> {
         try {
@@ -112,18 +98,8 @@ export class PongGame {
         } catch (error) {
             console.error('Join game error:', error);
 
-        } finally {
-            //this.setLoadingState(false);
         }
     }
-
-
-	//manages game state transition and init websocket
-//    private handleJoinSuccess(data: GameData): void {
-//        console.log('Game data:', data);
-//        if (data.status === 'waiting') {
-//            this.showSuccess('Waiting for another player to join...');
-//            this.initializeWebSocket(data.playerId || this.playerId);
 
     private handleJoinSuccess(data: GameData): void {
         console.log('Game data:', data);
@@ -143,44 +119,39 @@ export class PongGame {
 		this.gameId = data.id || '';
 		// Set the game ID in WebSocket handler and reset ready flag
 		if (this.wsHandler) {
-			this.wsHandler.setGameId(this.gameId);  // <-- Add this!
+			this.wsHandler.setGameId(this.gameId);
 		}
 		// First navigate to game view
 		this.router.navigate("/game");
 		// Wait for navigation to complete
 		requestAnimationFrame(() => {
 			// Remove old canvas if it exists
-        const oldCanvas = document.getElementById("gameCanvas");
-        if (oldCanvas) {
-			console.log("Removing old canvas:", oldCanvas);
-			oldCanvas.remove();
-		}
-		// 3. Create game view
-        this.gameView = gameView(this.router);
-        // Verify view creation
-        if (!this.gameView?.canvas) {
-            console.error('Failed to create game view');
-            return;
-        }
-
-        // Initialize renderer
-        try {
-            this.renderer = new Renderer(this.gameView.canvas);
-            this.renderer.initializeCanvas();
-
-            // Show match info
-            this.showGameMatched(data);
-
-            // Send ready message only after everything is set up
-            if (this.renderer.isReady() && this.wsHandler) {
-                console.log('View Render ready, sending ready message');
-                this.wsHandler.sendReadyMessage();  // <-- This now uses the correct game ID
-				this.gameView.canvas.style.display = "block";
-            }
-        } catch (error) {
-            console.error('Failed to initialize renderer:', error);
-        }
-    });
+			const oldCanvas = document.getElementById("gameCanvas");
+			if (oldCanvas) {
+				//console.log("Removing old canvas:", oldCanvas);
+				oldCanvas.remove();
+			}
+			// 3. Create game view
+			this.gameView = gameView(this.router);
+			// Verify view creation
+			if (!this.gameView?.canvas) {
+				console.error('Failed to create game view');
+				return;
+			}
+			// Initialize renderer
+			try {
+				this.renderer = new Renderer(this.gameView.canvas);
+				this.renderer.initializeCanvas();
+				// Send ready message only after everything is set up
+				if (this.renderer.isReady() && this.wsHandler) {
+					console.log('View Render ready, sending ready message');
+					this.wsHandler.sendReadyMessage();
+					this.gameView.canvas.style.display = "block";
+				}
+			} catch (error) {
+				console.error('Failed to initialize renderer:', error);
+			}
+		});
     }
 
 	private handleGameUpdate(data: GameState): void{
@@ -205,13 +176,10 @@ export class PongGame {
 			this.wsHandler?.disconnect();
 			this.wsHandler = undefined;
 		}
-		
-
     	 // render the final game state first
 		if (this.gameState) {
 			this.renderer?.render(this.gameState);
 		}
-
 		// then schedule the result screen on next frame
 		requestAnimationFrame(() => {
 			this.gameView?.showGameResult(isWin, finalScore);
@@ -222,33 +190,23 @@ export class PongGame {
 				this.gameState = undefined;
 			}
 		});
-}
-
-
-    private showGameMatched(data: GameData): void {
-        //this.showSuccess(`Game found! Players matched - Game starting...`);
-        //setTimeout(() => this.displayGameInfo(data), 1000);
-		console.log('game matched');
 	}
+
 
 	private handleTournamentNotification(data: any): void {
 		console.log('Tournament notification received, initializing tournament room...');
 		// Save tournament id if needed
 		this.gameId = data.id || '';
-
 		if (this.wsHandler) {
        		this.wsHandler.setTournamentId(data.id);
     	}
-
 		// Navigate to the tournament room page
 		this.router.navigate("/tournamentroom");
-
 		// Wait for navigation to complete, then render the room
 		requestAnimationFrame(() => {
 			tournamentRoomView(this.router, data, this.wsHandler!);
 		});
 	}
-
 
     // Cleanup method
    public dispose(): void {

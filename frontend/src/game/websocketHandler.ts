@@ -41,25 +41,20 @@ export class WebSocketHandler {
 		return(
 			data &&
 			typeof data === 'object' &&
-			'player1Score' in data &&
-			'player2Score' in data &&
-			'winner' in data
-			// 'loser' in data
+			data.type === 'classic_notification' &&
+			data.status === 'finished'
 		)
 
 	}
 
 
 	private isGameUpdate(data: any): data is GameState {
-		    return (
-        data &&
-        typeof data === 'object' &&
-        data.type === 'game_state' &&  // <-- Add this check!
-        data.status === 'playing' //&&
-        //'player' in data &&
-        //'opponent' in data &&
-        //'ball' in data
-    );
+		return (
+			data &&
+			typeof data === 'object' &&
+			data.type === 'game_state' &&  
+			data.status === 'playing' 
+    	);
 	}
 
 	public setGameId(id:string){
@@ -156,7 +151,6 @@ export class WebSocketHandler {
                 if (this.onTournamentNotification) {
                     this.onTournamentNotification(data);
                 }
-                //this.handleTournamentNotification(data);
             }
             else if (this.isGameState(data)) {
                 this.handleInitialGameState(data);

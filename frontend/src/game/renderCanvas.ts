@@ -1,15 +1,11 @@
-
 import { type GameState, type Ball, GAME_CONFIG } from '../types';
 
 export class Renderer {
     private ctx: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
-
 	private isInitialized: boolean = false;
-
-
-
-    constructor(canvas: HTMLCanvasElement) {
+    
+	constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
 		//set based on conf
 		this.canvas.height = GAME_CONFIG.CANVAS.HEIGHT;
@@ -17,7 +13,6 @@ export class Renderer {
         const context = canvas.getContext('2d');
         if (!context) throw new Error('Could not get canvas context');
         this.ctx = context;
-
   }
 
 	public initializeCanvas() {
@@ -36,7 +31,6 @@ export class Renderer {
 		this.clear();
         this.drawPaddles(gameState);
         this.drawBall(gameState.ball);
-        //this.drawScores(gameState);
     }
 
     private clear(): void {
@@ -46,8 +40,6 @@ export class Renderer {
 
     private drawPaddles(gameState: GameState): void {
         this.ctx.fillStyle = 'white';
-        // Player paddle
-        // Player paddle - centered around paddleY
     	this.ctx.fillRect(
         gameState.player.X,
         gameState.player.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center

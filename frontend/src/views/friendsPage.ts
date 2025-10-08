@@ -8,7 +8,6 @@ export function friendsView(router: Router) {
 
 		const content = document.createElement("div");
 		content.innerHTML = `
-		<div class="bg-blue-500 p-10">Tailwind is working!</div>
 			<p>Add yout friend</p>
 
 			<div class="field-row-stacked" style="width: 200px">
@@ -29,7 +28,7 @@ export function friendsView(router: Router) {
 		titleBarControls: {
 			close: true,
 			onClose: () => {
-    			router.navigate("/desktop")
+				router.navigate("/desktop")
 			}
 		}
 	});

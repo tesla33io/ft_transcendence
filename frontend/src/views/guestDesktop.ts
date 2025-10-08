@@ -24,53 +24,53 @@ export function guestDesktopView(router: Router) {
 	const desktop = document.createElement("div");
 	desktop.className = "desktop";
 	desktop.style.display = "flex";
-	desktop.style.flexWrap = "wrap"; // Allows wrapping to a new column
-	desktop.style.flexDirection = "column"; // Stack items top-to-bottom first
-	desktop.style.alignItems = "flex-start"; // Align items to the left
-	desktop.style.justifyContent = "flex-start"; // Align items to the top
-	desktop.style.gap = "5px"; // Add spacing between icons
-	desktop.style.padding = "5px"; // Add padding around the desktop
+	desktop.style.flexWrap = "wrap"; 
+	desktop.style.flexDirection = "column";
+	desktop.style.alignItems = "flex-start";
+	desktop.style.justifyContent = "flex-start";
+	desktop.style.gap = "5px";
+	desktop.style.padding = "5px";
 	root.appendChild(desktop);
 
   //icons
-  const icons: IconData[] = [
-    { id: "local_game", title: "local_Pong.exe", img: joystickIcon, x: 0, y: 0 },
-    { id: "logout", title: "logout.exe", img: padlock  , x: 100, y: 100 }
+	const icons: IconData[] = [
+	{ id: "local_game", title: "local_Pong.exe", img: joystickIcon, x: 0, y: 0 },
+	{ id: "logout", title: "logout.exe", img: padlock  , x: 100, y: 100 }
   
 ];
 
-  //render icons
-  icons.forEach(icon => {
-    const iconDiv = document.createElement("div");
-    iconDiv.className = "flex flex-col items-start w-fit ";
-    //iconDiv.style.left = `${icon.x}px`;
-    //iconDiv.style.top = `${icon.y}px`;
+	//render icons
+	icons.forEach(icon => {
+	const iconDiv = document.createElement("div");
+	iconDiv.className = "flex flex-col items-start w-fit ";
+	//iconDiv.style.left = `${icon.x}px`;
+	//iconDiv.style.top = `${icon.y}px`;
 
-    // Image
-    const img = document.createElement("img");
-    img.src = icon.img;
-    img.alt = icon.title;
+	// Image
+	const img = document.createElement("img");
+	img.src = icon.img;
+	img.alt = icon.title;
 	img.className = "desktop-icon"
-    iconDiv.appendChild(img);
+	iconDiv.appendChild(img);
 
-    // Title
-    const label = document.createElement("div");
-    label.innerText = icon.title;
-    label.className = "mt-2 text-white";
-    iconDiv.appendChild(label);
+	// Title
+	const label = document.createElement("div");
+	label.innerText = icon.title;
+	label.className = "mt-2 text-white";
+	iconDiv.appendChild(label);
 
-    //Double-click to navigate
-    iconDiv.addEventListener("dblclick", () => {
-      switch(icon.id) {
-        case "local_game":
-          router.navigate("/localgame");   // navigate to testsite compartment
-          break;
-        case "login":
-          router.navigate("/login"); 
-          break;
+	//Double-click to navigate
+	iconDiv.addEventListener("dblclick", () => {
+	  switch(icon.id) {
+		case "local_game":
+		  router.navigate("/localgame");   // navigate to testsite compartment
+		  break;
+		case "login":
+		  router.navigate("/login"); 
+		  break;
 	  }
-      
-    });
+	  
+	});
 
 		// Create the taskbar
 	const { taskbar, taskArea } = createTaskbar({
@@ -88,7 +88,7 @@ export function guestDesktopView(router: Router) {
 		
 
 
-    // Append icon to desktop
-    desktop.appendChild(iconDiv);
+	// Append icon to desktop
+	desktop.appendChild(iconDiv);
   });
 }
