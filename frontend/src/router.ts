@@ -1,4 +1,5 @@
-export type RouteHandler = () => void; // a route handler renders a view (or mounts it)
+
+export type RouteHandler = () => void;
 
 export class Router {
   private routes: Record<string, RouteHandler> = {}; // map of path -> handler
@@ -6,7 +7,8 @@ export class Router {
 
   constructor(rootId: string) {
     // find the DOM element that will hold views (e.g. <div id="app"></div>)
-    const el = document.getElementById(rootId); //el short for element only used once so just el
+    const el = document.getElementById(rootId);
+
     if (!el) throw new Error(`Root element #${rootId} not found`);
     this.root = el;
 

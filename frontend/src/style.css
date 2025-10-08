@@ -1,19 +1,3 @@
-:root {
-  --color-background: #231942;   /* Deep Purple – main background */
-  --color-primary: #5E548E;      /* Purple – main buttons, paddles */
-  --color-secondary: #9F86C0;    /* Lavender – accents, highlights */
-  --color-text: #BE95C4;         /* Light Purple – main text */
-  --color-accent: #E0B1CB;       /* Pink Mist – overlays, hover states */
-  --color-error: #dc2626;        /* Error messages */
-  --color-error-bg: #fee2e2;
-  --color-error-border: #fecaca;
-  --color-success: #059669;      /* Success messages */
-  --color-success-bg: #d1fae5;
-  --color-success-border: #a7f3d0;
-  --color-dev-console: #0f0;     /* Dev console text */
-  --color-overlay-bg: rgba(0,0,0,0.8);
-}
-
 
 * {
     margin: 0;
@@ -207,38 +191,6 @@ input[type="text"]:focus {
     to { opacity: 1; transform: translateY(0); }
 }
 
-#dev-console {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  max-height: 250px;
-  background: rgba(0,0,0,0.9);
-  color: var(--color-dev-console);
-  font-family: monospace;
-  font-size: 12px;
-  display: flex;
-  flex-direction: column;
-  z-index: 9999;
-  border-top: 2px solid var(--color-secondary);
-}
-
-#dev-console .header {
-  background: var(--color-background);
-  color: var(--color-text);
-  padding: 4px 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-}
-
-#dev-console .output {
-  flex: 1;
-  overflow-y: auto;
-  padding: 4px;
-  line-height: 1.3;
-}
 
 #result-screen {
   position: fixed;
@@ -263,38 +215,4 @@ input[type="text"]:focus {
   font-family: monospace;
 }
 
-#play-again-btn {
-  margin-top: 20px;
-  padding: 12px 24px;
-  font-size: 16px;
-  cursor: pointer;
-  background: var(--color-primary);
-  color: var(--color-text);
-  border: none;
-  border-radius: 8px;
-}
 
-#play-again-btn:hover {
-    background: var(--color-secondary);
-}
-
-
-#testingSitebutton {
-    width: 100%;
-    padding: 14px 20px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-    color: var(--color-text);
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-#testingSitebutton:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(94, 84, 142, 0.4);
-}

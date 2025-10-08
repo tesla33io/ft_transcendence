@@ -1,4 +1,5 @@
 import fastify from 'fastify'
+
 const server = fastify({logger: true})
 const PORT = 3000
 

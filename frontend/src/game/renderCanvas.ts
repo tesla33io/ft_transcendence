@@ -1,14 +1,11 @@
-import { type GameState, type GameResult, type Ball, GAME_CONFIG } from '../types';
+import { type GameState, type Ball, GAME_CONFIG } from '../types';
 
 export class Renderer {
     private ctx: CanvasRenderingContext2D;
     private canvas: HTMLCanvasElement;
-	private resultScreen: HTMLElement;
-	private resultTitle: HTMLElement;
-	private resultScore: HTMLElement;
-	private playAgainBtn: HTMLButtonElement;
-
-    constructor(canvas: HTMLCanvasElement) {
+	private isInitialized: boolean = false;
+    
+	constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
 		//set based on conf
 		this.canvas.height = GAME_CONFIG.CANVAS.HEIGHT;
@@ -16,40 +13,24 @@ export class Renderer {
         const context = canvas.getContext('2d');
         if (!context) throw new Error('Could not get canvas context');
         this.ctx = context;
-
-		 // cache DOM elements
-		this.resultScreen = document.getElementById('result-screen')!;
-		this.resultTitle = document.getElementById('result-title')!;
-		this.resultScore = document.getElementById('result-score')!;
-        this.playAgainBtn = document.getElementById('play-again-btn') as HTMLButtonElement;
-
-		// attach click
-		this.playAgainBtn.addEventListener('click', () => {
-		this.hideResultScreen();
-		this.onPlayAgain?.();
-		});
   }
 
-	public onPlayAgain?: () => void; // callback to PongGame
+	public initializeCanvas() {
+        // Initialize canvas with game dimensions
+        this.canvas.height = GAME_CONFIG.CANVAS.HEIGHT;
+        this.canvas.width = GAME_CONFIG.CANVAS.WIDTH;
+        this.isInitialized = true;
+    }
 
-	showResultScreen(result: GameResult, myPlayerId: string) {
-        const isWin = result.winner === myPlayerId;
-		this.resultTitle.textContent = isWin ? "🎉 YOU WIN!" : "😢 YOU LOSE!";
-        console.log(`Player: ${myPlayerId} - Won: ${isWin}`)
-		this.resultScore.textContent = `${result.player1Score} : ${result.player2Score}`;
-		this.resultScreen.classList.remove('hidden');
-  }
-
-	hideResultScreen() {
-			this.resultScreen.classList.add('hidden');
-	}
-
+    public isReady(): boolean {
+        return this.isInitialized;
+    }
 
     public render(gameState: GameState): void {
-        this.clear();
+        //console.log("Rendering frame", gameState);
+		this.clear();
         this.drawPaddles(gameState);
         this.drawBall(gameState.ball);
-        this.drawScores(gameState);
     }
 
     private clear(): void {
@@ -59,8 +40,6 @@ export class Renderer {
 
     private drawPaddles(gameState: GameState): void {
         this.ctx.fillStyle = 'white';
-        // Player paddle
-        // Player paddle - centered around paddleY
     	this.ctx.fillRect(
         gameState.player.X,
         gameState.player.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
@@ -89,18 +68,5 @@ export class Renderer {
         this.ctx.fill();
     }
 
-    private drawScores(gameState: GameState): void {
-        this.ctx.font =  GAME_CONFIG.SCORE.FONT;
-        this.ctx.fillStyle = 'white';
-        this.ctx.fillText(
-            gameState.player.score.toString(),
-            GAME_CONFIG.SCORE.RIGHT_X,
-            GAME_CONFIG.SCORE.OFFSET_Y
-        );
-        this.ctx.fillText(
-            gameState.opponent.score.toString(),
-            GAME_CONFIG.SCORE.LEFT_X,
-            GAME_CONFIG.SCORE.OFFSET_Y
-        );
-    }
+    
 }

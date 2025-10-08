@@ -16,12 +16,14 @@ export const GAME_CONFIG = {
             Y: 2
         }
     },
-    SCORE: {
+
+    SCORE: {//can i probaply delete 
         FONT: '32px Arial',
         OFFSET_Y: 50,
         LEFT_X: 50,
         RIGHT_X: 850
     }
+
 };
 
 
@@ -42,6 +44,7 @@ export interface GameData {
     player1?: Player;      // First player data
     player2?: Player;      // Second player data
 }
+
 
 export interface TournamentBracket {
     id: string;
@@ -64,6 +67,7 @@ export interface GameState {
     gameid: string;        // Game identifier
     player: Player;        // Current player data
     opponent: Player;       // Opponent data (keeping server's spelling)
+
     ball: Ball;           // Ball position and velocity
 }
 
