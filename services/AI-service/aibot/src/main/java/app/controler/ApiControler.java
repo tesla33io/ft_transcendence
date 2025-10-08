@@ -6,6 +6,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import app.AIbot.AIbotManager;
+import app.AIbot.model.BotRequest;
+
+import org.springframework.web.bind.annotation.PostMapping;
+
 
 @RestController
 @RequestMapping("/api/v1/aibot")
@@ -17,9 +21,9 @@ public class ApiControler {
 		return "Connection reached";
 	}
 
-	@GetMapping("/get-bot/classic") //the request JSON will send the
-	public String Aibot (@RequestBody String rawJson){
-		final String botId = this.aIbotManager.createBot("id", "easy");
+	@PostMapping("/get-bot/classic") //the request JSON will send the
+	public String Aibot (@RequestBody BotRequest req){
+		final String botId = this.aIbotManager.createBot(req.getGameId(), req.getDifficulty());
 		return botId;
 	}
 }
