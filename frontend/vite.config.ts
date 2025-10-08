@@ -22,7 +22,7 @@ export default defineConfig({
       '/ws': {
         target: 'ws://gateway-service:3000', // Use ws:// scheme for WebSockets
         ws: true,                            // Enable WebSocket proxying
-      }///home/leschenb/sgoinfre
+      }
     }
   },
 

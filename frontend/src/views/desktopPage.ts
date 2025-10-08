@@ -41,7 +41,7 @@ export function desktopView(router: Router) {
 	{ id: "local_game", title: "local_Pong.exe", img: joystickIcon, x: 0, y: 0 },
 	{ id: "Remotepong", title: "Online_Pong.exe", img: remote, x: 0, y: 0 },
 	{ id: "Ai", title: "Ai_Pong.exe", img: spider, x: 0, y: 0 },
-	  { id: "tournament", title: "Tornament.exe", img: network, x: 0, y: 0 }, 
+	  { id: "tournament", title: "Tournament.exe", img: network, x: 0, y: 0 }, 
 	  { id: "profile", title: "Profile.exe", img: usergreen, x: 0, y: 0 },
 	{ id: "friends", title: "friends.exe", img: phone, x: 0, y: 0 },
 	{ id: "settings", title: "settings.exe", img: gear, x: 0, y: 0 },
@@ -91,7 +91,7 @@ export function desktopView(router: Router) {
 		  router.navigate("/profile");
 		  break;
 	case "settings":
-		  router.navigate("/setings");
+		  router.navigate("/settings");
 		  break;
 	  }
 	  

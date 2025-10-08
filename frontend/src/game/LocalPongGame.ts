@@ -22,7 +22,7 @@ export class LocalPongGame {
                 X: GAME_CONFIG.PADDLE.OFFSET_FROM_EDGE,
                 Y: GAME_CONFIG.CANVAS.HEIGHT / 2,
             },
-            opponet: {
+            opponent: {
                 name: 'Player 2',
                 score: 0,
                 X: GAME_CONFIG.CANVAS.WIDTH - GAME_CONFIG.PADDLE.OFFSET_FROM_EDGE - GAME_CONFIG.PADDLE.WIDTH,
@@ -80,19 +80,19 @@ export class LocalPongGame {
 
         // Player 2 (ArrowUp/ArrowDown)
         if (this.keysPressed['arrowup']) {
-            this.gameState.opponet.Y -= paddleSpeed;
+            this.gameState.opponent.Y -= paddleSpeed;
         }
         if (this.keysPressed['arrowdown']) {
-            this.gameState.opponet.Y += paddleSpeed;
+            this.gameState.opponent.Y += paddleSpeed;
         }
 
         // Clamp paddle positions to stay within the canvas
         this.gameState.player.Y = Math.max(paddleHeight / 2, Math.min(canvasHeight - paddleHeight / 2, this.gameState.player.Y));
-        this.gameState.opponet.Y = Math.max(paddleHeight / 2, Math.min(canvasHeight - paddleHeight / 2, this.gameState.opponet.Y));
+        this.gameState.opponent.Y = Math.max(paddleHeight / 2, Math.min(canvasHeight - paddleHeight / 2, this.gameState.opponent.Y));
     }
 
     private updateBall(): void {
-        const { ball, player, opponet } = this.gameState;
+        const { ball, player, opponent } = this.gameState;
         ball.x += ball.dx;
         ball.y += ball.dy;
 
@@ -117,7 +117,7 @@ export class LocalPongGame {
         };
 
         // Check for collision and reverse ball direction
-        if ((ball.dx < 0 && collidesWithPaddle(player)) || (ball.dx > 0 && collidesWithPaddle(opponet))) {
+        if ((ball.dx < 0 && collidesWithPaddle(player)) || (ball.dx > 0 && collidesWithPaddle(opponent))) {
             ball.dx *= -1;
             // Optional: Increase speed slightly on each hit
             ball.dx *= 1.05;
@@ -125,10 +125,10 @@ export class LocalPongGame {
 
         // Score update when ball goes past a paddle
         if (ball.x - GAME_CONFIG.BALL.RADIUS < 0) {
-            this.gameState.opponet.score++;
+            this.gameState.opponent.score++;
             this.updateScoreboard();
-            if (this.gameState.opponet.score >= this.winningScore) {
-                this.endGame(this.gameState.opponet.name);
+            if (this.gameState.opponent.score >= this.winningScore) {
+                this.endGame(this.gameState.opponent.name);
             } else {
                 this.gameState.ball = this.resetBall();
             }
@@ -147,7 +147,7 @@ export class LocalPongGame {
         const p1Score = document.getElementById('player1-score');
         const p2Score = document.getElementById('player2-score');
         if (p1Score) p1Score.textContent = this.gameState.player.score.toString();
-        if (p2Score) p2Score.textContent = this.gameState.opponet.score.toString();
+        if (p2Score) p2Score.textContent = this.gameState.opponent.score.toString();
     }
 
     private gameLoop = (): void => {

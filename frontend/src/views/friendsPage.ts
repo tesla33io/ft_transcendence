@@ -8,7 +8,7 @@ export function friendsView(router: Router) {
 
 		const content = document.createElement("div");
 		content.innerHTML = `
-			<p>Add yout friend</p>
+			<p>Add your friend</p>
 
 			<div class="field-row-stacked" style="width: 200px">
 			<label for="text18">Friends username:</label>

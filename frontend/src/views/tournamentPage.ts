@@ -34,7 +34,7 @@ export function tournamentView(router: Router) {
 	const joinClassicBtn = document.createElement("button");
 	joinClassicBtn.type = "submit";
 	joinClassicBtn.id = "joinBtn";
-	joinClassicBtn.textContent = "Join Turnament";
+	joinClassicBtn.textContent = "Join Tournament";
 
 	form.append(label, input, joinClassicBtn);
 	content.appendChild(form);
