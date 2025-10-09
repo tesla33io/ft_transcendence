@@ -18,7 +18,7 @@ public class ApiControler {
 
 	@GetMapping("/test")
 	public String test(){
-		return "Connection reached";
+		return "Connection reached\n";
 	}
 
 	@PostMapping("/get-bot/classic") //the request JSON will send the
