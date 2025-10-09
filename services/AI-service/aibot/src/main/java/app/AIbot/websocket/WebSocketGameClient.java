@@ -1,14 +1,101 @@
 package app.AIbot.websocket;
 
+import java.util.function.Consumer;
 import org.springframework.stereotype.Component;
-import jakarta.annotation.PostConstruct;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.client.WebSocketConnectionManager;
+import org.springframework.web.socket.client.standard.StandardWebSocketClient;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import app.AIbot.model.GameState;
+import app.AIbot.model.BotAction;
+import app.AIbot.model.BotActionMessage;
+
+//each boot need to connect to the server via websocket
 //this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws/${this.gameMode}?playerId=${this.playerId}`)
 @Component
 public class WebSocketGameClient {
+	private WebSocketSession session;
+	private final ObjectMapper objectMapper = new ObjectMapper();
+	private String botId;
+	private String gameId;
+	private Consumer<GameState> gameStateHandler;
 
-	@PostConstruct
-	public void connect(){
+	private static final String WEBSOCKET_URL = "ws://gateway-service:3000/ws/%s?playerId=%s";
 
+	public void connect(String botId, String gameId, String gameMode, Consumer<GameState> gameStateHandler){
+		this.botId = botId;
+		this.gameId = gameId;
+		this.gameStateHandler = gameStateHandler;
+
+		String url = String.format(WEBSOCKET_URL, gameMode, botId);
+
+		WebSocketConnectionManager connectionManager = new WebSocketConnectionManager(
+			new StandardWebSocketClient(),
+			new BotWebSocketHandler(),
+			url
+		);
+
+		connectionManager.start();
+	}
+
+	public void sendAction(BotAction action){
+		if (session != null && session.isOpen()){
+			try {
+				BotActionMessage message = new BotActionMessage(botId, action);
+				String jsonMessage = objectMapper.writeValueAsString(message);
+				session.sendMessage(new TextMessage(jsonMessage));
+			} catch (Exception e) {
+				System.err.println("Failed to send action: " + e.getMessage());
+			}
+		}
+	}
+
+	public void disconnect(){
+		if (session != null && session.isOpen()){
+			try{
+				session.close();
+			} catch (Exception e){
+				System.err.println("Error in disconnect :" + e.getMessage());
+			}
+		}
+	}
+
+	private class BotWebSocketHandler extends TextWebSocketHandler {
+		@Override
+		public void afterConnectionEstablished(WebSocketSession session){
+			WebSocketGameClient.this.session = session;
+			System.out.println("Bot " + botId + " connected to the game " + gameId);
+		}
+
+		@Override
+		public void handleTextMessage(WebSocketSession session, TextMessage message){
+			try {
+				GameState gameState = objectMapper.readValue(message.getPayload(), GameState.class);
+					if (gameStateHandler != null){
+						gameStateHandler.accept(gameState);
+					}
+			}
+			catch (Exception e){
+				System.err.println("Failed to parse game state: " + e.getMessage());
+			}
+		}
+
+		@Override
+		public void handleTransportError(WebSocketSession session, Throwable exception) {
+			System.err.println("WebSocket transport error for bot " + botId + " : " + exception.getMessage() );
+		}
+
+		@Override
+		public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
+			System.err.println("Bot " + botId + " disconnected from game");
+			WebSocketGameClient.this.session = null;
+		}
 	}
 }
+
+
