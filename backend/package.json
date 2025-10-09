@@ -4,9 +4,22 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "node --no-warnings=ExperimentalWarning --loader ts-node/esm src/server.ts",
+    "start:prod": "node dist/server.js",
     "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "migration:up": "mikro-orm migration:up",
-    "migration:down": "mikro-orm migration:down"
+    "migration:down": "mikro-orm migration:down",
+    "docker:build": "docker build -t ft_transcendence-backend .",
+    "docker:build:dev": "docker build -f Dockerfile.dev -t ft_transcendence-backend:dev .",
+    "docker:run": "docker run -p 3000:3000 ft_transcendence-backend",
+    "docker:run:dev": "docker run -p 3001:3000 -v $(pwd):/app -v /app/node_modules ft_transcendence-backend:dev",
+    "docker:compose:up": "docker-compose up -d",
+    "docker:compose:down": "docker-compose down",
+    "docker:compose:dev": "docker-compose --profile dev up -d backend-dev",
+    "docker:logs": "docker-compose logs -f backend",
+    "docker:logs:dev": "docker-compose logs -f backend-dev"
   },
   "type": "module",
   "dependencies": {
@@ -14,17 +27,25 @@
     "@mikro-orm/migrations": "^6.5.5",
     "@mikro-orm/reflection": "^6.5.5",
     "@mikro-orm/sqlite": "^6.5.5",
+    "@types/bcrypt": "^6.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcrypt": "^6.0.0",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
-    "ts-node": "^10.0.0"
+    "jsonwebtoken": "^9.0.2",
+    "node-fetch": "^3.3.2",
+    "supertest": "^7.0.0"
   },
   "devDependencies": {
     "@mikro-orm/cli": "^6.5.5",
     "@types/express": "^4.17.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.19.17",
-    "ts-node": "^10.0.0",
-    "typescript": "^4.9.5",
-    "vitest": "3.2.4"
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
   "license": "MIT"
 }

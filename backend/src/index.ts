@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { MikroORM } from '@mikro-orm/core';
 import { User } from './entities/User.js';
 import { app } from './app.js';
-import  mikroOrmConfig  from '../dist/mikro-orm.config.js';
+import mikroOrmConfig from './mikro-orm.config.js';
 
 const startServer = async () => {
   const orm = await MikroORM.init(mikroOrmConfig);

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
+    "module": "ESNext",
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
@@ -12,12 +12,20 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "resolveJsonModule": true,
+    "noEmit": false,
+    "types": ["jest", "node"],
+    "allowImportingTsExtensions": false,
+    "noEmitOnError": false
   },
   "include": ["src/**/*.ts"],
   "exclude": [
     "node_modules",
-    "**/*.spec.ts",
-    "src/mikro-orm.config.ts"
-  ]
+    "**/*.spec.ts"
+  ],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
 }
