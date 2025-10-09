@@ -192,10 +192,10 @@ export function settingsView(router: Router) {
 
 	app.innerHTML = '';
 	app.appendChild(setupWindow);
-	const { taskbar, taskArea } = createTaskbar({
+	const { taskbar } = createTaskbar({
 			startButton: {
 				label: "Start",
-				onClick: () => alert("Start Menu Clicked!"),
+				onClick: () => router.navigate("/"),
 			},
 			clock: true,
 		});

@@ -4,7 +4,7 @@ import { createTaskbar } from "./components";
 import joystickIcon from './images/joystick.png';
 import padlock from './images/padlock.png';
 import network from './images/network.png'
-import offline from './images/network_no.png'
+//import offline from './images/network_no.png'
 
 // Define the type for icons
 type IconData = {
@@ -38,9 +38,7 @@ export function guestDesktopView(router: Router) {
 	{ id: "local_game", title: "local_Pong.exe", img: joystickIcon, x: 0, y: 0 },
 	{ id: "Tournament", title: "Tournament.exe", img: network  , x: 100, y: 100 },
 	{ id: "logout", title: "logout.exe", img: padlock  , x: 100, y: 200 }
-  
-];
-
+	];
 	//render icons
 	icons.forEach(icon => {
 	const iconDiv = document.createElement("div");
@@ -63,32 +61,27 @@ export function guestDesktopView(router: Router) {
 
 	//Double-click to navigate
 	iconDiv.addEventListener("dblclick", () => {
-	  switch(icon.id) {
-		case "local_game":
-			router.navigate("/localgame");   // navigate to testsite compartment
-			break;
-		case "Tournament":
-			router.navigate("/tournament");
-			break;
-		case "login":
-			router.navigate("/login"); 
-			break;
-	  }
-	  
-	});
-
-	
+		switch(icon.id) {
+			case "local_game":
+				router.navigate("/localgame");   // navigate to testsite compartment
+				break;
+			case "Tournament":
+				router.navigate("/tournament");
+				break;
+			case "logout":
+				router.navigate("/login"); 
+				break;
+		}
 		
-
-
+		});
 	// Append icon to desktop
 	desktop.appendChild(iconDiv);
   });
   	// Create the taskbar
-	const { taskbar, taskArea } = createTaskbar({
+	const { taskbar } = createTaskbar({
 		startButton: {
 		label: "Start",
-		onClick: () => alert("Start Menu Clicked!"),//add something to do there /
+		onClick: () => router.navigate("/"),
 		},
 		clock: true,
 	});

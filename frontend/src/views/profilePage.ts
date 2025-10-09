@@ -23,10 +23,10 @@ import type { Match,StatsData } from "./components";
     root.appendChild(simpleWindow);
 	
 	// Create the taskbar
-	const { taskbar, taskArea } = createTaskbar({
+	const { taskbar } = createTaskbar({
 		startButton: {
 		label: "Start",
-		onClick: () => alert("Start Menu Clicked!"),//add something to do there /
+		onClick: () => router.navigate("/"),
 		},
 		clock: true,
 	});

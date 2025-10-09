@@ -97,10 +97,10 @@ export function desktopView(router: Router) {
 		desktop.appendChild(iconDiv);
 	});
 
-	const { taskbar, taskArea } = createTaskbar({
+	const { taskbar } = createTaskbar({
 		startButton: {
 			label: "Start",
-			onClick: () => alert("Start Menu Clicked!"),
+			onClick: () => router.navigate("/"),
 		},
 		clock: true,
 	});

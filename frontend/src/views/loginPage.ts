@@ -95,7 +95,7 @@ function verifyLogin(username: string, password: string, router: Router){
 	//send api verfy call to backend 
 	//if(call returns succes)
 		//connect to websocket
-		router.navigate("/desktop");
+	router.navigate("/desktop");
 	//else some message etc 
 	//limit trys maybe in the bakend logic ? 
 }

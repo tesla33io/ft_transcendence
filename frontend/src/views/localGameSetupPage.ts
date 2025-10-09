@@ -75,10 +75,10 @@ export function localGameSetupView(router: Router) {
 	app.innerHTML = '';
 	app.appendChild(setupWindow);
 	// Create the taskbar
-	const { taskbar, taskArea } = createTaskbar({
+	const { taskbar } = createTaskbar({
 		startButton: {
 		label: "Start",
-		onClick: () => alert("Start Menu Clicked!"),//add something to do there /
+		onClick: () => router.navigate("/"),
 		},
 		clock: true,
 	});
