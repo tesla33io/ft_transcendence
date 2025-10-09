@@ -1,4 +1,3 @@
-
 export type RouteHandler = () => void;
 
 export class Router {
@@ -41,8 +40,16 @@ export class Router {
       // call the handler which is expected to render into the root (or append)
       handler();
     } else {
-      // fallback 404 content if no route matches
-      this.root.innerHTML = "<h2>404 - Page not found</h2>";
+      // Navigate to the 404 page if it's registered
+      if (this.routes["/404"]) {
+        // Update the URL to show /404
+        history.replaceState({}, "", "/404");
+        // Call the 404 handler
+        this.routes["/404"]();
+      } else {
+        // Fallback if no 404 route is registered
+        this.root.innerHTML = "<h2>404 - Page not found</h2>";
+      }
     }
   }
 }
