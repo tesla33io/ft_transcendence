@@ -44,7 +44,7 @@ export class PongGame {
 			// on Game end one player win
 			(result: GameResult) => this.handleGameResult(result),
 
-			(message: string) => this.showError(message),
+			(message: string) => console.error('Game Error:', message),
 
 			(tournamentData:any) => this.handleTournamentNotification(tournamentData)
         );

@@ -22,6 +22,7 @@ export function tournamentView(router: Router) {
 	const label = document.createElement("label");
 	label.htmlFor = "alias";
 	label.textContent = "Enter your alias:";
+	//label.className = "block mb-4"; // Block display + bottom margin
 
 	const input = document.createElement("input");
 	input.type = "text";
@@ -31,6 +32,7 @@ export function tournamentView(router: Router) {
 	input.minLength = 1;
 	input.maxLength = 20;
 	input.required = true;
+	input.className = " ml-4 "
 
 	const joinClassicBtn = document.createElement("button");
 	joinClassicBtn.type = "submit";

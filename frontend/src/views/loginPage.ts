@@ -1,6 +1,8 @@
 import { Router } from "../router";
 import { createWindow } from "./components";
-import { createTaskbar } from "./components";
+import { UserService } from "../game/userService";
+import type { LoginRequest } from "../types";
+
 
 export function loginView(router: Router) {
 	const root = document.getElementById("app")!;
@@ -41,6 +43,20 @@ export function loginView(router: Router) {
 	passwordField.appendChild(passwordLabel);
 	passwordField.appendChild(passwordInput);
 
+	// --- Error message area ---
+	const errorMessage = document.createElement("div");
+	errorMessage.style.color = "red";
+	errorMessage.style.textAlign = "center";
+	errorMessage.style.marginTop = "10px";
+	errorMessage.style.display = "none";
+
+	// --- Loading message ---
+	const loadingMessage = document.createElement("div");
+	loadingMessage.textContent = "Logging in...";
+	loadingMessage.style.textAlign = "center";
+	loadingMessage.style.marginTop = "10px";
+	loadingMessage.style.display = "none";
+
 	// --- Buttons row ---
 	const buttonRow = document.createElement("div");
 	buttonRow.className = "field-row";
@@ -64,6 +80,8 @@ export function loginView(router: Router) {
 	// --- Assemble content ---
 	content.appendChild(usernameField);
 	content.appendChild(passwordField);
+	content.appendChild(errorMessage);
+	content.appendChild(loadingMessage);
 	content.appendChild(buttonRow);
 
 	// --- Create window with content ---
@@ -77,25 +95,91 @@ export function loginView(router: Router) {
 	});
 
 	// --- Event listeners ---
-	loginBtn.addEventListener("click", () => {
+	loginBtn.addEventListener("click", async () => {
+		const username = usernameInput.value.trim();
+		const password = passwordInput.value.trim();
+		
+		// Basic validation
+		if (!username || !password) {
+			showError("Please enter both username and password");
+			return;
+		}
 
-		verifyLogin(usernameInput.value,passwordInput.value, router);
+		await handleLogin(username, password, router);
 	});
+
+	// Allow Enter key to submit
+	const handleEnterKey = (e: KeyboardEvent) => {
+		if (e.key === 'Enter') {
+			loginBtn.click();
+		}
+	};
+	usernameInput.addEventListener('keypress', handleEnterKey);
+	passwordInput.addEventListener('keypress', handleEnterKey);
 
 	registerBtn.addEventListener("click", () => router.navigate("/register"));
 	guestBtn.addEventListener("click", () => router.navigate("/guest"));
 
+	// --- Helper functions ---
+	function showError(message: string) {
+		errorMessage.textContent = message;
+		errorMessage.style.display = "block";
+		loadingMessage.style.display = "none";
+	}
+
+	function showLoading() {
+		loadingMessage.style.display = "block";
+		errorMessage.style.display = "none";
+		loginBtn.disabled = true;
+		loginBtn.textContent = "Logging in...";
+	}
+
+	function hideLoading() {
+		loadingMessage.style.display = "none";
+		loginBtn.disabled = false;
+		loginBtn.textContent = "Login";
+	}
+
+	async function handleLogin(username: string, password: string, router: Router) {
+		console.log('🔐 Login attempt:', { username, password: '***' });
+		
+		showLoading();
+
+		try {
+			// Create LoginRequest object
+			const credentials: LoginRequest = {
+				username: username,
+				password: password
+				// twoFactorCode can be added later if needed
+			};
+
+			console.log('📤 Sending login request:', credentials);
+
+			// Call UserService login method
+			const authResponse = await UserService.login(credentials);
+
+			console.log('✅ Login successful!', {
+				user: authResponse.user,
+				token: authResponse.token ? 'Token received' : 'No token',
+				expiresAt: authResponse.expiresAt
+			});
+
+			console.log('💾 User data saved to localStorage');
+			console.log('👤 Logged in as:', authResponse.user.username);
+			console.log('🆔 User ID:', authResponse.user.id);
+			// Navigate to desktop on success
+			router.navigate("/desktop");
+
+		} catch (error) {
+			console.error('❌ Login failed:', error);
+			hideLoading();
+			showError(error instanceof Error ? error.message : 'Login failed. Please try again.');
+		}
+	}
+
 	// --- Attach to root ---
 	root.appendChild(loginWindow);
-}
 
-function verifyLogin(username: string, password: string, router: Router){
-	console.log('user:',username,' with password:',password,' logged in');
-	//hash the password
-	//send api verfy call to backend 
-	//if(call returns succes)
-		//connect to websocket
-	router.navigate("/desktop");
-	//else some message etc 
-	//limit trys maybe in the bakend logic ? 
+	// Focus on username input for better UX
+	setTimeout(() => usernameInput.focus(), 100);
 }
