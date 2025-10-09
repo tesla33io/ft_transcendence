@@ -13,7 +13,7 @@ import {desktopView} from './views/desktopPage'
 import {localGameView} from './views/localGamePage'
 import {localGameSetupView} from './views/localGameSetupPage'
 import {remoteGameSetupView} from './views/remoteGameSetup'
-
+import {settingsView} from './views/settingsPage'
 
 document.addEventListener("DOMContentLoaded", () => {
 	const router = new Router("app");
@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	router.register("/tournament", () => tournamentView(router));
 	router.register("/guest", () => guestDesktopView(router));
 	router.register("/desktop", () => desktopView(router));
+	router.register("/settings", () => settingsView(router));
 	router.register("/localgame", () => localGameSetupView(router));
 	router.register("/localgame/play", () => localGameView(router));
 

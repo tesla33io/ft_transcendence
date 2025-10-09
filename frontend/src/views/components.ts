@@ -25,8 +25,23 @@ export function createWindow(options: WindowOptions): HTMLElement {
 
 	// Position setup
 	windowDiv.style.position = "absolute";
-	windowDiv.style.left = `${options.initialPosition?.x || 50}px`;
-	windowDiv.style.top = `${options.initialPosition?.y || 50}px`;
+
+	// Center the window if no initial position is provided
+	if (options.initialPosition) {
+		windowDiv.style.left = `${options.initialPosition.x}px`;
+		windowDiv.style.top = `${options.initialPosition.y}px`;
+	} else {
+		// Center the window on screen
+		const windowWidth = parseInt(options.width || '400');
+		const windowHeight = parseInt(options.height || '300');
+		
+		// Calculate center position
+		const centerX = (window.innerWidth - windowWidth) / 2;
+		const centerY = (window.innerHeight - windowHeight) / 2;
+		
+		windowDiv.style.left = `${Math.max(0, centerX)}px`;
+		windowDiv.style.top = `${Math.max(0, centerY)}px`;
+	}
 
 	// Title bar
 	const titleBar = document.createElement("div");

@@ -3,6 +3,7 @@ import { createTaskbar } from "./components";
 
 import joystickIcon from './images/joystick.png';
 import padlock from './images/padlock.png';
+import network from './images/network.png'
 import offline from './images/network_no.png'
 
 // Define the type for icons
@@ -35,7 +36,8 @@ export function guestDesktopView(router: Router) {
   //icons
 	const icons: IconData[] = [
 	{ id: "local_game", title: "local_Pong.exe", img: joystickIcon, x: 0, y: 0 },
-	{ id: "logout", title: "logout.exe", img: padlock  , x: 100, y: 100 }
+	{ id: "Tournament", title: "Tournament.exe", img: network  , x: 100, y: 100 },
+	{ id: "logout", title: "logout.exe", img: padlock  , x: 100, y: 200 }
   
 ];
 
@@ -63,11 +65,14 @@ export function guestDesktopView(router: Router) {
 	iconDiv.addEventListener("dblclick", () => {
 	  switch(icon.id) {
 		case "local_game":
-		  router.navigate("/localgame");   // navigate to testsite compartment
-		  break;
+			router.navigate("/localgame");   // navigate to testsite compartment
+			break;
+		case "Tournament":
+			router.navigate("/tournament");
+			break;
 		case "login":
-		  router.navigate("/login"); 
-		  break;
+			router.navigate("/login"); 
+			break;
 	  }
 	  
 	});

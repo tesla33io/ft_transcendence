@@ -19,14 +19,14 @@ export function tournamentView(router: Router) {
 	form.className = "join-game-form";
 
 	const label = document.createElement("label");
-	label.htmlFor = "playerName";
-	label.textContent = "Player Name";
+	label.htmlFor = "alias";
+	label.textContent = "Enter your alias:";
 
 	const input = document.createElement("input");
 	input.type = "text";
-	input.id = "playerName";
-	input.name = "playerName";
-	input.placeholder = "Enter your name ";
+	input.id = "alias";
+	input.name = "alias";
+	input.placeholder = " ";
 	input.minLength = 1;
 	input.maxLength = 20;
 	input.required = true;
@@ -86,8 +86,8 @@ export function tournamentView(router: Router) {
 	// --- Form Submit Handler ---
 	form.addEventListener("submit", async (e: Event) => {
 		e.preventDefault();
-		const playerName = input.value.trim();
-		if (!playerName) return;
+		const alias = input.value.trim();
+		if (!alias) return;
 
 		joinClassicBtn.disabled = true;
 		joinClassicBtn.textContent = "Waiting for opponent...";
@@ -105,7 +105,7 @@ export function tournamentView(router: Router) {
 
 		try {
 			const game = new PongGame(
-				playerName,
+				alias,
 				playerId,
 				'tournament',
 				router
