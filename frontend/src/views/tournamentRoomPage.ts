@@ -1,6 +1,7 @@
 import { Router } from "../router";
 import { createWindow } from "./components";
 import { WebSocketHandler } from "../game/websocketHandler";
+import { createTaskbar } from "./components";
 
 export function tournamentRoomView(
 	router: Router,
@@ -141,7 +142,11 @@ export function tournamentRoomView(
 	});
 
 	root.append(bracketsWindow);
-	}
+	
+	
+
+
+}
 
 	// Helper to create a match box
 	function createMatch(

@@ -1,5 +1,6 @@
 import { Router } from "../router";
 import { createWindow } from "./components";
+import { createTaskbar } from "./components";
 
 export function gameView(router: Router) {
 	const root = document.getElementById("app")!;
@@ -86,6 +87,17 @@ export function gameView(router: Router) {
 	});
 
 	root.appendChild(gameWindow);
+
+		// Create the taskbar
+		const { taskbar, taskArea } = createTaskbar({
+			startButton: {
+			label: "Start",
+			onClick: () => alert("Start Menu Clicked!"),//add something to do there /
+			},
+			clock: true,
+		});
+		// Add the taskbar to the root
+		root.appendChild(taskbar);
 
 	// Result window (separate window)
 	let resultWindow: HTMLElement | null = null;

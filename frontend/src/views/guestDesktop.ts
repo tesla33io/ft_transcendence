@@ -77,7 +77,14 @@ export function guestDesktopView(router: Router) {
 	  
 	});
 
-		// Create the taskbar
+	
+		
+
+
+	// Append icon to desktop
+	desktop.appendChild(iconDiv);
+  });
+  	// Create the taskbar
 	const { taskbar, taskArea } = createTaskbar({
 		startButton: {
 		label: "Start",
@@ -85,15 +92,6 @@ export function guestDesktopView(router: Router) {
 		},
 		clock: true,
 	});
-	
-	
-
 	// Add the taskbar to the root
 	root.appendChild(taskbar);
-		
-
-
-	// Append icon to desktop
-	desktop.appendChild(iconDiv);
-  });
 }

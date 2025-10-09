@@ -1,5 +1,6 @@
 import { Router } from '../router';
 import { createWindow } from './components';
+import { createTaskbar } from "./components";
 import { PongGame } from '../game/PongGame';
 
 export function remoteGameSetupView(router: Router) {
@@ -118,6 +119,17 @@ export function remoteGameSetupView(router: Router) {
     });
 
     root.appendChild(setupWindow);
+
+	const { taskbar, taskArea } = createTaskbar({
+			startButton: {
+				label: "Start",
+				onClick: () => alert("Start Menu Clicked!"),
+			},
+			clock: true,
+		});
+	
+		// Add the taskbar to the root
+	root.appendChild(taskbar);
 
     form.addEventListener("submit", async (e: Event) => {
         e.preventDefault();

@@ -1,5 +1,6 @@
 import { Router } from "../router";
 import { createWindow } from "./components";
+import { createTaskbar } from "./components";
 
 export function loginView(router: Router) {
 	const root = document.getElementById("app")!;

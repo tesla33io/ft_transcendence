@@ -1,6 +1,7 @@
 import { Router } from '../router';
 import { createWindow } from './components';
 import { PongGame } from '../game/PongGame';
+import { createTaskbar } from "./components";
 
 let currentPongGame: PongGame | undefined = undefined;
 
@@ -82,6 +83,17 @@ export function tournamentView(router: Router) {
 	});
 
 	root.appendChild(setupWindow);
+
+		const { taskbar, taskArea } = createTaskbar({
+			startButton: {
+				label: "Start",
+				onClick: () => alert("Start Menu Clicked!"),
+			},
+			clock: true,
+		});
+	
+		// Add the taskbar to the root
+		root.appendChild(taskbar);
 
 	// --- Form Submit Handler ---
 	form.addEventListener("submit", async (e: Event) => {

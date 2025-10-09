@@ -1,5 +1,6 @@
 import { Router } from "../router";
 import { createWindow, MatchHistory,Stats } from "./components";
+import { createTaskbar } from "./components";
 import type { Match,StatsData } from "./components";
 
     export function profileView(router: Router) {
@@ -20,6 +21,17 @@ import type { Match,StatsData } from "./components";
     });
 
     root.appendChild(simpleWindow);
+	
+	// Create the taskbar
+	const { taskbar, taskArea } = createTaskbar({
+		startButton: {
+		label: "Start",
+		onClick: () => alert("Start Menu Clicked!"),//add something to do there /
+		},
+		clock: true,
+	});
+	// Add the taskbar to the root
+	root.appendChild(taskbar);
 
     const statsHeading = document.createElement("h3");
     statsHeading.textContent = "your Stats";

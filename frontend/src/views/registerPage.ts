@@ -1,5 +1,6 @@
 import { Router } from "../router";
 import { createWindow } from "./components";
+import { createTaskbar } from "./components";
 import agent from "./images/msagent.png"
 import book_user from "./images/book_user.png"
 import rabit from "./images/rabit.png"
@@ -170,4 +171,15 @@ export function registerView(router: Router) {
 		router.navigate("/desktop"); //navigate to login 
 	});
 	root.append(simpleWindow);
+
+	// Create the taskbar
+	const { taskbar, taskArea } = createTaskbar({
+		startButton: {
+		label: "Start",
+		onClick: () => alert("Start Menu Clicked!"),//add something to do there /
+		},
+		clock: true,
+	});
+	// Add the taskbar to the root
+	root.appendChild(taskbar);
 }
