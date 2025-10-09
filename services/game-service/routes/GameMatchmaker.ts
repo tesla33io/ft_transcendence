@@ -122,7 +122,21 @@ export class GameMatchmaker {
 		//[TO DO] - need to generate bot from api call
 		// the request JSON should have the difficulity of the bot
 		// request to aibot service will return the ID of the bot (bot will connect to the server via websocket)
-		const bot: Player = generateDefaultPlayer("bot1", "bot1")
+
+		const response = await fetch ('http://ai-service:5100/api/v1/aibot/get-bot/classic', {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({gameId: `${playerId}`, difficulty: 'easy'})
+		})
+
+		if (!response.ok){
+			throw new Error('Failed to generate bot')
+		}
+
+		const data = await response.json()
+		const botId = data.botId
+
+		const bot: Player = generateDefaultPlayer("bot", botId as string)
 		const game: Game = generateDefaultGame(bot, player)
 		setTimeout(() => {
 			if (gameService){
