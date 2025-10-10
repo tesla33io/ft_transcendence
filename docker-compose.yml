@@ -1,5 +1,5 @@
 services:
-
+  # Frontend
   frontend:
     build:
       context: ./frontend
@@ -69,6 +69,7 @@ services:
       dockerfile: Dockerfile
     container_name: blockchain-service
     # NO PORTS - this is a library service
+    #  - "3002:3002"
     env_file:
       - .env
     networks:
@@ -78,7 +79,6 @@ services:
       - /blockchain-service/node_modules
     environment:
       - NODE_ENV=development
-      # No PORT needed
   ai-service:
     build:
       context: ./services/AI-service
@@ -91,4 +91,8 @@ services:
 
 networks:
   pong-network:
+        - ./services/user-service:/user-service
+        - /app/node_modules
 
+networks:
+  pong-network:

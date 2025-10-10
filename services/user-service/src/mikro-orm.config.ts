@@ -1,5 +1,5 @@
 import { defineConfig } from '@mikro-orm/core';
-import { SqliteDriver } from '@mikro-orm/sqlite';
+import { SqliteDriver } from '@mikro-orm/better-sqlite';
 
 export default defineConfig({
     driver: SqliteDriver,

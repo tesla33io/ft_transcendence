@@ -26,10 +26,10 @@ const authenticateToken = (app: FastifyInstance) =>async (request: FastifyReques
         // Find user by ID in database
         const user = await app.em.findOne(User, { id: parseInt(token) });
         if (!user) {
-          return reply.code(403).send({ error: 'User not found' });
+            return reply.code(403).send({ error: 'User not found' });
         }
         request.user = user;
-      } catch (error) {
+    } catch (error) {
         return reply.code(403).send({ error: 'Invalid or expired token' });
     }
 };
@@ -99,11 +99,11 @@ export default async function userRoutes(app: FastifyInstance) {
         // Generate tokens for the newly registered user
         // const deviceInfo = extractDeviceInfo(req);
 
-    return { 
-        id: user.id, 
-        username: user.username,
-        message: 'User registered successfully'
-    };
+        return { 
+            id: user.id, 
+            username: user.username,
+            message: 'User registered successfully'
+        };
 
         } catch (error) {
             app.log.error('Registration error: ' + String(error));
@@ -367,24 +367,24 @@ export default async function userRoutes(app: FastifyInstance) {
 
             // Check if already friends
             const existingFriend = currentUser.friends.getItems().find(friend => friend.id === friendToAdd.id);
-            if (existingFriend) {
-                return reply.code(409).send({ error: 'User is already your friend' });
+        if (existingFriend) {
+            return reply.code(409).send({ error: 'User is already your friend' });
+        }
+
+        // Add friend relationship (bidirectional)
+        currentUser.friends.add(friendToAdd);
+        friendToAdd.friends.add(currentUser);
+
+        await app.em.persistAndFlush([currentUser, friendToAdd]);
+
+        return reply.send({ 
+            message: 'Friend added successfully',
+            friend: {
+                id: friendToAdd.id,
+                username: friendToAdd.username,
+                onlineStatus: friendToAdd.onlineStatus
             }
-
-            // Add friend relationship (bidirectional)
-            currentUser.friends.add(friendToAdd);
-            friendToAdd.friends.add(currentUser);
-
-            await app.em.persistAndFlush([currentUser, friendToAdd]);
-
-            return reply.send({ 
-                message: 'Friend added successfully',
-                friend: {
-                    id: friendToAdd.id,
-                    username: friendToAdd.username,
-                    onlineStatus: friendToAdd.onlineStatus
-                }
-            });
+        });
         } catch (error) {
             app.log.error('Error adding friend: ' + String(error));
             return reply.code(500).send({ error: 'Internal server error' });
@@ -411,17 +411,17 @@ export default async function userRoutes(app: FastifyInstance) {
 
             // Check if they are friends
             const existingFriend = currentUser.friends.getItems().find(friend => friend.id === friendToRemove.id);
-            if (!existingFriend) {
-                return reply.code(404).send({ error: 'User is not your friend' });
-            }
+        if (!existingFriend) {
+            return reply.code(404).send({ error: 'User is not your friend' });
+        }
 
-            // Remove friend relationship (bidirectional)
-            currentUser.friends.remove(friendToRemove);
-            friendToRemove.friends.remove(currentUser);
+        // Remove friend relationship (bidirectional)
+        currentUser.friends.remove(friendToRemove);
+        friendToRemove.friends.remove(currentUser);
 
-            await app.em.persistAndFlush([currentUser, friendToRemove]);
+        await app.em.persistAndFlush([currentUser, friendToRemove]);
 
-            return reply.send({ message: 'Friend removed successfully' });
+        return reply.send({ message: 'Friend removed successfully' });
         } catch (error) {
             app.log.error('Error removing friend: ' + String(error));
             return reply.code(500).send({ error: 'Internal server error' });
@@ -572,5 +572,3 @@ function validatePassword(password: any): ValidationResult {
 function sanitizeInput(input: string): string {
     return input.trim().replace(/\s+/g, ' ');
 }
-
-//!
