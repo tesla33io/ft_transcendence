@@ -42,6 +42,13 @@ export class UserStatistics {
   @Property({ default: 0 })
   ratingChange: number = 0;
 
+  // Tournament statistics
+  @Property({ default: 0 })
+  overallTournamentWon: number = 0;
+
+  @Property({ default: 0 })
+  tournamentsParticipated: number = 0;
+
   // Timestamps
   @Property()
   createdAt!: Date;
@@ -103,5 +110,21 @@ export class UserStatistics {
     }
     
     this.updatedAt = new Date();
+  }
+
+  // Tournament statistics methods
+  addTournamentParticipation(): void {
+    this.tournamentsParticipated++;
+    this.updatedAt = new Date();
+  }
+
+  addTournamentWin(): void {
+    this.overallTournamentWon++;
+    this.updatedAt = new Date();
+  }
+
+  calculateTournamentWinRate(): number {
+    if (this.tournamentsParticipated === 0) return 0;
+    return Number(((this.overallTournamentWon / this.tournamentsParticipated) * 100).toFixed(2));
   }
 }
