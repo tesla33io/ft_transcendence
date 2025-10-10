@@ -7,11 +7,9 @@ A comprehensive microservices-based gaming platform built with Node.js, TypeScri
 ```
 ft_transcendence/
 ├── services/                    # Microservices
-│   ├── gateway/                # API Gateway / Frontend Backend
-│   ├── auth-service/           # Authentication & Authorization
-│   ├── user-service/          # User Management (CRUD, Profiles, Stats)
-│   ├── game-service/          # Game Logic & Real-time Gaming
-│   └── tournament-service/     # Tournament Management
+│   ├── gateway-service/         # API Gateway
+│   ├── user-service/           # User Management (CRUD, Profiles, Stats, Auth)
+│   └── game-service/           # Game Logic & Real-time Gaming
 ├── frontend/                   # Frontend Application
 ├── shared/                     # Shared Types, DTOs, Events
 ├── scripts/                    # DevOps, Testing, Migration Scripts
@@ -95,17 +93,16 @@ docker-compose up -d
 
 ## 📋 Services Overview
 
+### 🌐 Frontend (Port 5173)
+- React/Vue frontend application
+- User interface for gaming platform
+- Real-time game visualization
+
 ### 🌐 Gateway Service (Port 3000)
 - API Gateway and routing
 - Rate limiting and security
 - Request/response transformation
 - Load balancing
-
-### 🔐 Auth Service (Port 3001)
-- User authentication (JWT)
-- Password management
-- Two-factor authentication
-- Session management
 
 ### 👤 User Service (Port 3002)
 - User CRUD operations
@@ -113,18 +110,16 @@ docker-compose up -d
 - User statistics
 - Match history
 - Account management
+- Authentication (JWT)
+- Password management
+- Two-factor authentication
 
-### 🎮 Game Service (Port 3003)
+### 🎮 Game Service (Ports 5001, 5002)
 - Real-time game logic
 - WebSocket connections
 - Game state management
 - Score tracking
-
-### 🏆 Tournament Service (Port 3004)
-- Tournament creation and management
-- Bracket generation
-- Tournament scheduling
-- Results tracking
+- Pong game engine
 
 ## 🛠️ Development
 
@@ -179,11 +174,10 @@ docker-compose -f docker-compose.dev.yml up -d
 
 ## 📚 API Documentation
 
+- **Frontend**: http://localhost:5173
 - **Gateway**: http://localhost:3000/docs
-- **Auth Service**: http://localhost:3001/docs
 - **User Service**: http://localhost:3002/docs
-- **Game Service**: http://localhost:3003/docs
-- **Tournament Service**: http://localhost:3004/docs
+- **Game Service**: http://localhost:5001/docs (WebSocket: ws://localhost:5001)
 
 ## 🧪 Testing
 

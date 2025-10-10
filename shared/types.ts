@@ -24,6 +24,8 @@ export interface UserStatistics {
   currentRating: number;
   highestRating: number;
   ratingChange: number;
+  overallTournamentWon: number;
+  tournamentsParticipated: number;
   createdAt: Date;
   updatedAt: Date;
   lastGameAt?: Date;
