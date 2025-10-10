@@ -13,7 +13,7 @@ export class AuthService {
       role: user.role
     };
 
-    return jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+    return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
   }
 
   static async hashPassword(password: string): Promise<string> {
