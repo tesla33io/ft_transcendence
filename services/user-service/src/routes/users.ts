@@ -161,17 +161,24 @@ router.post('/me/2fa/setup', authenticateToken, async (req: Request, res: Respon
       return res.status(400).json({ error: '2FA is already enabled' });
     }
 
-    // Generate temporary secret (in real implementation, use crypto.randomBytes)
-    const tempSecret = 'TEMP_SECRET_' + Math.random().toString(36).substring(2, 15);
-    const otpauth_url = `otpauth://totp/ft_transcendence:${user.username}?secret=${tempSecret}&issuer=ft_transcendence`;
+    // Generate cryptographically secure secret for 2FA
+    const speakeasy = require('speakeasy');
+    const tempSecret = speakeasy.generateSecret({
+      name: `ft_transcendence (${user.username})`,
+      issuer: 'ft_transcendence',
+      length: 32
+    });
     
-    // Generate backup codes
+    const otpauth_url = tempSecret.otpauth_url;
+    
+    // Generate cryptographically secure backup codes
+    const crypto = require('crypto');
     const backupCodes = Array.from({ length: 10 }, () => 
-      Math.random().toString(36).substring(2, 8).toUpperCase()
+      crypto.randomBytes(4).toString('hex').toUpperCase()
     );
 
     // Store temporary secret and backup codes
-    user.twoFactorSecret = tempSecret;
+    user.twoFactorSecret = tempSecret.base32;
     user.backupCodes = JSON.stringify(backupCodes);
     await req.em.persistAndFlush(user);
 
@@ -200,8 +207,16 @@ router.post('/me/2fa/confirm', authenticateToken, async (req: Request, res: Resp
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Verify OTP (in real implementation, use speakeasy or similar)
-    if (otp !== '123456') { // Simplified verification
+    // Verify OTP using speakeasy
+    const speakeasy = require('speakeasy');
+    const verified = speakeasy.totp.verify({
+      secret: user.twoFactorSecret,
+      encoding: 'base32',
+      token: otp,
+      window: 2 // Allow 2 time steps before/after current time
+    });
+
+    if (!verified) {
       return res.status(400).json({ error: 'Invalid OTP' });
     }
 
@@ -234,9 +249,19 @@ router.post('/me/2fa/disable', authenticateToken, async (req: Request, res: Resp
       return res.status(400).json({ error: '2FA is not enabled' });
     }
 
-    // Verify OTP or recovery code (simplified)
-    if (otp && otp !== '123456') {
-      return res.status(400).json({ error: 'Invalid OTP' });
+    // Verify OTP using speakeasy
+    if (otp) {
+      const speakeasy = require('speakeasy');
+      const verified = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: 'base32',
+        token: otp,
+        window: 2
+      });
+
+      if (!verified) {
+        return res.status(400).json({ error: 'Invalid OTP' });
+      }
     }
 
     if (recovery_code) {
@@ -283,7 +308,15 @@ router.delete('/me', authenticateToken, async (req: Request, res: Response) => {
 
     // Verify OTP if 2FA is enabled
     if (user.twoFactorEnabled && otp) {
-      if (otp !== '123456') { // Simplified verification
+      const speakeasy = require('speakeasy');
+      const verified = speakeasy.totp.verify({
+        secret: user.twoFactorSecret,
+        encoding: 'base32',
+        token: otp,
+        window: 2
+      });
+
+      if (!verified) {
         return res.status(400).json({ error: 'Invalid OTP' });
       }
     }
