@@ -1,3 +1,5 @@
+import { randomBytes } from 'crypto';
+
 export const GAME_HEIGHT = Number(process.env.GAME_HEIGHT || "550")
 export const GAME_WIDTH = Number(process.env.GAME_WIDTH || "900")
 export const PADDLE_HEIGHT = Number(process.env.PADDLE_HEIGHT || "50")
@@ -8,11 +10,11 @@ export const PLAYER_OFFSET = Number(process.env.PLAYER_OFFSET || "20")
 export type GameMode = 'classic' | 'tournament'
 
 export const generateGameId = (): string => {
-	return Math.random().toString(36).substring(2, 15);
+	return randomBytes(16).toString('hex');
 }
 
 export const generatePlayerId = (): string =>{
-	return Math.random().toString().substring(2,6);
+	return randomBytes(8).toString('hex');
 }
 
 export enum GAME_STATE {

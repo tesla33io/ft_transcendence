@@ -1,5 +1,5 @@
 services:
-
+  # Frontend
   frontend:
     build:
       context: ./frontend
@@ -44,6 +44,20 @@ services:
       - ./services/game-service:/game-service
       - /app/node_modules
 
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "3002:3002"
+    env_file:
+      - .env
+    networks:
+      - pong-network
+    volumes:
+        - ./services/user-service:/user-service
+        - /app/node_modules
+
 networks:
   pong-network:
-

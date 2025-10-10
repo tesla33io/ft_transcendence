@@ -101,7 +101,7 @@ export function tournamentView(router: Router) {
 			currentPongGame = undefined;
 		}
 
-		const playerId = Math.random().toString().substring(2, 7);
+		const playerId = crypto.getRandomValues(new Uint8Array(8)).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
 		try {
 			const game = new PongGame(
