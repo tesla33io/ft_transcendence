@@ -2,8 +2,31 @@ import '../types/fastify';
 import { FastifyInstance } from 'fastify';
 import argon2 from 'argon2';
 import { User } from '../entities/User';
+import { FastifyRequest, FastifyReply } from 'fastify';
+import jwt from 'jsonwebtoken';
 //import { RefreshToken } from '../entities/RefreshToken';
 import crypto from 'crypto';
+
+// Authentication middleware
+const authenticateToken = (app: FastifyInstance) =>async (request: FastifyRequest, reply: FastifyReply) => {
+    const authHeader = request.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+        return reply.code(401).send({ error: 'Access token required' });
+    }
+
+    try {
+        // Find user by ID in database
+        const user = await app.em.findOne(User, { id: parseInt(token) });
+        if (!user) {
+          return reply.code(403).send({ error: 'User not found' });
+        }
+        request.user = user;
+      } catch (error) {
+        return reply.code(403).send({ error: 'Invalid or expired token' });
+    }
+};
 
 interface ValidationError {
     field: string;
@@ -149,6 +172,49 @@ export default async function userRoutes(app: FastifyInstance) {
                 error: 'Internal server error',
                 details: 'Unable to process login at this time'
             });
+        }
+    });
+
+    // GET /api/v1/users/me
+    app.get('/me', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const user = await app.em.findOne(User, { id: request.user!.id }, {
+                populate: ['statistics']
+            });
+        
+            if (!user) {
+                return reply.code(404).send({ error: 'User not found' });
+            }
+        
+            const response = {
+                id: user.id,
+                username: user.username,
+                role: user.role,
+                profile: {
+                    avatarUrl: user.avatarUrl,
+                    onlineStatus: user.onlineStatus,
+                    activityType: user.activityType
+                },
+                stats: {
+                    totalGames: user.statistics.getItems()[0]?.totalGames || 0,
+                    wins: user.statistics.getItems()[0]?.wins || 0,
+                    losses: user.statistics.getItems()[0]?.losses || 0,
+                    draws: user.statistics.getItems()[0]?.draws || 0,
+                    averageGameDuration: user.statistics.getItems()[0]?.averageGameDuration || 0,
+                    longestGame: user.statistics.getItems()[0]?.longestGame || 0,
+                    bestWinStreak: user.statistics.getItems()[0]?.bestWinStreak || 0,
+                    currentRating: user.statistics.getItems()[0]?.currentRating || 1000,
+                    highestRating: user.statistics.getItems()[0]?.highestRating || 1000,
+                    ratingChange: user.statistics.getItems()[0]?.ratingChange || 0
+                },
+                twofa_enabled: user.twoFactorEnabled,
+                last_login: user.lastLogin
+            };
+        
+            return reply.send(response);
+        } catch (error) {
+            app.log.error('Error fetching user profile:' + String(error));
+            return reply.code(500).send({ error: 'Internal server error' });
         }
     });
 }
