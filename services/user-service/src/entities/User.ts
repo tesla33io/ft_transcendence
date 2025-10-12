@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, Enum, OneToMany, Collection } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, Enum, OneToMany, ManyToMany, Collection } from '@mikro-orm/core';
 import { UserStatistics } from './UserStatistics.js';
 import { MatchHistory } from './MatchHistory.js';
 
@@ -68,6 +68,10 @@ export class User {
 
   @OneToMany(() => MatchHistory, (match) => match.user)
   matchHistory = new Collection<MatchHistory>(this);
+
+  // Friend relationships
+  @ManyToMany(() => User)
+  friends = new Collection<User>(this);
 
   // Helper methods for business logic
   isOnline(): boolean {

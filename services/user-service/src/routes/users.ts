@@ -217,8 +217,204 @@ export default async function userRoutes(app: FastifyInstance) {
             return reply.code(500).send({ error: 'Internal server error' });
         }
     });
-}
 
+    // PATCH /api/v1/users/me
+    app.patch('/me', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const { username, password, profile } = request.body as any;
+            const user = await app.em.findOne(User, { id: request.user!.id });
+
+            if (!user) {
+                return reply.code(404).send({ error: 'User not found' });
+            }
+
+            // Check if username is already taken (if changing username)
+            if (username && username !== user.username) {
+                const existingUser = await app.em.findOne(User, { username });
+                if (existingUser) {
+                    return reply.code(409).send({ error: 'Username already taken' });
+                }
+                user.username = username;
+            }
+
+            // Update password if provided
+            if (password) {
+                // Validate password
+                const passwordValidation = validatePassword(password);
+                if (!passwordValidation.isValid) {
+                    return reply.code(400).send({ 
+                        error: 'Invalid password',
+                        details: passwordValidation.errors
+                    });
+                }
+                
+                // Hash and update password
+                const hash = await argon2.hash(password);
+                user.passwordHash = hash;
+            }
+
+            // Update profile fields
+            if (profile) {
+                if (profile.avatarUrl !== undefined) user.avatarUrl = profile.avatarUrl;
+                if (profile.onlineStatus !== undefined) user.onlineStatus = profile.onlineStatus;
+                if (profile.activityType !== undefined) user.activityType = profile.activityType;
+            }
+
+            await app.em.persistAndFlush(user);
+
+            return reply.send({ 
+                message: 'Profile updated successfully', 
+                user: { id: user.id, username: user.username } 
+            });
+        } catch (error) {
+            app.log.error('Error updating user profile: ' + String(error));
+            return reply.code(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // GET /api/v1/users/friends - Get user's friends list
+    app.get('/friends', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const user = await app.em.findOne(User, { id: request.user!.id }, {
+                populate: ['friends']
+            });
+
+            if (!user) {
+                return reply.code(404).send({ error: 'User not found' });
+            }
+
+            const friends = user.friends.getItems().map(friend => ({
+                id: friend.id,
+                username: friend.username,
+                avatarUrl: friend.avatarUrl,
+                onlineStatus: friend.onlineStatus,
+                activityType: friend.activityType,
+                lastLogin: friend.lastLogin
+            }));
+
+            return reply.send({ friends });
+        } catch (error) {
+            app.log.error('Error fetching friends: ' + String(error));
+            return reply.code(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // POST /api/v1/users/friends - Add a friend
+    app.post('/friends', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const { username } = request.body as any;
+
+            if (!username || typeof username !== 'string') {
+                return reply.code(400).send({ 
+                    error: 'Invalid request',
+                    details: 'Username is required'
+                });
+            }
+
+            const currentUser = await app.em.findOne(User, { id: request.user!.id }, {
+                populate: ['friends']
+            });
+
+            if (!currentUser) {
+                return reply.code(404).send({ error: 'User not found' });
+            }
+
+            // Check if trying to add self
+            if (username === currentUser.username) {
+                return reply.code(400).send({ error: 'Cannot add yourself as a friend' });
+            }
+
+            // Find the user to add as friend
+            const friendToAdd = await app.em.findOne(User, { username });
+            if (!friendToAdd) {
+                return reply.code(404).send({ error: 'User not found' });
+            }
+
+            // Check if already friends
+            const existingFriend = currentUser.friends.getItems().find(friend => friend.id === friendToAdd.id);
+            if (existingFriend) {
+                return reply.code(409).send({ error: 'User is already your friend' });
+            }
+
+            // Add friend relationship (bidirectional)
+            currentUser.friends.add(friendToAdd);
+            friendToAdd.friends.add(currentUser);
+
+            await app.em.persistAndFlush([currentUser, friendToAdd]);
+
+            return reply.send({ 
+                message: 'Friend added successfully',
+                friend: {
+                    id: friendToAdd.id,
+                    username: friendToAdd.username,
+                    onlineStatus: friendToAdd.onlineStatus
+                }
+            });
+        } catch (error) {
+            app.log.error('Error adding friend: ' + String(error));
+            return reply.code(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // DELETE /api/v1/users/friends/:username - Remove a friend
+    app.delete('/friends/:username', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
+        try {
+            const { username } = request.params as any;
+
+            const currentUser = await app.em.findOne(User, { id: request.user!.id }, {
+                populate: ['friends']
+            });
+
+            if (!currentUser) {
+                return reply.code(404).send({ error: 'User not found' });
+            }
+
+            const friendToRemove = await app.em.findOne(User, { username });
+            if (!friendToRemove) {
+                return reply.code(404).send({ error: 'User not found' });
+            }
+
+            // Check if they are friends
+            const existingFriend = currentUser.friends.getItems().find(friend => friend.id === friendToRemove.id);
+            if (!existingFriend) {
+                return reply.code(404).send({ error: 'User is not your friend' });
+            }
+
+            // Remove friend relationship (bidirectional)
+            currentUser.friends.remove(friendToRemove);
+            friendToRemove.friends.remove(currentUser);
+
+            await app.em.persistAndFlush([currentUser, friendToRemove]);
+
+            return reply.send({ message: 'Friend removed successfully' });
+        } catch (error) {
+            app.log.error('Error removing friend: ' + String(error));
+            return reply.code(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // GET /api/v1/users/search/:username - Search for users by username
+    app.get('/search/:username', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
+        const { username } = request.params as any;
+        const { limit = 20, offset = 0 } = request.query as any;
+
+        const users: User[] = await app.em.find(
+            User,
+            { username: { $like: `%${username}%` }, id: { $ne: request.user!.id } },
+            { limit: Number(limit), offset: Number(offset) }
+        );
+
+        const searchResults = users.map((user: User) => ({
+            id: user.id,
+            username: user.username,
+            avatarUrl: user.avatarUrl,
+            onlineStatus: user.onlineStatus,
+            activityType: user.activityType
+        }));
+
+        return reply.send({ users: searchResults });
+    });
+}
 // function extractDeviceInfo(req: any): string {
 //     const userAgent = req.headers['user-agent'] || 'Unknown';
 //     const ip = req.ip || req.headers['x-forwarded-for'] || 'Unknown';
