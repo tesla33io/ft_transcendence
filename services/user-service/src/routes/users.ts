@@ -3,9 +3,15 @@ import { FastifyInstance } from 'fastify';
 import argon2 from 'argon2';
 import { User } from '../entities/User';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import jwt from 'jsonwebtoken';
-//import { RefreshToken } from '../entities/RefreshToken';
-import crypto from 'crypto';
+import { mkdir } from 'fs/promises';
+import { join } from 'path';
+import { randomBytes } from 'crypto';
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
+
+const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'profiles');
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 // Authentication middleware
 const authenticateToken = (app: FastifyInstance) =>async (request: FastifyRequest, reply: FastifyReply) => {
@@ -39,6 +45,7 @@ interface ValidationResult {
 }
 
 export default async function userRoutes(app: FastifyInstance) {
+    await mkdir(UPLOAD_DIR, { recursive: true });
 
     app.post('/register', async (req, reply) => {
         try {
@@ -181,11 +188,11 @@ export default async function userRoutes(app: FastifyInstance) {
             const user = await app.em.findOne(User, { id: request.user!.id }, {
                 populate: ['statistics']
             });
-        
+
             if (!user) {
                 return reply.code(404).send({ error: 'User not found' });
             }
-        
+
             const response = {
                 id: user.id,
                 username: user.username,
@@ -210,11 +217,93 @@ export default async function userRoutes(app: FastifyInstance) {
                 twofa_enabled: user.twoFactorEnabled,
                 last_login: user.lastLogin
             };
-        
+
             return reply.send(response);
         } catch (error) {
             app.log.error('Error fetching user profile:' + String(error));
             return reply.code(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    app.post('/profile/picture', async (req: FastifyRequest, reply) => {
+        try {
+            // authentication
+            const userId = 1;
+            if (!userId) {
+                return reply.code(401).send({ 
+                    error: 'User ID required',
+                    details: 'Please provide userId in request'
+                });
+            }
+
+            const data = await req.file();
+
+            if (!data) {
+                return reply.code(400).send({ 
+                    error: 'No file provided',
+                    details: 'Please upload an image file'
+                });
+            }
+
+            if (!ALLOWED_MIME_TYPES.includes(data.mimetype)) {
+                return reply.code(400).send({ 
+                    error: 'Invalid file type',
+                    details: `Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
+                });
+            }
+
+            const chunks: Buffer[] = [];
+            let size = 0;
+
+            for await (const chunk of data.file) {
+                size += chunk.length;
+                if (size > MAX_FILE_SIZE) {
+                    return reply.code(400).send({ 
+                        error: 'File too large',
+                        details: `Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`
+                    });
+                }
+                chunks.push(chunk);
+            }
+
+            const ext = data.mimetype.split('/')[1];
+            const randomName = randomBytes(16).toString('hex');
+            const filename = `${randomName}.${ext}`;
+            const filepath = join(UPLOAD_DIR, filename);
+
+            // Save file
+            const buffer = Buffer.concat(chunks);
+            await pipeline(
+                async function* () { yield buffer; },
+                createWriteStream(filepath)
+            );
+
+            const uri = `/uploads/profiles/${filename}`;
+
+            const user = await app.em.findOne(User, { id: userId });
+
+            if (!user) {
+                return reply.code(404).send({ 
+                    error: 'User not found'
+                });
+            }
+
+            // TODO: Delete old profile picture if exists
+
+            user.profilePicURI = uri;
+            await app.em.persistAndFlush(user);
+
+            return { 
+                message: 'Profile picture uploaded successfully',
+                uri: uri
+            };
+
+        } catch (error) {
+            app.log.error('Profile picture upload error: ' + String(error));
+            return reply.code(500).send({ 
+                error: 'Internal server error',
+                details: 'Unable to upload profile picture at this time'
+            });
         }
     });
 }
