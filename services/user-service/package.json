@@ -10,8 +10,9 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "migration:up": "mikro-orm migration:up",
-    "migration:down": "mikro-orm migration:down"
+    "migration:create": "tsx node_modules/@mikro-orm/cli/cli.js migration:create --dump",
+    "migration:up": "tsx node_modules/@mikro-orm/cli/cli.js migration:up",
+    "migration:down": "tsx node_modules/@mikro-orm/cli/cli.js migration:down"
   },
   "type": "module",
   "dependencies": {

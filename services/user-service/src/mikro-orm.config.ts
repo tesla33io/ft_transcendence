@@ -6,6 +6,7 @@ export default defineConfig({
     entities: ['./dist/entities'],  // compiled entities
     entitiesTs: ['./src/entities'], // TS entities
     debug: process.env.NODE_ENV !== 'production',
+    logger: (message) => console.log(message),
     metadataProvider: TsMorphMetadataProvider,
     migrations: {
         path: './migrations',
