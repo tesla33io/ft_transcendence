@@ -1,8 +1,11 @@
 import './types/fastify'
 import Fastify from 'fastify';
 import { MikroORM } from '@mikro-orm/core';
+import multipart from '@fastify/multipart';
+import fastifyStatic from '@fastify/static';
 import mikroConfig from './mikro-orm.config';
 import userRoutes from './routes/users';
+import { join } from 'path';
 //import { setup2FARoutes } from './routes/2fa';
 
 async function buildServer() {
@@ -18,6 +21,11 @@ async function buildServer() {
         await orm.close();
     });
 
+    await app.register(fastifyStatic, {
+        root: join(process.cwd(), 'public'),
+        prefix: '/'
+    });
+    await app.register(multipart);
     await app.register(userRoutes, { prefix: '/users' });
     //await app.register(setup2FARoutes, { prefix: 'auth' });
 
