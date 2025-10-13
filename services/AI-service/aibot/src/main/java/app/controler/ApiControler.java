@@ -4,11 +4,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.http.ResponseEntity;
+
 
 import app.AIbot.AIbotManager;
 import app.AIbot.model.BotRequest;
-
-import org.springframework.web.bind.annotation.PostMapping;
 
 
 @RestController
@@ -22,7 +23,7 @@ public class ApiControler {
 	}
 
 	@PostMapping("/get-bot/classic") //the request JSON will send the
-	public String Aibot (@RequestBody BotRequest req){
+	public ResponseEntity<BotResponse> Aibot (@RequestBody BotRequest req){
 		final String botId = this.aIbotManager.createBot(req.getGameId(), req.getDifficulty());
 		BotResponse response = new BotResponse(botId);
 		return ResponseEntity.ok(response);
