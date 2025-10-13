@@ -115,8 +115,8 @@ export class GameMatchmaker {
 	}
 
 	public async joinBotClassic(playerData: JoinGameRequest){
-		const { playerName, playerId, gameMode } = playerData as {playerName: string, playerId: string, gameMode: GameMode}
-		const gameService = this.gameServiceManager.getGameService(gameMode)
+		const { playerName, playerId} = playerData as {playerName: string, playerId: string}
+		const gameService = this.gameServiceManager.getGameService('classic')
 		const player: Player = generateDefaultPlayer(playerName, playerId)
 
 		//[TO DO] - need to generate bot from api call
@@ -135,6 +135,7 @@ export class GameMatchmaker {
 
 		const data = await response.json()
 		const botId = data.botId
+		console.log("bot ID: ", data.id);
 
 		const bot: Player = generateDefaultPlayer("bot", botId as string)
 		const game: Game = generateDefaultGame(bot, player)

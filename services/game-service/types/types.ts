@@ -5,7 +5,7 @@ export const PADDLE_WIDTH = Number(process.env.PADDLE_WIDTH || "10")
 export const FPS = Number(process.env.FPS || "60")
 export const PLAYER_OFFSET = Number(process.env.PLAYER_OFFSET || "20")
 
-export type GameMode = 'classic' | 'tournament'
+export type GameMode = 'classic' | 'tournament' | 'bot-classic'
 
 export const generateGameId = (): string => {
 	return Math.random().toString(36).substring(2, 15);

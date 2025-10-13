@@ -24,6 +24,25 @@ public class ApiControler {
 	@PostMapping("/get-bot/classic") //the request JSON will send the
 	public String Aibot (@RequestBody BotRequest req){
 		final String botId = this.aIbotManager.createBot(req.getGameId(), req.getDifficulty());
-		return botId;
+		BotResponse response = new BotResponse(botId);
+		return ResponseEntity.ok(response);
 	}
+
+	public static class BotResponse {
+		private String botId;
+
+		public BotResponse() {} // Default constructor for JSON deserialization
+
+		public BotResponse(String botId) {
+			this.botId = botId;
+		}
+
+		public String getBotId() {
+			return botId;
+		}
+
+		public void setBotId(String botId) {
+			this.botId = botId;
+		}
+}
 }
