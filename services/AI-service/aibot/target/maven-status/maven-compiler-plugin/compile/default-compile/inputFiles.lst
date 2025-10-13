@@ -1,0 +1,12 @@
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/AIbot.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/AIbotBuilder.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/AIbotInstance.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/AIbotManager.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/level/EasyAI.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/model/BotAction.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/model/BotActionMessage.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/model/BotRequest.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/model/GameState.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AIbot/websocket/WebSocketGameClient.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/AibotApplication.java
+/home/inzagini/ft_transcendence/services/AI-service/aibot/src/main/java/app/controler/ApiControler.java

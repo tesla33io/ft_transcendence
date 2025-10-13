@@ -1,0 +1,13 @@
+app/AIbot/websocket/WebSocketGameClient.class
+app/AIbot/level/EasyAI.class
+app/AibotApplication.class
+app/AIbot/model/BotAction.class
+app/AIbot/model/BotRequest.class
+app/controler/ApiControler.class
+app/AIbot/model/GameState.class
+app/AIbot/model/BotActionMessage.class
+app/AIbot/websocket/WebSocketGameClient$BotWebSocketHandler.class
+app/AIbot/AIbotManager.class
+app/AIbot/AIbot.class
+app/AIbot/AIbotInstance.class
+app/AIbot/AIbotBuilder.class
