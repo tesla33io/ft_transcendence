@@ -18,6 +18,13 @@ import  {
     MatchResult
 } from '../types';
 
+export interface TournamentStatistics {
+    tournamentWins: number;
+    tournamentsParticipated: number;
+    winLossPercentage: number;
+    userId: number;
+}
+
 export class UserService {
     // ===== AUTHENTICATION (SENDERS) =====
     
@@ -318,6 +325,51 @@ export class UserService {
         // return await ApiService.post<PublicUser>('/users/me/avatar', { avatarUrl });
         
         return await this.updateProfile({ avatarUrl });
+    }
+
+    // ===== TOURNAMENT STATISTICS =====
+    
+    // Get current user's tournament statistics
+    static async getCurrentUserTournamentStats(): Promise<TournamentStatistics> {
+        // TODO: Uncomment when backend is ready
+        // return await ApiService.get<TournamentStatistics>('/users/me/tournament-stats');
+        
+        // Mock response
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const currentUser = this.getCurrentUserFromStorage();
+        if (!currentUser) throw new Error('Not logged in');
+        
+        const tournamentWins = Math.floor(Math.random() * 15) + 2;
+        const tournamentsParticipated = tournamentWins + Math.floor(Math.random() * 25) + 5;
+        const winLossPercentage = Math.round((tournamentWins / tournamentsParticipated) * 100);
+        
+        return {
+            userId: currentUser.id,
+            tournamentWins,
+            tournamentsParticipated,
+            winLossPercentage
+        };
+    }
+
+    // Get any user's tournament statistics
+    static async getUserTournamentStats(userId: number): Promise<TournamentStatistics> {
+        // TODO: Uncomment when backend is ready
+        // return await ApiService.get<TournamentStatistics>(`/users/${userId}/tournament-stats`);
+        
+        // Mock response
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        const tournamentWins = Math.floor(Math.random() * 20) + 1;
+        const tournamentsParticipated = tournamentWins + Math.floor(Math.random() * 30) + 3;
+        const winLossPercentage = Math.round((tournamentWins / tournamentsParticipated) * 100);
+        
+        return {
+            userId,
+            tournamentWins,
+            tournamentsParticipated,
+            winLossPercentage
+        };
     }
 
     // ===== UTILITY FUNCTIONS =====

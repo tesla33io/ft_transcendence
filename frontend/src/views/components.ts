@@ -475,3 +475,128 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
 }
 
 
+//static desktop icons 
+// Import your existing desktop icons
+import joystickIcon from './images/joystick.png';
+import padlock from './images/padlock.png';
+import remote from './images/remote.png'
+import usergreen from './images/users_green.png'
+import network from './images/network.png'
+import spider from './images/spider.png'
+import phone from './images/phone.png'
+import gear from './images/gears.png'
+// Define the icon data type (same as your desktop)
+type StaticIconData = {
+    id: string;
+    title: string;
+    img: string;
+    x: number;
+    y: number;
+};
+
+export interface StaticDesktopOptions {
+    opacity?: number; // 0.1 to 1.0, default 0.4
+    showLabels?: boolean; // Whether to show icon labels, default true
+    iconSize?: number; // Icon size in pixels, default 32
+    zIndex?: number; // Z-index for positioning, default -1
+}
+
+export class StaticDesktopBackground {
+    private container: HTMLElement;
+    private icons: StaticIconData[];
+
+    constructor() {
+        // Use the exact same icons as your desktop
+        this.icons = [
+            { id: "local_game", title: "local_Pong.exe", img: joystickIcon, x: 0, y: 0 },
+            { id: "Remotepong", title: "Online_Pong.exe", img: remote, x: 0, y: 0 },
+            { id: "Ai", title: "Ai_Pong.exe", img: spider, x: 0, y: 0 },
+            { id: "tournament", title: "Tournament.exe", img: network, x: 0, y: 0 },
+            { id: "profile", title: "Profile.exe", img: usergreen, x: 0, y: 0 },
+            { id: "friends", title: "friends.exe", img: phone, x: 0, y: 0 },
+            { id: "settings", title: "settings.exe", img: gear, x: 0, y: 0 },
+            { id: "logout", title: "logout.exe", img: padlock, x: 0, y: 0 }
+        ];
+
+        this.container = this.createContainer();
+        this.render();
+    }
+
+    private createContainer(): HTMLElement {
+        const container = document.createElement('div');
+        container.className = 'static-desktop-background';
+        container.style.cssText = `
+            position: fixed;
+            pointer-events: none;
+            z-index: -1;
+        `;
+        return container;
+    }
+
+    private render() {
+        this.container.innerHTML = '';
+
+        // Create desktop layout exactly like your desktop page
+        const desktop = document.createElement("div");
+        desktop.className = "desktop";
+        desktop.style.cssText = `
+            display: flex;
+            flex-wrap: wrap;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            gap: 5px;
+            padding: 5px;
+            height: 100%;
+        `;
+
+        // Render icons exactly like your desktop
+        this.icons.forEach(icon => {
+            const iconDiv = document.createElement("div");
+            iconDiv.className = "flex flex-col items-start w-fit";
+
+            // Image - exact same as desktop
+            const img = document.createElement("img");
+            img.src = icon.img;
+            img.alt = icon.title;
+            img.className = "desktop-icon";
+            iconDiv.appendChild(img);
+
+            // Title - exact same as desktop
+            const label = document.createElement("div");
+            label.innerText = icon.title;
+            label.className = "mt-2 text-white";
+            iconDiv.appendChild(label);
+
+            // Add to desktop
+            desktop.appendChild(iconDiv);
+        });
+
+        this.container.appendChild(desktop);
+    }
+
+    // Public method to add the background to a specific page
+    public attachToPage(targetElement: HTMLElement = document.body) {
+        // Remove any existing background first
+        this.remove();
+        targetElement.appendChild(this.container);
+        return this; // For method chaining
+    }
+
+    // Public method to remove the background
+    public remove() {
+        if (this.container.parentElement) {
+            this.container.parentElement.removeChild(this.container);
+        }
+    }
+
+    // Check if background is currently attached
+    public isAttached(): boolean {
+        return this.container.parentElement !== null;
+    }
+}
+
+// Helper function for easy usage
+export function createStaticDesktopBackground(): StaticDesktopBackground {
+    return new StaticDesktopBackground();
+}

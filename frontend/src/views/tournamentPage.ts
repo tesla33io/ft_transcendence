@@ -1,8 +1,8 @@
 import { Router } from '../router';
 import { createWindow } from './components';
 import { PongGame } from '../game/PongGame';
-import { createTaskbar } from "./components";
-
+import { createTaskbar, createStaticDesktopBackground } from "./components";
+import {TournamentStatsComponent} from "./statisticComponents"
 let currentPongGame: PongGame | undefined = undefined;
 
 export function tournamentView(router: Router) {
@@ -11,8 +11,23 @@ export function tournamentView(router: Router) {
 
 	// --- Window Content ---
 	const content = document.createElement("div");
+    content.style.padding = "15px";
 
-	//maybe add some statistics winn streak elo gain ? 
+	 // Add static desktop background
+    const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(root);
+
+    // Add Tournament Statistics (Compact view)
+    const tournamentStatsContainer = document.createElement("div");
+    new TournamentStatsComponent({
+        container: tournamentStatsContainer,
+        showTitle: true,
+        onError: (error) => {
+            console.error('Tournament stats error:', error);
+            // Handle error as needed
+        }
+    });
+    content.appendChild(tournamentStatsContainer);
 
 	// Form
 	const form = document.createElement("form");

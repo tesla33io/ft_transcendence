@@ -80,36 +80,6 @@ input[type="text"]:focus {
     box-shadow: 0 0 0 4px rgba(94, 84, 142, 0.1);
 }
 
-.join-btn {
-    width: 100%;
-    padding: 14px 20px;
-    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-    color: var(--color-text);
-    border: none;
-    border-radius: 12px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.join-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(94, 84, 142, 0.4);
-}
-
-.join-btn:active {
-    transform: translateY(0);
-}
-
-.join-btn:disabled {
-    background: var(--color-accent);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
 
 .button-group {
   display: flex;
