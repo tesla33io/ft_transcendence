@@ -238,62 +238,39 @@ export function registerView(router: Router) {
     }
 
     async function handleRegistration() {
-        console.log('📝 Registration attempt started');
-        
         const data = getRegistrationData();
-        console.log("📤 Collected registration data:", {
-            ...data,
-            password: '***',
-            repeatPassword: '***'
-        });
-
         // Validate data
         const validationError = validateRegistrationData(data);
         if (validationError) {
             showError(validationError);
             return;
         }
-
         showLoading();
-
         try {
-            // Create RegisterRequest object (matches your backend interface)
+            // Create RegisterRequest object 
             const registerData: RegisterRequest = {
                 username: data.username,
                 password: data.password,
                 avatarUrl: data.avatar || undefined // Use selected avatar or undefined
             };
 
-            console.log("🚀 Sending registration request:", {
+            console.log(" Sending registration request:", {
                 ...registerData,
-                password: '***'
             });
 
             // Call UserService register method
             const authResponse = await UserService.register(registerData);
 
-            console.log('✅ Registration successful!', {
-                user: authResponse.user,
-                token: authResponse.token ? 'Token received' : 'No token',
-                expiresAt: authResponse.expiresAt
-            });
+            console.log('Registered New User:', authResponse.user.username);
+            console.log('User ID:', authResponse.user.id);
 
-            console.log('💾 User data saved to localStorage');
-            console.log('👤 Registered as:', authResponse.user.username);
-            console.log('🆔 New User ID:', authResponse.user.id);
-
-            // TODO: When backend is ready, you'll also save the extra fields:
-            console.log('📋 Extra data that will be sent to backend later:', {
-                email: data.email,
-                twoFactorEnabled: data.twoFactor,
-                bio: data.bio
-            });
+    
 
             // Navigate to desktop on success (user is automatically logged in)
             router.navigate("/desktop");
 
         } catch (error) {
-            console.error('❌ Registration failed:', error);
+            console.error('Registration failed:', error);
             hideLoading();
             showError(error instanceof Error ? error.message : 'Registration failed. Please try again.');
         }

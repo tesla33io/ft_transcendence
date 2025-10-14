@@ -141,8 +141,6 @@ export function loginView(router: Router) {
 	}
 
 	async function handleLogin(username: string, password: string, router: Router) {
-		console.log('🔐 Login attempt:', { username, password: '***' });
-		
 		showLoading();
 
 		try {
@@ -150,28 +148,23 @@ export function loginView(router: Router) {
 			const credentials: LoginRequest = {
 				username: username,
 				password: password
-				// twoFactorCode can be added later if needed
+				// add later twoFactorCode 
 			};
 
-			console.log('📤 Sending login request:', credentials);
+			console.log('login request:', credentials);
 
 			// Call UserService login method
 			const authResponse = await UserService.login(credentials);
 
-			console.log('✅ Login successful!', {
+			console.log('Login successful!', {
 				user: authResponse.user,
 				token: authResponse.token ? 'Token received' : 'No token',
 				expiresAt: authResponse.expiresAt
 			});
-
-			console.log('💾 User data saved to localStorage');
-			console.log('👤 Logged in as:', authResponse.user.username);
-			console.log('🆔 User ID:', authResponse.user.id);
-			// Navigate to desktop on success
 			router.navigate("/desktop");
 
 		} catch (error) {
-			console.error('❌ Login failed:', error);
+			console.error('Login failed:', error);
 			hideLoading();
 			showError(error instanceof Error ? error.message : 'Login failed. Please try again.');
 		}

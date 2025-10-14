@@ -153,7 +153,6 @@ export function tournamentRoomView(
 	// Add the taskbar to the root
 	root.appendChild(taskbar);
 
-
 }
 
 	// Helper to create a match box
