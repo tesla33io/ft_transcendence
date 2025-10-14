@@ -1,12 +1,14 @@
 import { Router } from '../router';
 import { createWindow } from './components';
-import { createTaskbar } from "./components";
+import { createTaskbar, createStaticDesktopBackground } from "./components";
 import { PongGame } from '../game/PongGame';
 
 export function remoteGameSetupView(router: Router) {
     const root = document.getElementById("app")!;
     root.innerHTML = "";
 
+	const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(root);
     const content = document.createElement("div");
 
     // Player Statistics Section

@@ -1,6 +1,6 @@
 import { Router } from '../router';
 import { createWindow } from './components';
-import { createTaskbar } from "./components";
+import { createTaskbar, createStaticDesktopBackground } from "./components";
 
 export function localGameSetupView(router: Router) {
 	const app = document.getElementById('app');
@@ -8,7 +8,7 @@ export function localGameSetupView(router: Router) {
 		console.error("App element not found!");
 		return;
 	}
-
+	
 	// --- Setup Form Content ---
 	const content = document.createElement('div');
 	content.className = 'flex flex-col items-center justify-center';
@@ -84,4 +84,7 @@ export function localGameSetupView(router: Router) {
 	});
 	// Add the taskbar to the root
 	app.appendChild(taskbar);
-	}
+
+	const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(app);
+}

@@ -1,11 +1,14 @@
 import { Router } from '../router';
 import { createWindow } from './components';
-import { createTaskbar } from "./components";
+import { createTaskbar, createStaticDesktopBackground } from "./components";
 import { UserService } from "../game/userService";
 import type { PublicUser, ProfileUpdateRequest } from "../types";
 import agent from "./images/msagent.png"
 import book_user from "./images/book_user.png"
 import rabit from "./images/rabit.png"
+
+// Global variables for cleanup
+let staticBackground: any = null;
 
 export async function settingsView(router: Router) {
     const app = document.getElementById('app');
@@ -14,10 +17,11 @@ export async function settingsView(router: Router) {
         return;
     }
 
-    // ----------------------------
-    // LOAD CURRENT USER DATA
-    // ----------------------------
-    app.innerHTML = '<div style="text-align: center; padding: 50px;">Loading settings...</div>';
+    // Initialize page with background
+    initializePage(app);
+
+    // Show loading state while fetching data
+    showLoadingState(app, router);
 
     try {
         console.log('⚙️ Loading current user settings...');
@@ -32,71 +36,255 @@ export async function settingsView(router: Router) {
     }
 }
 
-function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUser) {
-    const content = document.createElement("div");
-    content.style.padding = "15px";
-    content.style.height = "100%";
-    content.style.display = "flex";
-    content.style.flexDirection = "column";
+// ===========================
+// PAGE INITIALIZATION
+// ===========================
+function initializePage(app: HTMLElement) {
+    app.innerHTML = '';
+    staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(document.body);
 
-    // ----------------------------
-    // MAIN HEADING
-    // ----------------------------
-    const mainHeading = document.createElement("h2");
-    mainHeading.textContent = "Profile Settings";
-    mainHeading.style.textAlign = "center";
-    mainHeading.style.margin = "0 0 15px 0"; // Reduced from 20px to 15px
-    mainHeading.style.fontSize = "18px";
-    mainHeading.style.borderBottom = "1px solid #c0c0c0";
-    mainHeading.style.paddingBottom = "8px"; // Reduced from 10px to 8px
-    content.appendChild(mainHeading);
+    // Add CSS for spinner animation if not already present
+    if (!document.querySelector('#spinner-style')) {
+        const style = document.createElement('style');
+        style.id = 'spinner-style';
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
 
-    // ----------------------------
-    // MAIN LAYOUT CONTAINER (TWO COLUMNS)
-    // ----------------------------
-    const mainContainer = document.createElement("div");
-    mainContainer.style.display = "grid";
-    mainContainer.style.gridTemplateColumns = "1fr 1fr";
-    mainContainer.style.gridTemplateRows = "1fr 1fr";
-    mainContainer.style.gap = "15px"; // Reduced from 20px to 15px
-    mainContainer.style.flex = "1"; // Take available space
-    mainContainer.style.minHeight = "0"; // Important for proper grid sizing
-
-    // LEFT COLUMN
-    const leftColumn = document.createElement("div");
-    leftColumn.style.display = "flex";
-    leftColumn.style.flexDirection = "column";
-    leftColumn.style.gap = "15px"; // Reduced from 20px to 15px
+// ===========================
+// SHARED UI CREATORS
+// ===========================
+function createPageLayout(app: HTMLElement, window: HTMLElement) {
+    app.innerHTML = '';
+    app.appendChild(window);
     
-    // RIGHT COLUMN  
-    const rightColumn = document.createElement("div");
-    rightColumn.style.display = "flex";
-    rightColumn.style.flexDirection = "column";
-    rightColumn.style.gap = "15px"; // Reduced from 20px to 15px
+    const { taskbar } = createTaskbar({
+        startButton: {
+            label: "Start",
+            onClick: () => {
+                cleanupPage();
+                router.navigate("/");
+            }
+        },
+        clock: true,
+    });
+    
+    app.appendChild(taskbar);
+}
 
-    // ----------------------------
-    // PANEL COMMON STYLES
-    // ----------------------------
-    const panelCommonStyles = `
-        background-color: #e0e0e0;
-        flex: 1;
+function cleanupPage() {
+    if (staticBackground) {
+        staticBackground.remove();
+        staticBackground = null;
+    }
+}
+
+function createCloseHandler(router: Router, navigateTo: string = "/desktop") {
+    return () => {
+        cleanupPage();
+        router.navigate(navigateTo);
+    };
+}
+
+// ===========================
+// LOADING STATE
+// ===========================
+function showLoadingState(app: HTMLElement, router: Router) {
+    const loadingContent = document.createElement("div");
+    loadingContent.style.cssText = `
+        text-align: center;
+        padding: 50px;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        min-height: 0;
-        overflow: hidden;
+        align-items: center;
+        gap: 15px;
     `;
 
-    // ----------------------------
-    // USERNAME SECTION (LEFT COLUMN)
-    // ----------------------------
-    const usernameSection = document.createElement("div");
-    usernameSection.className = "sunken-panel";
-    usernameSection.style.cssText = `
-        padding: 10px; 
-        ${panelCommonStyles}
+    const spinner = document.createElement("div");
+    spinner.textContent = "⏳";
+    spinner.style.cssText = `
+        font-size: 32px;
+        animation: spin 1s linear infinite;
     `;
-    usernameSection.innerHTML = `
+
+    const loadingText = document.createElement("div");
+    loadingText.textContent = "Loading settings...";
+    loadingText.style.cssText = `
+        font-size: 14px;
+        color: #404040;
+    `;
+
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.style.cssText = `padding: 8px 20px; margin-top: 10px;`;
+    cancelBtn.addEventListener("click", createCloseHandler(router));
+
+    loadingContent.appendChild(spinner);
+    loadingContent.appendChild(loadingText);
+    loadingContent.appendChild(cancelBtn);
+
+    const loadingWindow = createWindow({
+        title: "⚙️ Settings",
+        width: "300px",
+        height: "200px",
+        content: loadingContent,
+        titleBarControls: {
+            close: true,
+            onClose: createCloseHandler(router)
+        }
+    });
+
+    createPageLayout(app, loadingWindow);
+}
+
+// ===========================
+// ERROR STATE
+// ===========================
+function showErrorState(app: HTMLElement, router: Router) {
+    const errorContent = document.createElement("div");
+    errorContent.style.cssText = `text-align: center; padding: 40px;`;
+    
+    errorContent.innerHTML = `
+        <h2 style="color: red;">❌ Failed to Load Settings</h2>
+        <p>Could not load user settings. Please try again.</p>
+    `;
+
+    const buttonContainer = document.createElement("div");
+    buttonContainer.style.marginTop = "20px";
+
+    const retryBtn = document.createElement("button");
+    retryBtn.textContent = "Try Again";
+    retryBtn.style.marginRight = "10px";
+    retryBtn.addEventListener("click", () => {
+        showLoadingState(app, router);
+        
+        UserService.getCurrentUser()
+            .then(currentUser => buildSettingsUI(app, router, currentUser))
+            .catch(error => {
+                console.error('❌ Retry failed:', error);
+                showErrorState(app, router);
+            });
+    });
+
+    const backBtn = document.createElement("button");
+    backBtn.textContent = "Go Back";
+    backBtn.addEventListener("click", createCloseHandler(router));
+
+    buttonContainer.appendChild(retryBtn);
+    buttonContainer.appendChild(backBtn);
+    errorContent.appendChild(buttonContainer);
+
+    const errorWindow = createWindow({
+        title: "Settings Error",
+        width: "350px",
+        content: errorContent,
+        titleBarControls: {
+            close: true,
+            onClose: createCloseHandler(router)
+        }
+    });
+
+    createPageLayout(app, errorWindow);
+}
+
+// ===========================
+// MAIN SETTINGS UI
+// ===========================
+function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUser) {
+    const content = createMainContent();
+    addSettingsSections(content, currentUser);
+    addBackButton(content, router);
+    
+    const setupWindow = createWindow({
+        title: `Profile settings`,
+        width: "650px",
+        height: "600px", 
+        content: content,
+        titleBarControls: {
+            help: true,
+            close: true,
+            onClose: createCloseHandler(router)
+        }
+    });
+
+    createPageLayout(app, setupWindow);
+}
+
+function createMainContent(): HTMLElement {
+    const content = document.createElement("div");
+    content.style.cssText = `
+        padding: 15px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    `;
+
+    // Main heading
+    const mainHeading = document.createElement("h2");
+    mainHeading.textContent = "Profile Settings";
+    mainHeading.style.cssText = `
+        text-align: center;
+        margin: 0 0 15px 0;
+        font-size: 18px;
+        border-bottom: 1px solid #c0c0c0;
+        padding-bottom: 8px;
+    `;
+    content.appendChild(mainHeading);
+
+    return content;
+}
+
+function addSettingsSections(content: HTMLElement, currentUser: PublicUser) {
+    const mainContainer = document.createElement("div");
+    mainContainer.style.cssText = `
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 15px;
+        flex: 1;
+        min-height: 0;
+    `;
+
+    const leftColumn = createColumn();
+    const rightColumn = createColumn();
+
+    // Add sections to columns
+    leftColumn.appendChild(createUsernameSection(currentUser));
+    leftColumn.appendChild(createBioSection(currentUser));
+    rightColumn.appendChild(createPasswordSection());
+    rightColumn.appendChild(createAvatarSection(currentUser));
+
+    mainContainer.appendChild(leftColumn);
+    mainContainer.appendChild(rightColumn);
+    content.appendChild(mainContainer);
+
+    // Add status messages
+    content.appendChild(createStatusDiv());
+}
+
+function createColumn(): HTMLElement {
+    const column = document.createElement("div");
+    column.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    `;
+    return column;
+}
+
+// ===========================
+// SETTINGS SECTIONS
+// ===========================
+function createUsernameSection(currentUser: PublicUser): HTMLElement {
+    const section = createPanel();
+    section.innerHTML = `
         <div>
             <div class="field-row-stacked" style="width: 100%; margin: 6px 0;">
                 <label for="current_username">Current Username</label>
@@ -109,18 +297,14 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
         </div>
         <button id="save_username" style="margin-top: auto; width: 100%;">Update Username</button>
     `;
-    leftColumn.appendChild(usernameSection);
+    
+    setupUsernameHandlers(section, currentUser);
+    return section;
+}
 
-    // ----------------------------
-    // BIO SECTION (LEFT COLUMN)
-    // ----------------------------
-    const bioSection = document.createElement("div");
-    bioSection.className = "sunken-panel";
-    bioSection.style.cssText = `
-        padding: 10px;
-        ${panelCommonStyles}
-    `;
-    bioSection.innerHTML = `
+function createBioSection(currentUser: PublicUser): HTMLElement {
+    const section = createPanel();
+    section.innerHTML = `
         <div>
             <div class="field-row-stacked" style="width: 100%; margin: 6px 0;">
                 <label for="current_bio">Current Bio</label>
@@ -133,18 +317,14 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
         </div>
         <button id="save_bio" style="margin-top: auto; width: 100%;">Update Bio</button>
     `;
-    leftColumn.appendChild(bioSection);
+    
+    setupBioHandlers(section);
+    return section;
+}
 
-    // ----------------------------
-    // PASSWORD SECTION (RIGHT COLUMN)
-    // ----------------------------
-    const passwordSection = document.createElement("div");
-    passwordSection.className = "sunken-panel";
-    passwordSection.style.cssText = `
-        padding: 10px;
-        ${panelCommonStyles}
-    `;
-    passwordSection.innerHTML = `
+function createPasswordSection(): HTMLElement {
+    const section = createPanel();
+    section.innerHTML = `
         <div>
             <div class="field-row-stacked" style="width: 100%; margin: 6px 0;">
                 <label for="current_password">Current Password</label>
@@ -161,76 +341,165 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
         </div>
         <button id="save_password" style="margin-top: auto; width: 100%;">Update Password</button>
     `;
-    rightColumn.appendChild(passwordSection);
+    
+    setupPasswordHandlers(section);
+    return section;
+}
 
-    // ----------------------------
-    // AVATAR SECTION (RIGHT COLUMN) - OPTIMIZED FOR NO SCROLLING
-    // ----------------------------
-    const avatarSection = document.createElement("div");
-    avatarSection.className = "sunken-panel";
-    avatarSection.style.cssText = `
-        padding: 10px;
-        ${panelCommonStyles}
+function createAvatarSection(currentUser: PublicUser): HTMLElement {
+    const section = createPanel();
+    
+    const avatarContent = document.createElement("div");
+    avatarContent.style.cssText = `
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
     `;
 
-    // Create avatar content container with tighter spacing
-    const avatarContent = document.createElement("div");
-    avatarContent.style.flex = "1";
-    avatarContent.style.display = "flex";
-    avatarContent.style.flexDirection = "column";
-    avatarContent.style.justifyContent = "space-between";
-    
-    // Top section with current avatar
+    // Current avatar display
+    const topSection = createCurrentAvatarDisplay(currentUser);
+    avatarContent.appendChild(topSection);
+
+    // Avatar selection
+    const { avatarContainer, avatarInput } = createAvatarSelector();
+    avatarContent.appendChild(avatarContainer);
+
+    // Upload section
+    avatarContent.appendChild(createAvatarUpload(avatarInput, avatarContainer));
+
+    section.appendChild(avatarContent);
+
+    // Save button
+    const saveBtn = document.createElement("button");
+    saveBtn.id = "save_avatar";
+    saveBtn.textContent = "Update Avatar";
+    saveBtn.style.cssText = `width: 100%; font-size: 12px; padding: 4px;`;
+    section.appendChild(saveBtn);
+
+    setupAvatarHandlers(section, currentUser, avatarContainer);
+    return section;
+}
+
+// ===========================
+// HELPER FUNCTIONS
+// ===========================
+function createPanel(): HTMLElement {
+    const panel = document.createElement("div");
+    panel.className = "sunken-panel";
+    panel.style.cssText = `
+        padding: 10px;
+        background-color: #e0e0e0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 0;
+        overflow: hidden;
+    `;
+    return panel;
+}
+
+function createStatusDiv(): HTMLElement {
+    const statusDiv = document.createElement("div");
+    statusDiv.id = "status_message";
+    statusDiv.style.cssText = `
+        text-align: center;
+        margin: 10px 0;
+        padding: 6px;
+        display: none;
+        border-radius: 4px;
+        font-size: 12px;
+    `;
+    return statusDiv;
+}
+
+function addBackButton(content: HTMLElement, router: Router) {
+    const buttonContainer = document.createElement("div");
+    buttonContainer.className = "field-row";
+    buttonContainer.style.cssText = `
+        justify-content: center;
+        border-top: 1px solid #c0c0c0;
+        padding-top: 10px;
+        flex-shrink: 0;
+    `;
+
+    const backBtn = document.createElement("button");
+    backBtn.textContent = "Back";
+    backBtn.style.cssText = `padding: 6px 25px; font-size: 13px;`;
+    backBtn.addEventListener("click", () => router.navigate("/profile"));
+
+    buttonContainer.appendChild(backBtn);
+    content.appendChild(buttonContainer);
+}
+
+// ===========================
+// AVATAR HELPERS
+// ===========================
+function createCurrentAvatarDisplay(currentUser: PublicUser): HTMLElement {
     const topSection = document.createElement("div");
     
-    // Current avatar display - more compact
     const currentAvatarDiv = document.createElement("div");
-    currentAvatarDiv.style.textAlign = "center";
-    currentAvatarDiv.style.marginBottom = "8px";
+    currentAvatarDiv.style.cssText = `text-align: center; margin-bottom: 8px;`;
     currentAvatarDiv.innerHTML = `<label style="display: block; margin-bottom: 3px; font-size: 11px;">Current Avatar:</label>`;
 
     const currentAvatar = document.createElement("img");
     currentAvatar.src = currentUser.avatarUrl || agent;
-    currentAvatar.width = 35; // Further reduced for better fit
+    currentAvatar.width = 35;
     currentAvatar.height = 35;
-    currentAvatar.style.border = "2px solid #c0c0c0";
-    currentAvatar.style.display = "block";
-    currentAvatar.style.margin = "0 auto";
+    currentAvatar.style.cssText = `
+        border: 2px solid #c0c0c0;
+        display: block;
+        margin: 0 auto;
+    `;
+    
     currentAvatarDiv.appendChild(currentAvatar);
     topSection.appendChild(currentAvatarDiv);
 
-    // New avatar selection - more compact
-    const newAvatarLabel = document.createElement("label");
-    newAvatarLabel.textContent = "Select New:";
-    newAvatarLabel.style.display = "block";
-    newAvatarLabel.style.textAlign = "center";
-    newAvatarLabel.style.fontSize = "11px";
-    newAvatarLabel.style.marginBottom = "5px";
-    topSection.appendChild(newAvatarLabel);
+    return topSection;
+}
+
+function createAvatarSelector(): { avatarContainer: HTMLElement, avatarInput: HTMLInputElement } {
+    const label = document.createElement("label");
+    label.textContent = "Select New:";
+    label.style.cssText = `
+        display: block;
+        text-align: center;
+        font-size: 11px;
+        margin-bottom: 5px;
+    `;
 
     const avatarContainer = document.createElement("div");
-    avatarContainer.style.display = "flex";
-    avatarContainer.style.gap = "6px"; // Reduced gap
-    avatarContainer.style.justifyContent = "center";
-    avatarContainer.style.marginBottom = "8px";
+    avatarContainer.style.cssText = `
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        margin-bottom: 8px;
+    `;
+
+    const avatarInput = document.createElement("input");
+    avatarInput.type = "hidden";
+    avatarInput.id = "new_avatar";
 
     const avatars = [agent, book_user, rabit];
     avatars.forEach(src => {
         const img = document.createElement("img");
         img.src = src;
-        img.width = 32; // Further reduced for better fit
+        img.width = 32;
         img.height = 32;
-        img.style.cursor = "pointer";
-        img.style.border = "2px solid transparent";
+        img.style.cssText = `
+            cursor: pointer;
+            border: 2px solid transparent;
+        `;
         img.classList.add("avatar-option");
 
         img.addEventListener("click", () => {
-            // Remove old selection
+            // Clear all selections
             avatarContainer.querySelectorAll(".avatar-option").forEach(a => {
                 (a as HTMLElement).style.border = "2px solid transparent";
                 a.classList.remove("selected");
             });
-            // Add new selection
+            // Set new selection
             img.style.border = "2px solid #0000ff";
             img.classList.add("selected");
             avatarInput.value = src;
@@ -239,28 +508,25 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
         avatarContainer.appendChild(img);
     });
 
-    const avatarInput = document.createElement("input");
-    avatarInput.type = "hidden";
-    avatarInput.id = "new_avatar";
+    const container = document.createElement("div");
+    container.appendChild(label);
+    container.appendChild(avatarContainer);
+    container.appendChild(avatarInput);
 
-    topSection.appendChild(avatarContainer);
-    topSection.appendChild(avatarInput);
+    return { avatarContainer: container, avatarInput };
+}
 
-    avatarContent.appendChild(topSection);
-
-    // Upload section - more compact
+function createAvatarUpload(avatarInput: HTMLInputElement, avatarContainer: HTMLElement): HTMLElement {
     const uploadSection = document.createElement("div");
+    
     const uploadLabel = document.createElement("label");
     uploadLabel.textContent = "Or upload:";
-    uploadLabel.style.display = "block";
-    uploadLabel.style.fontSize = "10px";
-    uploadLabel.style.marginBottom = "3px";
+    uploadLabel.style.cssText = `display: block; font-size: 10px; margin-bottom: 3px;`;
 
     const uploadInput = document.createElement("input");
     uploadInput.type = "file";
     uploadInput.accept = "image/*";
-    uploadInput.style.width = "100%";
-    uploadInput.style.fontSize = "10px";
+    uploadInput.style.cssText = `width: 100%; font-size: 10px;`;
 
     uploadInput.addEventListener("change", () => {
         const file = uploadInput.files?.[0];
@@ -280,109 +546,20 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
 
     uploadSection.appendChild(uploadLabel);
     uploadSection.appendChild(uploadInput);
-    avatarContent.appendChild(uploadSection);
-
-    // Avatar save button
-    const avatarSaveBtn = document.createElement("button");
-    avatarSaveBtn.id = "save_avatar";
-    avatarSaveBtn.textContent = "Update Avatar";
-    avatarSaveBtn.style.width = "100%";
-    avatarSaveBtn.style.fontSize = "12px";
-    avatarSaveBtn.style.padding = "4px";
-
-    // Add content and button to avatar section
-    avatarSection.appendChild(avatarContent);
-    avatarSection.appendChild(avatarSaveBtn);
-
-    rightColumn.appendChild(avatarSection);
-
-    // Add columns to main container
-    mainContainer.appendChild(leftColumn);
-    mainContainer.appendChild(rightColumn);
-    content.appendChild(mainContainer);
-
-    // ----------------------------
-    // STATUS MESSAGES - COMPACT
-    // ----------------------------
-    const statusDiv = document.createElement("div");
-    statusDiv.id = "status_message";
-    statusDiv.style.textAlign = "center";
-    statusDiv.style.margin = "10px 0"; // Reduced margins
-    statusDiv.style.padding = "6px";
-    statusDiv.style.display = "none";
-    statusDiv.style.borderRadius = "4px";
-    statusDiv.style.fontSize = "12px";
-    content.appendChild(statusDiv);
-
-    // ----------------------------
-    // BOTTOM BUTTON - COMPACT
-    // ----------------------------
-    const buttonContainer = document.createElement("div");
-    buttonContainer.className = "field-row";
-    buttonContainer.style.justifyContent = "center";
-    buttonContainer.style.borderTop = "1px solid #c0c0c0";
-    buttonContainer.style.paddingTop = "10px"; // Reduced from 15px
-    buttonContainer.style.flexShrink = "0"; // Don't shrink
-
-    const backBtn = document.createElement("button");
-    backBtn.textContent = "Back";
-    backBtn.style.padding = "6px 25px"; // Slightly smaller
-    backBtn.style.fontSize = "13px";
-    backBtn.addEventListener("click", () => router.navigate("/profile"));
-
-    buttonContainer.appendChild(backBtn);
-    content.appendChild(buttonContainer);
-
-    // ----------------------------
-    // CREATE WINDOW - ADJUSTED HEIGHT
-    // ----------------------------
-    const setupWindow = createWindow({
-        title: `Profile settings`,
-        width: "650px",
-        height: "600px", 
-        content: content,
-        titleBarControls: {
-            help: true,
-            close: true,
-            onClose: () => router.navigate("/desktop")
-        }
-    });
-
-    // ----------------------------
-    // HELPER FUNCTIONS (same as before)
-    // ----------------------------
-    function showStatus(message: string, isError: boolean = false) {
-        statusDiv.textContent = message;
-        statusDiv.style.display = "block";
-        statusDiv.style.color = isError ? "red" : "green";
-        statusDiv.style.backgroundColor = isError ? "#ffe6e6" : "#e6ffe6";
-        statusDiv.style.border = `1px solid ${isError ? "#ffcccc" : "#ccffcc"}`;
-        
-        // Hide after 3 seconds
-        setTimeout(() => {
-            statusDiv.style.display = "none";
-        }, 3000);
-    }
-
-    function setButtonLoading(button: HTMLButtonElement, loading: boolean) {
-        if (loading) {
-            button.disabled = true;
-            button.dataset.originalText = button.textContent || '';
-            button.textContent = "Saving...";
-        } else {
-            button.disabled = false;
-            button.textContent = button.dataset.originalText || 'Save';
-        }
-    }
-
-    // ----------------------------
-    // EVENT HANDLERS (same as before, but remove handleLogout function)
-    // ----------------------------
     
-    // USERNAME UPDATE
-    const saveUsernameBtn = content.querySelector("#save_username") as HTMLButtonElement;
-    saveUsernameBtn.addEventListener("click", async () => {
-        const newUsername = (content.querySelector("#new_username") as HTMLInputElement).value.trim();
+    return uploadSection;
+}
+
+// ===========================
+// EVENT HANDLERS
+// ===========================
+function setupUsernameHandlers(section: HTMLElement, currentUser: PublicUser) {
+    const saveBtn = section.querySelector("#save_username") as HTMLButtonElement;
+    const newUsernameInput = section.querySelector("#new_username") as HTMLInputElement;
+    const currentUsernameInput = section.querySelector("#current_username") as HTMLInputElement;
+
+    saveBtn.addEventListener("click", async () => {
+        const newUsername = newUsernameInput.value.trim();
         
         if (!newUsername) {
             showStatus("Please enter a new username", true);
@@ -394,7 +571,7 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
             return;
         }
 
-        setButtonLoading(saveUsernameBtn, true);
+        setButtonLoading(saveBtn, true);
         
         try {
             console.log('👤 Updating username to:', newUsername);
@@ -404,24 +581,63 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
             console.log('✅ Username updated successfully');
             showStatus("Username updated successfully!");
             
-            // Update UI
-            (content.querySelector("#current_username") as HTMLInputElement).value = updatedUser.username;
-            (content.querySelector("#new_username") as HTMLInputElement).value = "";
+            currentUsernameInput.value = updatedUser.username;
+            newUsernameInput.value = "";
             
         } catch (error) {
             console.error('❌ Failed to update username:', error);
             showStatus("Failed to update username. Please try again.", true);
         } finally {
-            setButtonLoading(saveUsernameBtn, false);
+            setButtonLoading(saveBtn, false);
         }
     });
+}
 
-    // PASSWORD UPDATE
-    const savePasswordBtn = content.querySelector("#save_password") as HTMLButtonElement;
-    savePasswordBtn.addEventListener("click", async () => {
-        const currentPassword = (content.querySelector("#current_password") as HTMLInputElement).value;
-        const newPassword = (content.querySelector("#new_password") as HTMLInputElement).value;
-        const confirmPassword = (content.querySelector("#confirm_password") as HTMLInputElement).value;
+function setupBioHandlers(section: HTMLElement) {
+    const saveBtn = section.querySelector("#save_bio") as HTMLButtonElement;
+    const newBioInput = section.querySelector("#new_bio") as HTMLTextAreaElement;
+    const currentBioInput = section.querySelector("#current_bio") as HTMLTextAreaElement;
+
+    saveBtn.addEventListener("click", async () => {
+        const newBio = newBioInput.value.trim();
+        
+        if (!newBio) {
+            showStatus("Please enter a bio", true);
+            return;
+        }
+
+        setButtonLoading(saveBtn, true);
+        
+        try {
+            console.log('📝 Updating bio to:', newBio);
+            const updates: ProfileUpdateRequest = { activityType: newBio };
+            await UserService.updateProfile(updates);
+            
+            console.log('✅ Bio updated successfully');
+            showStatus("Bio updated successfully!");
+            
+            currentBioInput.value = newBio;
+            newBioInput.value = "";
+            
+        } catch (error) {
+            console.error('❌ Failed to update bio:', error);
+            showStatus("Failed to update bio. Please try again.", true);
+        } finally {
+            setButtonLoading(saveBtn, false);
+        }
+    });
+}
+
+function setupPasswordHandlers(section: HTMLElement) {
+    const saveBtn = section.querySelector("#save_password") as HTMLButtonElement;
+    const currentPasswordInput = section.querySelector("#current_password") as HTMLInputElement;
+    const newPasswordInput = section.querySelector("#new_password") as HTMLInputElement;
+    const confirmPasswordInput = section.querySelector("#confirm_password") as HTMLInputElement;
+
+    saveBtn.addEventListener("click", async () => {
+        const currentPassword = currentPasswordInput.value;
+        const newPassword = newPasswordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
         
         if (!currentPassword || !newPassword || !confirmPassword) {
             showStatus("Please fill in all password fields", true);
@@ -438,7 +654,7 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
             return;
         }
 
-        setButtonLoading(savePasswordBtn, true);
+        setButtonLoading(saveBtn, true);
         
         try {
             console.log('🔒 Updating password...');
@@ -447,62 +663,33 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
             console.log('✅ Password updated successfully');
             showStatus("Password updated successfully!");
             
-            // Clear password fields
-            (content.querySelector("#current_password") as HTMLInputElement).value = "";
-            (content.querySelector("#new_password") as HTMLInputElement).value = "";
-            (content.querySelector("#confirm_password") as HTMLInputElement).value = "";
+            currentPasswordInput.value = "";
+            newPasswordInput.value = "";
+            confirmPasswordInput.value = "";
             
         } catch (error) {
             console.error('❌ Failed to update password:', error);
             showStatus("Failed to update password. Please try again.", true);
         } finally {
-            setButtonLoading(savePasswordBtn, false);
+            setButtonLoading(saveBtn, false);
         }
     });
+}
 
-    // BIO UPDATE
-    const saveBioBtn = content.querySelector("#save_bio") as HTMLButtonElement;
-    saveBioBtn.addEventListener("click", async () => {
-        const newBio = (content.querySelector("#new_bio") as HTMLTextAreaElement).value.trim();
-        
-        if (!newBio) {
-            showStatus("Please enter a bio", true);
-            return;
-        }
+function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser, avatarContainer: HTMLElement) {
+    const saveBtn = section.querySelector("#save_avatar") as HTMLButtonElement;
+    const avatarInput = section.querySelector("#new_avatar") as HTMLInputElement;
+    const currentAvatar = section.querySelector("img") as HTMLImageElement;
 
-        setButtonLoading(saveBioBtn, true);
-        
-        try {
-            console.log('📝 Updating bio to:', newBio);
-            const updates: ProfileUpdateRequest = { activityType: newBio };
-            await UserService.updateProfile(updates);
-            
-            console.log('✅ Bio updated successfully');
-            showStatus("Bio updated successfully!");
-            
-            // Update UI
-            (content.querySelector("#current_bio") as HTMLTextAreaElement).value = newBio;
-            (content.querySelector("#new_bio") as HTMLTextAreaElement).value = "";
-            
-        } catch (error) {
-            console.error('❌ Failed to update bio:', error);
-            showStatus("Failed to update bio. Please try again.", true);
-        } finally {
-            setButtonLoading(saveBioBtn, false);
-        }
-    });
-
-    // AVATAR UPDATE
-    const saveAvatarBtn = content.querySelector("#save_avatar") as HTMLButtonElement;
-    saveAvatarBtn.addEventListener("click", async () => {
-        const newAvatarUrl = (content.querySelector("#new_avatar") as HTMLInputElement).value;
+    saveBtn.addEventListener("click", async () => {
+        const newAvatarUrl = avatarInput.value;
         
         if (!newAvatarUrl) {
             showStatus("Please select an avatar", true);
             return;
         }
 
-        setButtonLoading(saveAvatarBtn, true);
+        setButtonLoading(saveBtn, true);
         
         try {
             console.log('🖼️ Updating avatar to:', newAvatarUrl);
@@ -511,9 +698,8 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
             console.log('✅ Avatar updated successfully');
             showStatus("Avatar updated successfully!");
             
-            // Update current avatar display
             currentAvatar.src = updatedUser.avatarUrl || agent;
-            (content.querySelector("#new_avatar") as HTMLInputElement).value = "";
+            avatarInput.value = "";
             
             // Clear selections
             avatarContainer.querySelectorAll(".avatar-option").forEach(a => {
@@ -525,58 +711,34 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
             console.error('❌ Failed to update avatar:', error);
             showStatus("Failed to update avatar. Please try again.", true);
         } finally {
-            setButtonLoading(saveAvatarBtn, false);
+            setButtonLoading(saveBtn, false);
         }
     });
-
-    // ----------------------------
-    // ATTACH TO DOM
-    // ----------------------------
-    app.innerHTML = '';
-    app.appendChild(setupWindow);
-    
-    const { taskbar } = createTaskbar({
-        startButton: {
-            label: "Start",
-            onClick: () => router.navigate("/"),
-        },
-        clock: true,
-    });
-    
-    app.appendChild(taskbar);
 }
 
-function showErrorState(app: HTMLElement, router: Router) {
-    const errorContent = document.createElement("div");
-    errorContent.style.textAlign = "center";
-    errorContent.style.padding = "40px";
+// ===========================
+// UTILITY FUNCTIONS
+// ===========================
+function showStatus(message: string, isError: boolean = false) {
+    const statusDiv = document.getElementById("status_message")!;
+    statusDiv.textContent = message;
+    statusDiv.style.display = "block";
+    statusDiv.style.color = isError ? "red" : "green";
+    statusDiv.style.backgroundColor = isError ? "#ffe6e6" : "#e6ffe6";
+    statusDiv.style.border = `1px solid ${isError ? "#ffcccc" : "#ccffcc"}`;
     
-    errorContent.innerHTML = `
-        <h2 style="color: red;">❌ Failed to Load Settings</h2>
-        <p>Could not load user settings. Please try again.</p>
-        <button onclick="location.reload()">Try Again</button>
-        <button onclick="history.back()">Go Back</button>
-    `;
+    setTimeout(() => {
+        statusDiv.style.display = "none";
+    }, 3000);
+}
 
-    const errorWindow = createWindow({
-        title: "Settings Error",
-        width: "350px",
-        content: errorContent,
-        titleBarControls: {
-            close: true,
-            onClose: () => router.navigate("/desktop")
-        }
-    });
-
-    app.innerHTML = '';
-    app.appendChild(errorWindow);
-
-    const { taskbar } = createTaskbar({
-        startButton: {
-            label: "Start",
-            onClick: () => router.navigate("/"),
-        },
-        clock: true,
-    });
-    app.appendChild(taskbar);
+function setButtonLoading(button: HTMLButtonElement, loading: boolean) {
+    if (loading) {
+        button.disabled = true;
+        button.dataset.originalText = button.textContent || '';
+        button.textContent = "Saving...";
+    } else {
+        button.disabled = false;
+        button.textContent = button.dataset.originalText || 'Save';
+    }
 }

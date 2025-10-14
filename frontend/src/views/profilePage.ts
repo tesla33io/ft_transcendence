@@ -1,11 +1,14 @@
 import { Router } from "../router";
 import { createWindow, MatchHistory,Stats } from "./components";
-import { createTaskbar } from "./components";
+import { createTaskbar,createStaticDesktopBackground } from "./components";
 import type { Match,StatsData } from "./components";
 
     export function profileView(router: Router) {
     const root = document.getElementById("app")!;
     root.innerHTML = "";
+	
+	const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(root);
 
     // Container for profile content
     const content = document.createElement("div");

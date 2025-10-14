@@ -1,12 +1,15 @@
 import { Router } from "../router";
 import { createWindow } from "./components";
-
+import { createTaskbar, createStaticDesktopBackground } from "./components";
 
 export function friendsView(router: Router) {
 	const root = document.getElementById("app")!;
 		root.innerHTML = "";
 
-		const content = document.createElement("div");
+	const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(root);
+		
+	const content = document.createElement("div");
 		content.innerHTML = `
 			<p>Add your friend</p>
 
@@ -34,5 +37,14 @@ export function friendsView(router: Router) {
 	});
 
 	root.append(simpleWindow);
-
+	// Create the taskbar
+	const { taskbar } = createTaskbar({
+		startButton: {
+		label: "Start",
+		onClick: () => router.navigate("/"),
+		},
+		clock: true,
+	});
+	// Add the taskbar to the root
+	root.appendChild(taskbar);
 }

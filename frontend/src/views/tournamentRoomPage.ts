@@ -1,7 +1,7 @@
 import { Router } from "../router";
 import { createWindow } from "./components";
 import { WebSocketHandler } from "../game/websocketHandler";
-import { createTaskbar } from "./components";
+import { createTaskbar, createStaticDesktopBackground } from "./components";
 
 export function tournamentRoomView(
 	router: Router,
@@ -10,7 +10,10 @@ export function tournamentRoomView(
 	) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
-
+	
+	const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(root);
+	
 	const content = document.createElement("div");
 	content.className = "grid grid-cols-3 gap-4 p-4 relative";
 
