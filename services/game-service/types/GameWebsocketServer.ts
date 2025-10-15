@@ -144,7 +144,7 @@ export class GameWebSocketServer{
 
 	public sendGameState(gameState: Game){
 
-		let player1State = JSON.stringify({
+		let player1State = {
 			type: 'game_state',
 			status: 'playing',
 			player: {
@@ -168,15 +168,15 @@ export class GameWebSocketServer{
 				y: gameState.ball.y,
 			}
 
-		})
+		}
 
-		const player2State = JSON.stringify({
+		const player2State = {
 			type: 'game_state',
 			status: 'playing',
 			player:gameState.player2,
 			opponent: gameState.player1,
 			ball: gameState.ball
-		})
+		}
 
 		this.sendToPlayer(gameState.player1.id, player1State)
 		this.sendToPlayer(gameState.player2.id, player2State)
@@ -192,9 +192,8 @@ export class GameWebSocketServer{
 			winner: winnerId
 		}
 
-		const msg = JSON.stringify(gameResult)
-		this.sendToPlayer(game.player1.id, msg)
-		this.sendToPlayer(game.player2.id, msg)
+		this.sendToPlayer(game.player1.id, gameResult)
+		this.sendToPlayer(game.player2.id, gameResult)
 	}
 
 	public disconnectClient(playerId: string){
