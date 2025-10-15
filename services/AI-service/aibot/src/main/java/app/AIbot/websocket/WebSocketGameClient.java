@@ -15,6 +15,7 @@ import app.AIbot.model.GameState;
 import app.AIbot.model.BotAction;
 import app.AIbot.model.BotActionMessage;
 import app.AIbot.model.BaseMessage;
+import app.AIbot.model.ReadyMessage;
 
 //each boot need to connect to the server via websocket
 //this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws/${this.gameMode}?playerId=${this.playerId}`)
@@ -66,6 +67,7 @@ public class WebSocketGameClient {
 		}
 	}
 
+
 	private class BotWebSocketHandler extends TextWebSocketHandler {
 		@Override
 		public void afterConnectionEstablished(WebSocketSession session){
@@ -82,13 +84,17 @@ public class WebSocketGameClient {
 				BaseMessage baseMessage = objectMapper.readValue(payload, BaseMessage.class);
 
 				if ("classic_notification".equals(baseMessage.type) && "connected".equals(baseMessage.status)) {
-					System.out.println("classic notification!");
-					// GameData gameData = objectMapper.readValue(payload, GameData.class);
-					// handleGameConnected(gameData);
+					System.out.println("classic notification! " + WebSocketGameClient.this.botId + " " + WebSocketGameClient.this.gameId);
+					ReadyMessage readyMessage = new ReadyMessage("ready", WebSocketGameClient.this.botId, WebSocketGameClient.this.gameId);
+					String jsonResponse = objectMapper.writeValueAsString(readyMessage);
+					session.sendMessage(new TextMessage(jsonResponse));
+					System.out.println("crearted msg: " + jsonResponse);
 				} else if ("classic_notification".equals(baseMessage.type) && "finished".equals(baseMessage.status)) {
+					System.out.println("Finnish notification!");
 					// GameResult gameResult = objectMapper.readValue(payload, GameResult.class);
 					// handleGameFinished(gameResult);
 				} else if ("game_state".equals(baseMessage.type) && "playing".equals(baseMessage.status)) {
+					System.out.println("Game State!");
 					// GameState gameState = objectMapper.readValue(payload, GameState.class);
 					// handleGameUpdate(gameState);
 				} else {
