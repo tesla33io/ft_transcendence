@@ -12,6 +12,17 @@ public class GameState {
 	private long timestamp;
 
 
+	public int getBallY(){
+		return ball.getY();
+	}
+
+	public int getBallX(){
+		return ball.getX();
+	}
+
+	public long getTimestamp(){
+		return this.timestamp;
+	}
 }
 
 
