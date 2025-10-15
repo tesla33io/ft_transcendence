@@ -1,5 +1,5 @@
 import {Player, Game, GameMode, Tournament, JoinGameRequest} from "../types/types"
-import {generateDefaultPlayer, generateDefaultGame} from "../types/types"
+import {generateDefaultPlayer, generateDefaultGame, generateGameId, generateBallPos} from "../types/types"
 import { GameServiceManager } from "./GameServiceManager"
 
 
@@ -119,7 +119,7 @@ export class GameMatchmaker {
 		const gameMode: GameMode = 'classic'
 		const gameService = this.gameServiceManager.getGameService(gameMode)
 		const player: Player = generateDefaultPlayer(playerName, playerId)
-
+		const gameId: string = generateGameId();
 		//[TO DO] - need to generate bot from api call
 		// the request JSON should have the difficulity of the bot
 		// request to aibot service will return the ID of the bot (bot will connect to the server via websocket)
@@ -127,7 +127,7 @@ export class GameMatchmaker {
 		const response = await fetch ('http://ai-service:5100/api/v1/aibot/get-bot/classic', {
 			method: 'POST',
 			headers: {'Content-Type': 'application/json'},
-			body: JSON.stringify({gameId: `${playerId}`, difficulty: 'easy'})
+			body: JSON.stringify({gameId: `${gameId}`, difficulty: 'easy'})
 		})
 
 		if (!response.ok){
@@ -140,7 +140,14 @@ export class GameMatchmaker {
 
 		const bot: Player = generateDefaultPlayer("bot", botId)
 
-		const game: Game = generateDefaultGame(bot, player)
+		const game: Game ={
+				id: gameId,
+				gameMode: 'classic',
+				status: 'connected',
+				player1: player,
+				player2: bot,
+				ball: generateBallPos()
+			}
 
 		setTimeout(() => {
 			if (gameService) {

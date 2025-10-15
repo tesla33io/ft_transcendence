@@ -35,7 +35,7 @@ export class GameService{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
 		this.webSocketServer.clientReady = (gameId: string, playerId: string, tournamentId?: string) => {
-
+			
 			if (tournamentId && !gameId){
 					if (this.gameEngine instanceof TournamentPong &&
 						this.gameEngine.tournamentAllPlayersReady(tournamentId, playerId)){
