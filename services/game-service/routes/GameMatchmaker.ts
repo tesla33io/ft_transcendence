@@ -116,7 +116,8 @@ export class GameMatchmaker {
 
 	public async joinBotClassic(playerData: JoinGameRequest){
 		const { playerName, playerId} = playerData as {playerName: string, playerId: string}
-		const gameService = this.gameServiceManager.getGameService('classic')
+		const gameMode: GameMode = 'classic'
+		const gameService = this.gameServiceManager.getGameService(gameMode)
 		const player: Player = generateDefaultPlayer(playerName, playerId)
 
 		//[TO DO] - need to generate bot from api call
@@ -134,25 +135,27 @@ export class GameMatchmaker {
 		}
 
 		const data = await response.json()
-		const botId = data.botId
+		const botId: string = data.botId
 		console.log("bot ID: ", data.id);
 
-		const bot: Player = generateDefaultPlayer("bot", botId as string)
+		const bot: Player = generateDefaultPlayer("bot", botId)
+
 		const game: Game = generateDefaultGame(bot, player)
+
 		setTimeout(() => {
-			if (gameService){
+			if (gameService) {
 				gameService.initializeGame(game)
 				gameService.notifyGameMatched(game)
 			} else {
-				console.error('GameService not Initialized!')
+				console.error('GameService not initialized!')
 			}
-		})
+		}, 100)
 
 		return {
-			status: 'waitting',
+			status: 'waiting',
 			playerId: player.id,
 			gameId: game.id,
 			message: 'Connecting to game...'
-		}
+		};
 	}
 }

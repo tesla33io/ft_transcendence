@@ -20,17 +20,17 @@ server.get("/test", async (req, reply) => {
 	return {test: 'OK'}
 })
 
-server.post("/join-classic", async (req, reply) => {
-	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
-	return result
-})
+// server.post("/join-classic", async (req, reply) => {
+// 	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
+// 	return result
+// })
 
 server.post("/join-tournament", async (req, reply) => {
 	const result = await gameMatchmaker.joinTournament(req.body as JoinGameRequest)
 	return result
 })
-
-server.post("/bot-classic", async(req, reply) => {
+//for testing chage to the join-classic from bot-classic
+server.post("/join-classic", async(req, reply) => {
 	const result = await gameMatchmaker.joinBotClassic(req.body as JoinGameRequest)
 	return result
 })
