@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import app.AIbot.model.GameState;
 import app.AIbot.model.BotAction;
 import app.AIbot.model.BotActionMessage;
+import app.AIbot.model.BaseMessage;
 
 //each boot need to connect to the server via websocket
 //this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws/${this.gameMode}?playerId=${this.playerId}`)
@@ -75,10 +76,24 @@ public class WebSocketGameClient {
 		@Override
 		public void handleTextMessage(WebSocketSession session, TextMessage message){
 			try {
-				GameState gameState = objectMapper.readValue(message.getPayload(), GameState.class);
-					if (gameStateHandler != null){
-						gameStateHandler.accept(gameState);
-					}
+				String payload = message.getPayload();
+				System.out.println("=============PAYLOAD===========\n" + payload + "\n");
+
+				BaseMessage baseMessage = objectMapper.readValue(payload, BaseMessage.class);
+
+				if ("classic_notification".equals(baseMessage.type) && "connected".equals(baseMessage.status)) {
+					System.out.println("classic notification!");
+					// GameData gameData = objectMapper.readValue(payload, GameData.class);
+					// handleGameConnected(gameData);
+				} else if ("classic_notification".equals(baseMessage.type) && "finished".equals(baseMessage.status)) {
+					// GameResult gameResult = objectMapper.readValue(payload, GameResult.class);
+					// handleGameFinished(gameResult);
+				} else if ("game_state".equals(baseMessage.type) && "playing".equals(baseMessage.status)) {
+					// GameState gameState = objectMapper.readValue(payload, GameState.class);
+					// handleGameUpdate(gameState);
+				} else {
+					System.err.println("Unknown message type/status: " + baseMessage.type + " / " + baseMessage.status);
+				}
 			}
 			catch (Exception e){
 				System.err.println("Failed to parse game state: " + e.getMessage());
