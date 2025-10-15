@@ -1,4 +1,4 @@
-package app.AIbot.model;
+package app.AIbot.model.messages;
 
 public class ReadyMessage {
 	private String type;

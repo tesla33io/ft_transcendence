@@ -1,4 +1,4 @@
-package app.AIbot.model;
+package app.AIbot.model.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 

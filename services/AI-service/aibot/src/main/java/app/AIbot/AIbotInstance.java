@@ -2,7 +2,7 @@ package app.AIbot;
 
 import app.AIbot.websocket.WebSocketGameClient;
 import app.AIbot.model.BotAction;
-import app.AIbot.model.GameState;
+import app.AIbot.model.game.GameState;
 
 public class AIbotInstance {
 	private volatile String botId;

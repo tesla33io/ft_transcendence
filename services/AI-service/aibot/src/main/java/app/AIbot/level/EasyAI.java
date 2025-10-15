@@ -2,7 +2,7 @@ package app.AIbot.level;
 
 import app.AIbot.AIbot;
 import app.AIbot.model.BotAction;
-import app.AIbot.model.GameState;
+import app.AIbot.model.game.GameState;
 
 public class EasyAI implements AIbot {
 	private static final long COOLDOWN_MS = 1000;

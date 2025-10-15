@@ -52,8 +52,8 @@ export class WebSocketHandler {
 		return (
 			data &&
 			typeof data === 'object' &&
-			data.type === 'game_state' &&  
-			data.status === 'playing' 
+			data.type === 'game_state' &&
+			data.status === 'playing'
     	);
 	}
 
@@ -137,7 +137,7 @@ export class WebSocketHandler {
 			let data;
         	if(typeof rawData == 'string'){
 				data = JSON.parse(rawData); // convert string → object
-            	if (typeof data === "string") { //gameUpdate is double-stringified
+            	if (typeof data === "string") { //gameUpdate is double-stringified // I got rid of double stringify this was a bug so this can be DELETED
                 	data = JSON.parse(data);
             	}
 			}

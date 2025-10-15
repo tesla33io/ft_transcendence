@@ -29,6 +29,14 @@ public class ApiControler {
 		return ResponseEntity.ok(response);
 	}
 
+	@PostMapping("/delete-bot")
+	public String deleteBot(@RequestBody String entity) {
+		//TODO: call the deletion of the bot
+
+		return entity;
+	}
+
+
 	public static class BotResponse {
 		private String botId;
 

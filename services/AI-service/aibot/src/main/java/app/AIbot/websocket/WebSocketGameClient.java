@@ -11,11 +11,11 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import app.AIbot.model.GameState;
 import app.AIbot.model.BotAction;
 import app.AIbot.model.BotActionMessage;
-import app.AIbot.model.BaseMessage;
-import app.AIbot.model.ReadyMessage;
+import app.AIbot.model.game.GameState;
+import app.AIbot.model.messages.BaseMessage;
+import app.AIbot.model.messages.ReadyMessage;
 
 //each boot need to connect to the server via websocket
 //this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws/${this.gameMode}?playerId=${this.playerId}`)
@@ -90,12 +90,11 @@ public class WebSocketGameClient {
 					session.sendMessage(new TextMessage(jsonResponse));
 					System.out.println("crearted msg: " + jsonResponse);
 				} else if ("classic_notification".equals(baseMessage.type) && "finished".equals(baseMessage.status)) {
-					System.out.println("Finnish notification!");
-					// GameResult gameResult = objectMapper.readValue(payload, GameResult.class);
-					// handleGameFinished(gameResult);
+					System.out.println("Finnish notification! — disconnecting WebSocket.");
+					session.close(CloseStatus.NORMAL);
 				} else if ("game_state".equals(baseMessage.type) && "playing".equals(baseMessage.status)) {
 					System.out.println("Game State!");
-					// GameState gameState = objectMapper.readValue(payload, GameState.class);
+					GameState gameState = objectMapper.readValue(payload, GameState.class);
 					// handleGameUpdate(gameState);
 				} else {
 					System.err.println("Unknown message type/status: " + baseMessage.type + " / " + baseMessage.status);
