@@ -81,7 +81,6 @@ export class ClassicPong extends GameEngine {
 			game.player1.ready = true
 		else if (game && game.player2.id === playerId)
 			game.player2.ready = true
-		console.log(`player: ${game.player1.id} ${game.player1.ready} | ${game.player2.id} ${game.player2.ready}`)
 		return (game?.player1.ready && game?.player2.ready ? true : false)
 	}
 
