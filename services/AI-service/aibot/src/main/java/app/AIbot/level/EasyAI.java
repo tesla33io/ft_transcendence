@@ -5,16 +5,14 @@ import app.AIbot.model.BotAction;
 import app.AIbot.model.game.GameState;
 
 public class EasyAI implements AIbot {
-	private static final long COOLDOWN_MS = 1000;
+	private static final long COOLDOWN_MS = 10;
 
 	@Override
 	public BotAction decideAction(GameState gameState, int currentPaddleY){
 		int ballY = gameState.getBallY();
-		int paddleY = gameState.getX();
-
-		if (ballY < paddleY)
+		if (ballY < currentPaddleY - 5)
 			return BotAction.MOVE_UP;
-		else if (ballY > paddleY)
+		else if (ballY > currentPaddleY + 5)
 			return BotAction.MOVE_DOWN;
 		return BotAction.STAY;
 	}

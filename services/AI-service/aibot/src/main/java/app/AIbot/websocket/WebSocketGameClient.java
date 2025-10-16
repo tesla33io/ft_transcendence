@@ -48,7 +48,7 @@ public class WebSocketGameClient {
 	public void sendAction(BotAction action){
 		if (session != null && session.isOpen()){
 			try {
-				int deltaY = action == BotAction.MOVE_UP ? 10 : -10;
+				int deltaY = action == BotAction.MOVE_UP ? -10 : 10;
 				BotActionMessage message = new BotActionMessage("paddle_move",botId, gameId, deltaY);
 				String jsonMessage = objectMapper.writeValueAsString(message);
 				session.sendMessage(new TextMessage(jsonMessage));

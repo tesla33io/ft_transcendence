@@ -35,8 +35,8 @@ public class AIbotInstance {
 		if (now - lastActionTime < ai.getCooldown())
 			return ;
 		try {
-			System.out.println("Game State!\n" + "status: " + gameState.getStatus() + " paddle: " + this.paddleY);
 			BotAction action = ai.decideAction(gameState, paddleY);
+			System.out.println("Action: " + action);
 			if (action != BotAction.STAY){
 				ws.sendAction(action);
 				lastActionTime = now;

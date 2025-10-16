@@ -15,4 +15,6 @@ down:
 build:
 	docker compose build
 
+red: down build upd
+
 PHONY: up down build
