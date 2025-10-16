@@ -1,21 +1,40 @@
 package app.AIbot.model.game;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class Ball {
-	private int X;
-	private int Y;
-	private int vX;
-	private int vY;
+	@JsonProperty("x")
+	private int x;
+	@JsonProperty("y")
+	private int y;
+	@JsonProperty("vx")
+	private int vx;
+	@JsonProperty("vy")
+	private int vy;
+
+	public void setX(int x){
+		this.x = x;
+	}
+	public void setY(int Y){
+		this.y = y;
+	}
+	public void setVx(int vx){
+		this.vx = vx;
+	}
+	public void setVy(int vy){
+		this.vy = vy;
+	}
 
 	public int getX(){
-		return this.X;
+		return this.x;
 	}
 	public int getY(){
-		return this.Y;
+		return this.y;
 	}
-	public int getvX(){
-		return this.vX;
+	public int getVx(){
+		return this.vx;
 	}
-	public int getvY(){
-		return this.vY;
+	public int getVy(){
+		return this.vy;
 	}
 }

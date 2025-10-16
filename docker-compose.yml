@@ -11,8 +11,6 @@ services:
       - gateway-service
     networks:
       - pong-network
-    volumes:
-      - ./frontend:/app
 
   gateway-service:
     build:

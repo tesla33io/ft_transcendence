@@ -11,6 +11,48 @@ public class GameState {
 	private Ball ball;
 	private long timestamp;
 
+	public void setType(String type){
+		this.type = type;
+	}
+	public void setStatus(String status){
+		this.status = status;
+	}
+
+	public void setPlayer(Player player){
+		this.player = player;
+	}
+
+	public void setOpponent(Player opponent){
+		this.opponent = opponent;
+	}
+
+	public void setBall(Ball ball){
+		this.ball = ball;
+	}
+
+	public String getType(){
+		return this.type;
+	}
+
+	public String getStatus(){
+		return this.status;
+	}
+
+	public Player getPlayer(){
+		return this.player;
+	}
+
+	public Player getOpponent(){
+		return this.opponent;
+	}
+
+	public Ball getBall(){
+		return this.ball;
+	}
+
+	public long getTimestamp(){
+		return this.timestamp;
+	}
 
 	public int getBallY(){
 		return ball.getY();
@@ -20,9 +62,15 @@ public class GameState {
 		return ball.getX();
 	}
 
-	public long getTimestamp(){
-		return this.timestamp;
+	public int getX(){
+		return player.getX();
 	}
+
+	public int getY(){
+		return player.getY();
+	}
+
+
 }
 
 

@@ -29,12 +29,13 @@ public class AIbotInstance {
 	}
 
 	public synchronized void onGameState(GameState gameState){
-		this.paddleY = gameState.getBallY();
+		this.paddleY = gameState.getY();
 
 		long now = System.currentTimeMillis();
 		if (now - lastActionTime < ai.getCooldown())
 			return ;
 		try {
+			System.out.println("Game State!\n" + "status: " + gameState.getStatus() + " paddle: " + this.paddleY);
 			BotAction action = ai.decideAction(gameState, paddleY);
 			if (action != BotAction.STAY){
 				ws.sendAction(action);

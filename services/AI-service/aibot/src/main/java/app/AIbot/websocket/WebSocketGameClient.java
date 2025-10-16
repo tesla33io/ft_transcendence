@@ -48,7 +48,8 @@ public class WebSocketGameClient {
 	public void sendAction(BotAction action){
 		if (session != null && session.isOpen()){
 			try {
-				BotActionMessage message = new BotActionMessage(botId, action);
+				int deltaY = action == BotAction.MOVE_UP ? 10 : -10;
+				BotActionMessage message = new BotActionMessage("paddle_move",botId, gameId, deltaY);
 				String jsonMessage = objectMapper.writeValueAsString(message);
 				session.sendMessage(new TextMessage(jsonMessage));
 			} catch (Exception e) {
@@ -69,6 +70,7 @@ public class WebSocketGameClient {
 
 
 	private class BotWebSocketHandler extends TextWebSocketHandler {
+
 		@Override
 		public void afterConnectionEstablished(WebSocketSession session){
 			WebSocketGameClient.this.session = session;
@@ -79,23 +81,14 @@ public class WebSocketGameClient {
 		public void handleTextMessage(WebSocketSession session, TextMessage message){
 			try {
 				String payload = message.getPayload();
-				System.out.println("=============PAYLOAD===========\n" + payload + "\n");
-
 				BaseMessage baseMessage = objectMapper.readValue(payload, BaseMessage.class);
 
 				if ("classic_notification".equals(baseMessage.type) && "connected".equals(baseMessage.status)) {
-					System.out.println("classic notification! " + WebSocketGameClient.this.botId + " " + WebSocketGameClient.this.gameId);
-					ReadyMessage readyMessage = new ReadyMessage("ready", WebSocketGameClient.this.botId, WebSocketGameClient.this.gameId);
-					String jsonResponse = objectMapper.writeValueAsString(readyMessage);
-					session.sendMessage(new TextMessage(jsonResponse));
-					System.out.println("crearted msg: " + jsonResponse);
+					this.readyMessageHandling();
 				} else if ("classic_notification".equals(baseMessage.type) && "finished".equals(baseMessage.status)) {
-					System.out.println("Finnish notification! — disconnecting WebSocket.");
-					session.close(CloseStatus.NORMAL);
+					this.finnishedMessageHandling();
 				} else if ("game_state".equals(baseMessage.type) && "playing".equals(baseMessage.status)) {
-					System.out.println("Game State!");
-					GameState gameState = objectMapper.readValue(payload, GameState.class);
-					// handleGameUpdate(gameState);
+					this.gameStateMessageHandling(payload);
 				} else {
 					System.err.println("Unknown message type/status: " + baseMessage.type + " / " + baseMessage.status);
 				}
@@ -114,6 +107,39 @@ public class WebSocketGameClient {
 		public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
 			System.err.println("Bot " + botId + " disconnected from game");
 			WebSocketGameClient.this.session = null;
+		}
+
+		private void readyMessageHandling(){
+			try {
+				System.out.println("classic notification! " + WebSocketGameClient.this.botId + " " + WebSocketGameClient.this.gameId);
+				ReadyMessage readyMessage = new ReadyMessage("ready", WebSocketGameClient.this.botId, WebSocketGameClient.this.gameId);
+				String jsonResponse = objectMapper.writeValueAsString(readyMessage);
+				session.sendMessage(new TextMessage(jsonResponse));
+				System.out.println("crearted msg: " + jsonResponse);
+			}
+			catch (Exception e){
+				System.err.println("Error in ready message handling" + e);
+			}
+		}
+
+		private void finnishedMessageHandling(){
+			try{
+				System.out.println("Finnish notification! — disconnecting WebSocket.");
+				session.close(CloseStatus.NORMAL);
+			}
+			catch (Exception e) {
+				System.err.println("Error in finnish message handling" + e);
+			}
+		}
+
+		private void gameStateMessageHandling(String payload){
+			try{
+				GameState gameState = objectMapper.readValue(payload, GameState.class);
+				gameStateHandler.accept(gameState);
+			}
+			catch (Exception e){
+				System.err.println("Error in gamestate message handling" + e);
+			}
 		}
 	}
 }

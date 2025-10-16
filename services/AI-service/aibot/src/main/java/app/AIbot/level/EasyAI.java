@@ -10,7 +10,7 @@ public class EasyAI implements AIbot {
 	@Override
 	public BotAction decideAction(GameState gameState, int currentPaddleY){
 		int ballY = gameState.getBallY();
-		int paddleY = gameState.getPaddleX();
+		int paddleY = gameState.getX();
 
 		if (ballY < paddleY)
 			return BotAction.MOVE_UP;
@@ -24,4 +24,5 @@ public class EasyAI implements AIbot {
 
 	@Override
 	public String getDifficulty() { return "easy"; }
+
 }
