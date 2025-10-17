@@ -4,11 +4,11 @@ import { Game, Player} from "../types/types"
 
 export class ClassicPong extends GameEngine {
 	public initializeGameState(game: Game){
-		game.player1.Y = GAME_HEIGHT / 2 - 50
+		game.player1.Y = GAME_HEIGHT / 2
 		game.player1.X = PLAYER_OFFSET
 		game.player1.score = 0
 
-		game.player2.Y = GAME_HEIGHT / 2 - 50
+		game.player2.Y = GAME_HEIGHT / 2
 		game.player2.X = GAME_WIDTH - PLAYER_OFFSET
 		game.player2.score = 0
 
@@ -45,12 +45,12 @@ export class ClassicPong extends GameEngine {
 	}
 
 	private updatePlayerScore(game: Game){
-		if (game.ball.x <= PLAYER_OFFSET){
+		if (game.ball.x <= PLAYER_OFFSET - 10){
 			game.player2.score++
 			this.ballReset(game)
 			console.log(`Player 2 (${game.player2.name}|${game.player2.id}) score!`)
 		}
-		else if (game.ball.x >= GAME_WIDTH - PLAYER_OFFSET){
+		else if (game.ball.x >= GAME_WIDTH - PLAYER_OFFSET + 10){
 			game.player1.score++
 			this.ballReset(game)
 			console.log(`Player 1 (${game.player1.name}|${game.player1.id}) score!`)
