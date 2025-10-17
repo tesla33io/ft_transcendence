@@ -4,7 +4,7 @@ import app.AIbot.model.BotAction;
 import app.AIbot.model.game.GameState;
 
 public interface AIbot {
-	BotAction decideAction(GameState gameState, int currentPaddleY);
+	BotAction decideAction(GameState gameState);
 	long getCooldown();
 	String getDifficulty();
 }

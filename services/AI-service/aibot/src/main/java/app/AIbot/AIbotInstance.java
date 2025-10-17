@@ -9,7 +9,9 @@ public class AIbotInstance {
 	private volatile String gameId;
 	private volatile AIbot ai;
 	private volatile WebSocketGameClient ws;
+	private volatile GameState currentGameState;
 
+	private volatile BotAction action = BotAction.STAY;
 	private volatile long lastActionTime = 0;
 	private volatile int paddleY = 0;
 
@@ -29,15 +31,14 @@ public class AIbotInstance {
 	}
 
 	public synchronized void onGameState(GameState gameState){
-		this.paddleY = gameState.getY();
 
 		long now = System.currentTimeMillis();
-		if (now - lastActionTime < ai.getCooldown())
-			return ;
+		if (now - lastActionTime > ai.getCooldown())
+			this.currentGameState = gameState;
+
 		try {
-			BotAction action = ai.decideAction(gameState, paddleY);
-			System.out.println("Action: " + action);
-			if (action != BotAction.STAY){
+			this.action = ai.decideAction(this.currentGameState);
+			if (this.action != BotAction.STAY){
 				ws.sendAction(action);
 				lastActionTime = now;
 			}
