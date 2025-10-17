@@ -20,6 +20,11 @@ public class EasyAI implements AIbot {
 			this.desireY = ballY + gameState.getBallVy() * frame_to_reach;
 		}
 
+		if ((gameState.getX() == 20 && ballX > 650) ||
+			(gameState.getX() == 880 && ballX < 250) )
+			this.desireY = 550 / 2;
+
+
 		if (desireY < this.paddleY - 15){
 			this.paddleY -= 10;
 			return BotAction.MOVE_UP;
