@@ -1,16 +1,13 @@
 import {Player, Game, GameMode, Tournament, JoinGameRequest} from "../types/types"
 import {generateDefaultPlayer, generateDefaultGame, generateGameId, generateBallPos} from "../types/types"
 import { GameServiceManager } from "./GameServiceManager"
-
+import {PlayerQueueManager} from "./PlayerQueueManager"
 
 export class GameMatchmaker {
 	private static instance: GameMatchmaker
 	private gameServiceManager: GameServiceManager
+	private playerQueueManager: PlayerQueueManager = new PlayerQueueManager();
 	private tournamentPlayerLimit = 4
-	private waitingPlayers: Map< GameMode, Player[]> = new Map([
-		['classic', []],
-		['tournament', []]
-	])
 
 	private constructor (serviceManager: GameServiceManager){
 		this.gameServiceManager = serviceManager
@@ -23,17 +20,7 @@ export class GameMatchmaker {
 	}
 
 	public removePlayerFromQueue(playerId: string, gameMode: GameMode = 'classic'): boolean{
-		const waitingList = this.waitingPlayers.get(gameMode)
-		if (!waitingList)
-			return false
-
-		const playerIndex = waitingList.findIndex(player => player.id === playerId)
-		if (playerIndex !== -1){
-			waitingList.splice(playerIndex, 1)
-			console.log(`Player ${playerId} removed from the ${gameMode} waiting list`)
-			return true
-		}
-		return false
+		return this.playerQueueManager.removePlayer(playerId, gameMode)
 	}
 
 	public async joinClassicGame(playerData: JoinGameRequest) {
@@ -41,13 +28,10 @@ export class GameMatchmaker {
 		const gameService = this.gameServiceManager.getGameService(gameMode)
 		const player: Player = generateDefaultPlayer(playerName, playerId)
 
-		if (!this.waitingPlayers.has(gameMode))
-			this.waitingPlayers.set(gameMode, [])
+		const classicWaitingPlayer = this.playerQueueManager.getQueue(gameMode)
 
-		const ClassicWaitingPlayer = this.waitingPlayers.get(gameMode)!
-
-		if (ClassicWaitingPlayer.length > 0){
-			const opponent = ClassicWaitingPlayer.shift()!
+		if (classicWaitingPlayer.length > 0){
+			const opponent = classicWaitingPlayer.shift()!
 			const game: Game = generateDefaultGame(opponent, player)
 
 			setTimeout(() => {
@@ -67,8 +51,8 @@ export class GameMatchmaker {
 			};
 		}
 		else{
-			ClassicWaitingPlayer.push(player)
-			console.log("Waiting players: ", this.waitingPlayers)
+			classicWaitingPlayer.push(player)
+			console.log("Waiting players: ", classicWaitingPlayer)
 			return {
 				status: 'waiting',
 				playerId: player.id,
@@ -82,10 +66,7 @@ export class GameMatchmaker {
 		const gameService = this.gameServiceManager.getGameService('tournament')
 		const player: Player = generateDefaultPlayer(playerName, playerId)
 
-		if (!this.waitingPlayers.has(gameMode))
-			this.waitingPlayers.set(gameMode, [])
-
-		const tournamentWaitingPlayer = this.waitingPlayers.get(gameMode)!
+		const tournamentWaitingPlayer = this.playerQueueManager.getQueue(gameMode)
 		tournamentWaitingPlayer.push(player)
 		if (tournamentWaitingPlayer.length >= this.tournamentPlayerLimit){
 			const players = tournamentWaitingPlayer.splice(0, this.tournamentPlayerLimit)
@@ -105,7 +86,7 @@ export class GameMatchmaker {
 			}
 		}
 		else{
-			console.log("Waiting players: ", this.waitingPlayers)
+			console.log("Waiting players: ", tournamentWaitingPlayer)
 			return {
 				status: 'waiting',
 				playerId: player.id,
