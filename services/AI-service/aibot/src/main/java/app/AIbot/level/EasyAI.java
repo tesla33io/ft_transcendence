@@ -5,32 +5,29 @@ import app.AIbot.model.BotAction;
 import app.AIbot.model.game.GameState;
 
 public class EasyAI implements AIbot {
-	private static final long COOLDOWN_MS = 10;
+	private static final long COOLDOWN_MS = 1000;
+	private int paddleY = -1;
+	private int desireY = -1;
 
 	@Override
-	public BotAction decideAction(GameState gameState){
+	public BotAction decideAction(GameState gameState, boolean update){
 		int ballY = gameState.getBallY();
 		int ballX = gameState.getBallX();
-		int paddleY = gameState.getY();
-		int paddleX = gameState.getX();
 
-		if (paddleX == 20 && ballX > 650){
-			if (ballY < 550 / 2)
-				return BotAction.MOVE_DOWN;
-			else
-				return BotAction.MOVE_UP;
-		}
-		else if (paddleX == 880 && ballX < 250){
-			if (ballY < 550 / 2)
-				return BotAction.MOVE_DOWN;
-			else
-				return BotAction.MOVE_UP;
+		if (update){
+			this.paddleY = gameState.getY();
+			int frame_to_reach = (gameState.getX() - ballX) / gameState.getBallVx();
+			this.desireY = ballY + gameState.getBallVy() * frame_to_reach;
 		}
 
-		if (ballY < paddleY - 15)
+		if (desireY < this.paddleY - 15){
+			this.paddleY -= 10;
 			return BotAction.MOVE_UP;
-		else if (ballY > paddleY + 15)
+		}
+		else if (desireY > this.paddleY + 15){
+			this.paddleY += 10;
 			return BotAction.MOVE_DOWN;
+		}
 		return BotAction.STAY;
 	}
 

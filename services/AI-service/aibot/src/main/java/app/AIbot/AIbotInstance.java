@@ -33,14 +33,17 @@ public class AIbotInstance {
 	public synchronized void onGameState(GameState gameState){
 
 		long now = System.currentTimeMillis();
-		if (now - lastActionTime > ai.getCooldown())
+		if (now - lastActionTime > ai.getCooldown()){
 			this.currentGameState = gameState;
+			lastActionTime = now;
+			ai.decideAction(this.currentGameState, true);
+			System.out.println("Last time action: " + lastActionTime);
+		}
 
 		try {
-			this.action = ai.decideAction(this.currentGameState);
+			this.action = ai.decideAction(this.currentGameState, false);
 			if (this.action != BotAction.STAY){
 				ws.sendAction(action);
-				lastActionTime = now;
 			}
 		}
 		catch (Exception e){

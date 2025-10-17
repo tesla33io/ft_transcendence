@@ -70,6 +70,13 @@ public class GameState {
 		return player.getY();
 	}
 
+	public int getBallVy(){
+		return ball.getVy();
+	}
+
+	public int getBallVx(){
+		return ball.getVx();
+	}
 
 }
 
