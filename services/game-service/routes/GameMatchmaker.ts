@@ -3,15 +3,19 @@ import { generateDefaultPlayer, generateDefaultGame, generateGameId, generateBal
 import { Player, Game, Tournament, JoinGameRequest } from "../types/interfaces"
 import { GameServiceManager } from "./GameServiceManager"
 import { PlayerQueueManager} from "./PlayerQueueManager"
+import { ClassicGameJoiner } from "./ClassicGameJoiner"
 
 export class GameMatchmaker {
 	private static instance: GameMatchmaker
 	private gameServiceManager: GameServiceManager
-	private playerQueueManager: PlayerQueueManager = new PlayerQueueManager();
+	private playerQueueManager: PlayerQueueManager
+	private classicJoiner: ClassicGameJoiner
 	private tournamentPlayerLimit = 4
 
 	private constructor (serviceManager: GameServiceManager){
 		this.gameServiceManager = serviceManager
+		this.playerQueueManager = new PlayerQueueManager()
+		this.classicJoiner = new ClassicGameJoiner(this.playerQueueManager, this.gameServiceManager)
 	}
 
 	public static getInstance(gameServiceManager: GameServiceManager){
@@ -24,42 +28,46 @@ export class GameMatchmaker {
 		return this.playerQueueManager.removePlayer(playerId, gameMode)
 	}
 
-	public async joinClassicGame(playerData: JoinGameRequest): Promise<WaitingResponse> {
-		const { playerName, playerId, gameMode } = playerData as { playerName: string, playerId: string, gameMode: GameMode }
-		const gameService = this.gameServiceManager.getGameService(gameMode)
-		const player: Player = generateDefaultPlayer(playerName, playerId)
-
-		const classicWaitingPlayer = this.playerQueueManager.getQueue(gameMode)
-		if (classicWaitingPlayer.length > 0){
-			const opponent = classicWaitingPlayer.shift()!
-			const game: Game = generateDefaultGame(opponent, player)
-
-			setTimeout(() => {
-				if (gameService) {
-					gameService.initializeGame(game)
-					gameService.notifyGameMatched(game)
-				} else {
-					console.error('GameService not initialized!')
-				}
-			}, 100)
-
-			return {
-				status: 'waiting',
-				playerId: player.id,
-				gameId: game.id,
-				message: 'Connecting to game...'
-			};
-		}
-		else{
-			classicWaitingPlayer.push(player)
-			console.log("Waiting players: ", classicWaitingPlayer)
-			return {
-				status: 'waiting',
-				playerId: player.id,
-				message: 'Waiting for player...'
-			}
-		}
+	public async joinClassicGame(playerData: JoinGameRequest) {
+		return this.classicJoiner.join(playerData)
 	}
+
+	// public async joinClassicGame(playerData: JoinGameRequest): Promise<WaitingResponse> {
+	// 	const { playerName, playerId, gameMode } = playerData as { playerName: string, playerId: string, gameMode: GameMode }
+	// 	const gameService = this.gameServiceManager.getGameService(gameMode)
+	// 	const player: Player = generateDefaultPlayer(playerName, playerId)
+
+	// 	const classicWaitingPlayer = this.playerQueueManager.getQueue(gameMode)
+	// 	if (classicWaitingPlayer.length > 0){
+	// 		const opponent = classicWaitingPlayer.shift()!
+	// 		const game: Game = generateDefaultGame(opponent, player)
+
+	// 		setTimeout(() => {
+	// 			if (gameService) {
+	// 				gameService.initializeGame(game)
+	// 				gameService.notifyGameMatched(game)
+	// 			} else {
+	// 				console.error('GameService not initialized!')
+	// 			}
+	// 		}, 100)
+
+	// 		return {
+	// 			status: 'waiting',
+	// 			playerId: player.id,
+	// 			gameId: game.id,
+	// 			message: 'Connecting to game...'
+	// 		};
+	// 	}
+	// 	else{
+	// 		classicWaitingPlayer.push(player)
+	// 		console.log("Waiting players: ", classicWaitingPlayer)
+	// 		return {
+	// 			status: 'waiting',
+	// 			playerId: player.id,
+	// 			message: 'Waiting for player...'
+	// 		}
+	// 	}
+	// }
 
 	public async joinTournament(playerData: JoinGameRequest): Promise<WaitingResponse> {
 		const {playerName, playerId, gameMode} = playerData as {playerName: string, playerId: string, gameMode: GameMode}
