@@ -1,6 +1,7 @@
 import { GameEngine } from "../engine/GameEngine";
 import { GameWebSocketServer } from "../types/GameWebsocketServer";
-import { Game, GameMode, Player, Tournament } from "../types/types"
+import { GameMode, } from "../types/types"
+import { Game, Player, Tournament  } from "../types/interfaces";
 import { GameModeEngineProvider } from "../engine/GameEngineProvider";
 import { GameMatchmaker } from "./GameMatchmaker";
 import { TournamentPong } from "../engine/TournamentPong";
@@ -35,7 +36,7 @@ export class GameService{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
 		this.webSocketServer.clientReady = (gameId: string, playerId: string, tournamentId?: string) => {
-			
+
 			if (tournamentId && !gameId){
 					if (this.gameEngine instanceof TournamentPong &&
 						this.gameEngine.tournamentAllPlayersReady(tournamentId, playerId)){

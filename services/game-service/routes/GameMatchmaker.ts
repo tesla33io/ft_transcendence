@@ -1,7 +1,8 @@
-import {Player, Game, GameMode, Tournament, JoinGameRequest} from "../types/types"
-import {generateDefaultPlayer, generateDefaultGame, generateGameId, generateBallPos} from "../types/types"
+import { GameMode, WaitingResponse} from "../types/types"
+import { generateDefaultPlayer, generateDefaultGame, generateGameId, generateBallPos} from "../types/types"
+import { Player, Game, Tournament, JoinGameRequest } from "../types/interfaces"
 import { GameServiceManager } from "./GameServiceManager"
-import {PlayerQueueManager} from "./PlayerQueueManager"
+import { PlayerQueueManager} from "./PlayerQueueManager"
 
 export class GameMatchmaker {
 	private static instance: GameMatchmaker
@@ -23,13 +24,12 @@ export class GameMatchmaker {
 		return this.playerQueueManager.removePlayer(playerId, gameMode)
 	}
 
-	public async joinClassicGame(playerData: JoinGameRequest) {
+	public async joinClassicGame(playerData: JoinGameRequest): Promise<WaitingResponse> {
 		const { playerName, playerId, gameMode } = playerData as { playerName: string, playerId: string, gameMode: GameMode }
 		const gameService = this.gameServiceManager.getGameService(gameMode)
 		const player: Player = generateDefaultPlayer(playerName, playerId)
 
 		const classicWaitingPlayer = this.playerQueueManager.getQueue(gameMode)
-
 		if (classicWaitingPlayer.length > 0){
 			const opponent = classicWaitingPlayer.shift()!
 			const game: Game = generateDefaultGame(opponent, player)
@@ -61,7 +61,7 @@ export class GameMatchmaker {
 		}
 	}
 
-	public async joinTournament(playerData: JoinGameRequest){
+	public async joinTournament(playerData: JoinGameRequest): Promise<WaitingResponse> {
 		const {playerName, playerId, gameMode} = playerData as {playerName: string, playerId: string, gameMode: GameMode}
 		const gameService = this.gameServiceManager.getGameService('tournament')
 		const player: Player = generateDefaultPlayer(playerName, playerId)
@@ -95,15 +95,12 @@ export class GameMatchmaker {
 		}
 	}
 
-	public async joinBotClassic(playerData: JoinGameRequest){
+	public async joinBotClassic(playerData: JoinGameRequest): Promise<WaitingResponse> {
 		const { playerName, playerId} = playerData as {playerName: string, playerId: string}
 		const gameMode: GameMode = 'classic'
 		const gameService = this.gameServiceManager.getGameService(gameMode)
 		const player: Player = generateDefaultPlayer(playerName, playerId)
 		const gameId: string = generateGameId();
-		//[TO DO] - need to generate bot from api call
-		// the request JSON should have the difficulity of the bot
-		// request to aibot service will return the ID of the bot (bot will connect to the server via websocket)
 
 		const response = await fetch ('http://ai-service:5100/api/v1/aibot/get-bot/classic', {
 			method: 'POST',
@@ -117,8 +114,6 @@ export class GameMatchmaker {
 
 		const data = await response.json()
 		const botId: string = data.botId
-		console.log("bot ID: ", data.id);
-
 		const bot: Player = generateDefaultPlayer("bot", botId)
 
 		const game: Game ={

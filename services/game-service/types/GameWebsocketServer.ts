@@ -1,5 +1,6 @@
 import { WebSocketServer, WebSocket } from "ws"
-import {Game, GAME_WIDTH, Tournament} from "./types"
+import { GAME_WIDTH} from "./types"
+import { Game, Tournament } from "./interfaces"
 
 export class GameWebSocketServer{
 

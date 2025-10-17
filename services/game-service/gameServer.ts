@@ -1,7 +1,7 @@
 import fastify from 'fastify'
 import { GameMatchmaker} from "./routes/GameMatchmaker"
 import { GameServiceManager } from './routes/GameServiceManager'
-import { JoinGameRequest, GameMode } from './types/types'
+import { JoinGameRequest } from './types/interfaces'
 
 const server = fastify({ logger: true })
 const PORT = 5000

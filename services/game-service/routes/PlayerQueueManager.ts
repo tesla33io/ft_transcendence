@@ -1,4 +1,5 @@
-import { GameMode, Player } from "../types/types";
+import { GameMode } from "../types/types"
+import { Player } from "../types/interfaces";
 
 export class PlayerQueueManager {
 	private waitingPlayers: Map<GameMode, Player[]> = new Map([

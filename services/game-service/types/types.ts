@@ -1,3 +1,5 @@
+import {Player, Ball, Game} from "./interfaces"
+
 export const GAME_HEIGHT = Number(process.env.GAME_HEIGHT || "550")
 export const GAME_WIDTH = Number(process.env.GAME_WIDTH || "900")
 export const PADDLE_HEIGHT = Number(process.env.PADDLE_HEIGHT || "50")
@@ -22,29 +24,6 @@ export enum GAME_STATE {
 	READY = 3,
 	PLAYING = 4,
 	FINISHED = 5
-}
-
-export interface JoinGameRequest {
-	playerName: string,
-	playerId: string,
-	gameMode?: GameMode,
-	aiBotMode?: boolean
-}
-
-export interface Player {
-		id: string
-		name: string
-		Y: number
-		X: number
-		score: number
-		ready: boolean
-}
-
-export interface Ball {
-	x: number
-	y: number
-	vx: number
-	vy: number
 }
 
 export const generateBallPos = (): Ball => {
@@ -81,33 +60,12 @@ export const generateDefaultGame = (opponent: Player, player: Player): Game =>{
 	return game;
 }
 
-export interface Game {
-		id: string
-		gameMode: string
-		status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
-		player1: Player
-		player2: Player
-		ball: Ball
-}
-
-export interface Tournament {
-	id: string
-	status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
-	players: Player[]
-	bracket: TournamentMatch[]
-	winner: Player | null
-}
-
-export interface TournamentMatch {
-	id: string
-	tournamentId: string
-	status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
-	player1: Player
-	player2: Player
-	winner: Player | null
-}
-
-
+export type WaitingResponse = {
+	status: 'waiting';
+	playerId: string;
+	gameId?: string;
+	message: string;
+};
 
 
 

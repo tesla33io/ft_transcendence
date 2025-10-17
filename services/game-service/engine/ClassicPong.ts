@@ -1,6 +1,6 @@
 import { GameEngine } from "./GameEngine";
 import { GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH, PLAYER_OFFSET } from "../types/types";
-import { Game, Player} from "../types/types"
+import { Game, Player} from "../types/interfaces"
 
 export class ClassicPong extends GameEngine {
 	public initializeGameState(game: Game){
