@@ -14,8 +14,9 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 // Authentication middleware
-const authenticateToken = (app: FastifyInstance) =>async (request: FastifyRequest, reply: FastifyReply) => {
-    const authHeader = request.headers['authorization'];
+const authenticateToken = (app: FastifyInstance) =>async (req: FastifyRequest, reply: FastifyReply) => {
+    return;
+    const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
     if (!token) {
@@ -28,7 +29,7 @@ const authenticateToken = (app: FastifyInstance) =>async (request: FastifyReques
         if (!user) {
           return reply.code(403).send({ error: 'User not found' });
         }
-        request.user = user;
+        req.user = user;
       } catch (error) {
         return reply.code(403).send({ error: 'Invalid or expired token' });
     }
@@ -47,7 +48,7 @@ interface ValidationResult {
 export default async function userRoutes(app: FastifyInstance) {
     await mkdir(UPLOAD_DIR, { recursive: true });
 
-    app.post('/register', async (req, reply) => {
+    app.post('/auth/register', { config: { skipSession: true } }, async (req, reply) => {
         try {
             if (!req.body || typeof req.body !== 'object') {
                 return reply.code(400).send({ 
@@ -99,6 +100,14 @@ export default async function userRoutes(app: FastifyInstance) {
         // Generate tokens for the newly registered user
         // const deviceInfo = extractDeviceInfo(req);
 
+        const sessionId = await app.sm.create({ userId: user.id, username: user.username });
+        reply.setCookie('sessionId', sessionId, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 86400,
+            path: '/',
+        });
     return { 
         id: user.id, 
         username: user.username,
@@ -114,7 +123,7 @@ export default async function userRoutes(app: FastifyInstance) {
         }
     });
 
-    app.post('/login', async (req, reply) => {
+    app.post('/auth/login', { config: { skipSession: true } }, async (req, reply) => {
         try {
             if (!req.body || typeof req.body !== 'object') {
                 return reply.code(400).send({ 
@@ -166,6 +175,14 @@ export default async function userRoutes(app: FastifyInstance) {
             // Generate tokens
             // const deviceInfo = extractDeviceInfo(req);
 
+            const sessionId = await app.sm.create({ userId: user.id, username: user.username });
+            reply.setCookie('sessionId', sessionId, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 86400,
+                path: '/',
+            });
             return { 
                 id: user.id, 
                 username: user.username,
@@ -183,9 +200,14 @@ export default async function userRoutes(app: FastifyInstance) {
     });
 
     // GET /api/v1/users/me
-    app.get('/me', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
+    app.get('/me', { preHandler: authenticateToken(app) }, async (req: FastifyRequest, reply: FastifyReply) => {
+        console.log(req);
+        if (!req.session.userId) {
+            return reply.status(401).send({ error: 'Not authenticated' });
+        }
+
         try {
-            const user = await app.em.findOne(User, { id: request.user!.id }, {
+            const user = await app.em.findOne(User, { id: req.session!.userId }, {
                 populate: ['statistics']
             });
 
@@ -226,6 +248,10 @@ export default async function userRoutes(app: FastifyInstance) {
     });
 
     app.post('/profile/picture', async (req: FastifyRequest, reply) => {
+        if (!req.session.userId) {
+            return reply.status(401).send({ error: 'Not authenticated' });
+        }
+
         try {
             // authentication
             const userId = 1;
@@ -308,9 +334,13 @@ export default async function userRoutes(app: FastifyInstance) {
     });
 
     // GET /api/v1/users/friends - Get user's friends list
-    app.get('/friends', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
+    app.get('/friends', { preHandler: authenticateToken(app) }, async (req: FastifyRequest, reply: FastifyReply) => {
+        if (!req.session.userId) {
+            return reply.status(401).send({ error: 'Not authenticated' });
+        }
+
         try {
-            const user = await app.em.findOne(User, { id: request.user!.id }, {
+            const user = await app.em.findOne(User, { id: req.user!.id }, {
                 populate: ['friends']
             });
 
@@ -335,9 +365,13 @@ export default async function userRoutes(app: FastifyInstance) {
     });
 
     // POST /api/v1/users/friends - Add a friend
-    app.post('/friends', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
+    app.post('/friends', { preHandler: authenticateToken(app) }, async (req: FastifyRequest, reply: FastifyReply) => {
+        if (!req.session.userId) {
+            return reply.status(401).send({ error: 'Not authenticated' });
+        }
+
         try {
-            const { username } = request.body as any;
+            const { username } = req.body as any;
 
             if (!username || typeof username !== 'string') {
                 return reply.code(400).send({ 
@@ -346,7 +380,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 });
             }
 
-            const currentUser = await app.em.findOne(User, { id: request.user!.id }, {
+            const currentUser = await app.em.findOne(User, { id: req.user!.id }, {
                 populate: ['friends']
             });
 
@@ -392,11 +426,15 @@ export default async function userRoutes(app: FastifyInstance) {
     });
 
     // DELETE /api/v1/users/friends/:username - Remove a friend
-    app.delete('/friends/:username', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
-        try {
-            const { username } = request.params as any;
+    app.delete('/friends/:username', { preHandler: authenticateToken(app) }, async (req: FastifyRequest, reply: FastifyReply) => {
+        if (!req.session.userId) {
+            return reply.status(401).send({ error: 'Not authenticated' });
+        }
 
-            const currentUser = await app.em.findOne(User, { id: request.user!.id }, {
+        try {
+            const { username } = req.params as any;
+
+            const currentUser = await app.em.findOne(User, { id: req.user!.id }, {
                 populate: ['friends']
             });
 
@@ -429,13 +467,17 @@ export default async function userRoutes(app: FastifyInstance) {
     });
 
     // GET /api/v1/users/search/:username - Search for users by username
-    app.get('/search/:username', { preHandler: authenticateToken(app) }, async (request: FastifyRequest, reply: FastifyReply) => {
-        const { username } = request.params as any;
-        const { limit = 20, offset = 0 } = request.query as any;
+    app.get('/search/:username', { preHandler: authenticateToken(app) }, async (req: FastifyRequest, reply: FastifyReply) => {
+        if (!req.session.userId) {
+            return reply.status(401).send({ error: 'Not authenticated' });
+        }
+
+        const { username } = req.params as any;
+        const { limit = 20, offset = 0 } = req.query as any;
 
         const users: User[] = await app.em.find(
             User,
-            { username: { $like: `%${username}%` }, id: { $ne: request.user!.id } },
+            { username: { $like: `%${username}%` }, id: { $ne: req.user!.id } },
             { limit: Number(limit), offset: Number(offset) }
         );
 

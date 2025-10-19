@@ -1,4 +1,5 @@
-*/**/migrations/*
+**/**/migrations/*
+*.db
 services/user-service/public/*
 
 # Logs

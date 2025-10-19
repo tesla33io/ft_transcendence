@@ -3,10 +3,15 @@ import { EntityManager } from '@mikro-orm/core';
 import { User } from '../entities/User';
 
 declare module 'fastify' {
-  interface FastifyInstance {
-    em: EntityManager;
-  }
-  interface FastifyRequest {
-    user?: User;
-  }
+    interface FastifyInstance {
+        em: EntityManager;
+    }
+    interface FastifyRequest {
+        user?: User;
+        session: Record<string, any>;
+        sessionId: string | null;
+    }
+    interface RouteShorthandOptions {
+        skipSession?: boolean;
+    }
 }

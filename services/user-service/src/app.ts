@@ -6,7 +6,7 @@ import fastifyStatic from '@fastify/static';
 import mikroConfig from './mikro-orm.config';
 import userRoutes from './routes/users';
 import { join } from 'path';
-//import { setup2FARoutes } from './routes/2fa';
+import { SessionManager, setupSessionMiddleware } from './utils/SessionManager';
 
 async function buildServer() {
     const app = Fastify();
@@ -25,6 +25,13 @@ async function buildServer() {
         root: join(process.cwd(), 'public'),
         prefix: '/'
     });
+
+    const sm = new SessionManager(orm);
+    app.decorate('sm', sm);
+
+    setInterval(() => sm.cleanup(), 3600000);
+
+    await setupSessionMiddleware(app, sm);
     await app.register(multipart);
     await app.register(userRoutes, { prefix: '/users' });
     //await app.register(setup2FARoutes, { prefix: 'auth' });
