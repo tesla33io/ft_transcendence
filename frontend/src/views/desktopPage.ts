@@ -1,5 +1,5 @@
 import { Router } from "../router";
-import { createTaskbar } from "./components";
+import { createTaskbar } from "./_components";
 
 import joystickIcon from './images/joystick.png';
 import padlock from './images/padlock.png';
@@ -23,6 +23,13 @@ type IconData = {
 export function desktopView(router: Router) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
+
+    const staticBackgrounds = document.querySelectorAll('.static-desktop-background');
+    staticBackgrounds.forEach(bg => bg.remove());
+
+    const bodyStaticBackgrounds = document.body.querySelectorAll('.static-desktop-background');
+    bodyStaticBackgrounds.forEach(bg => bg.remove());
+
 
 	// the desktop container
 	const desktop = document.createElement("div");

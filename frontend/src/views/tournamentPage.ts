@@ -1,8 +1,8 @@
 import { Router } from '../router';
-import { createWindow } from './components';
+import { createWindow } from './_components';
 import { PongGame } from '../game/PongGame';
-import { createTaskbar, createStaticDesktopBackground } from "./components";
-import {TournamentStatsComponent} from "./statisticComponents"
+import { createTaskbar, createStaticDesktopBackground } from "./_components";
+//import {TournamentStatsComponent} from "./_statisticComponents"
 let currentPongGame: PongGame | undefined = undefined;
 
 export function tournamentView(router: Router) {
@@ -18,8 +18,8 @@ export function tournamentView(router: Router) {
     staticBackground.attachToPage(root);
 
     // Add Tournament Statistics (Compact view)
-    const tournamentStatsContainer = document.createElement("div");
-    new TournamentStatsComponent({
+    //const tournamentStatsContainer = document.createElement("div");
+    /*new TournamentStatsComponent({
         container: tournamentStatsContainer,
         showTitle: true,
         onError: (error) => {
@@ -28,7 +28,7 @@ export function tournamentView(router: Router) {
         }
     });
     content.appendChild(tournamentStatsContainer);
-
+*/
 	// Form
 	const form = document.createElement("form");
 	form.id = "joinOnlineGameForm";

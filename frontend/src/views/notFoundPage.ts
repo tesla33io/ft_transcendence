@@ -1,5 +1,5 @@
 import { Router } from '../router';
-import { createTaskbar } from './components';
+import { createTaskbar } from './_components';
 
 export function notFoundView(router: Router) {
 	const root = document.getElementById("app")!;

@@ -1,7 +1,7 @@
 import { Router } from "../router";
-import { createWindow } from "./components";
+import { createWindow } from "./_components";
 import { WebSocketHandler } from "../game/websocketHandler";
-import { createTaskbar, createStaticDesktopBackground } from "./components";
+import { createTaskbar, createStaticDesktopBackground } from "./_components";
 
 export function tournamentRoomView(
 	router: Router,

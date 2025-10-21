@@ -1,6 +1,6 @@
 import { Router } from "../router";
-import { createWindow } from "./components";
-import { createTaskbar } from "./components";
+import { createWindow } from "./_components";
+import { createTaskbar,createStaticDesktopBackground } from "./_components";
 
 export function gameView(router: Router) {
 	const root = document.getElementById("app")!;
@@ -98,6 +98,9 @@ export function gameView(router: Router) {
 		});
 		// Add the taskbar to the root
 		root.appendChild(taskbar);
+	
+		const staticBackground = createStaticDesktopBackground();
+		staticBackground.attachToPage(root);
 
 	// Result window (separate window)
 	let resultWindow: HTMLElement | null = null;

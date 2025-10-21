@@ -600,3 +600,4 @@ export class StaticDesktopBackground {
 export function createStaticDesktopBackground(): StaticDesktopBackground {
     return new StaticDesktopBackground();
 }
+
