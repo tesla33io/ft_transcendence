@@ -12,11 +12,9 @@ export function remoteGameSetupView(router: Router) {
     staticBackground.attachToPage(root);
     const content = document.createElement("div");
 
-    // ✅ Replace the old stats section with the 1v1 component
     const statsContainer = document.createElement("div");
     statsContainer.className = "mb-4";
-    
-    // Create the 1v1 stats component
+
     const statsComponent = new OneVOneStatsComponent({
         container: statsContainer,
         userId: undefined, // Will use current user's stats
@@ -27,7 +25,6 @@ export function remoteGameSetupView(router: Router) {
 
     content.appendChild(statsContainer);
 
-    // ✅ Button container with proper spacing and centering (matching local setup)
     const buttonContainer = document.createElement("div");
     buttonContainer.className = 'flex flex-col items-center gap-4 p-8 rounded-lg';
 
@@ -75,7 +72,6 @@ export function remoteGameSetupView(router: Router) {
 
     root.appendChild(taskbar);
 
-
     joinClassicBtn.addEventListener("click", async (e: Event) => {
         e.preventDefault();
         
@@ -96,13 +92,9 @@ export function remoteGameSetupView(router: Router) {
             await game.joinGame();
         } catch (error) {
             console.error("Failed to join game:", error);
-            errorMessage.textContent = "Failed to join game";
-            errorMessage.style.display = "block";
             joinClassicBtn.disabled = false;
             joinClassicBtn.textContent = "Join Online Game";
-            // ✅ Restore original button styling
             joinClassicBtn.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-bold';
-            loading.style.display = "none";
         }
     });
 }

@@ -1023,7 +1023,6 @@ export class UserInfoComponent {
         const joinDate = new Date(this.profile.accountCreationDate).toLocaleDateString();
         const lastOnline = this.profile.isOnline ? 'Now' : formatTimeAgo(this.profile.lastOnline);
 
-        // ✅ Create individual divs with exact 1v1 styling
         const joinedDiv = document.createElement('div');
         joinedDiv.className = 'text-center';
         joinedDiv.style.cssText = `
@@ -1157,7 +1156,6 @@ export class TournamentStatsComponent {
         statsData.forEach(stat => {
             const statDiv = document.createElement('div');
             statDiv.className = 'text-center p-1 flex flex-col justify-center';
-            // ✅ Match 1v1 stats styling exactly
             statDiv.style.cssText = `
                 background-color: #f0f0f0;
                 border: 1px inset #c0c0c0;
@@ -1281,7 +1279,7 @@ export class PlayerVsAIStatsComponent {
         mainStatsData.forEach(stat => {
             const statDiv = document.createElement('div');
             statDiv.className = 'text-center flex flex-col justify-center';
-            // ✅ Match 1v1 stats styling exactly
+            
             statDiv.style.cssText = `
                 background-color: #f0f0f0;
                 border: 1px inset #c0c0c0;

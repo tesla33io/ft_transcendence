@@ -29,29 +29,24 @@ export function createCompleteProfilePage(options: ProfilePageOptions) {
     const staticBackground = createStaticDesktopBackground();
     staticBackground.attachToPage(document.body);
 
-    // ✅ Main content container
     const content = document.createElement("div");
-    content.className = "p-4 flex flex-col gap-2"; // ✅ Removed h-full
+    content.className = "p-4 flex flex-col gap-2";
     content.style.cssText = `
         height: 100%;
         box-sizing: border-box;
         overflow: hidden;
-    `; // ✅ Use 100% of window content area, not viewport
-
-    // ✅ Top row: User Info + 1v1 Stats (taller components)
+    `; 
+    
     const topRow = document.createElement('div');
     topRow.className = "grid grid-cols-2 gap-2 flex-shrink-0";
-    topRow.style.height = "240px"; // ✅ Fixed height for tall components
+    topRow.style.height = "240px"; 
 
-    // ✅ Middle row: Tournament + AI Stats (shorter components)  
     const middleRow = document.createElement('div');
     middleRow.className = "grid grid-cols-2 gap-2 flex-shrink-0";
-    middleRow.style.height = "140px"; // ✅ Fixed height for short components
+    middleRow.style.height = "140px";
 
-    // ✅ Bottom section: Match history - calculate remaining space
     const matchHistoryContainer = document.createElement('div');
-    matchHistoryContainer.className = "flex-1 min-h-0 overflow-hidden"; // ✅ Removed bg-gray-200
-
+    matchHistoryContainer.className = "flex-1 min-h-0 overflow-hidden"; 
     // Create component containers for top row
     const userInfoContainer = document.createElement('div');
     userInfoContainer.className = "col-span-1 bg-gray-200";
@@ -66,7 +61,6 @@ export function createCompleteProfilePage(options: ProfilePageOptions) {
     const playerVsAIContainer = document.createElement('div');
     playerVsAIContainer.className = "col-span-1 bg-gray-200";
 
-    // ✅ Create components with their actual heights
     const userInfoComponent = createUserInfoComponent({
         container: userInfoContainer,
         userId: userId,
@@ -102,18 +96,16 @@ export function createCompleteProfilePage(options: ProfilePageOptions) {
         container: matchHistoryContainer,
         userId: userId,
         width: '100%',
-        height: '200px', // ✅ Uses all remaining space
+        height: '200px', 
         showTitle: true,
     });
 
-    // ✅ Add containers to their respective rows
     topRow.appendChild(userInfoContainer);
     topRow.appendChild(oneVOneStatsContainer);
     
     middleRow.appendChild(tournamentStatsContainer);
     middleRow.appendChild(playerVsAIContainer);
 
-    // ✅ Add all sections to main content
     content.appendChild(topRow);
     content.appendChild(middleRow);
     content.appendChild(matchHistoryContainer);

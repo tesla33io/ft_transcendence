@@ -24,27 +24,23 @@ export async function settingsView(router: Router) {
     showLoadingState(app, router);
 
     try {
-        console.log('⚙️ Loading current user settings...');
         const currentUser = await UserService.getCurrentUser();
-        console.log('✅ Current user loaded:', currentUser.username);
+        console.log('Current user loaded:', currentUser.username);
         
         buildSettingsUI(app, router, currentUser);
         
     } catch (error) {
-        console.error('❌ Failed to load user settings:', error);
+        console.error('Failed to load user settings:', error);
         showErrorState(app, router);
     }
 }
 
-// ===========================
 // PAGE INITIALIZATION
-// ===========================
 function initializePage(app: HTMLElement) {
     app.innerHTML = '';
     staticBackground = createStaticDesktopBackground();
     staticBackground.attachToPage(document.body);
 
-    // Add CSS for spinner animation if not already present
     if (!document.querySelector('#spinner-style')) {
         const style = document.createElement('style');
         style.id = 'spinner-style';
@@ -58,9 +54,7 @@ function initializePage(app: HTMLElement) {
     }
 }
 
-// ===========================
 // SHARED UI CREATORS
-// ===========================
 function createPageLayout(app: HTMLElement, window: HTMLElement, router: Router) {
     app.innerHTML = '';
     app.appendChild(window);
@@ -93,9 +87,6 @@ function createCloseHandler(router: Router, navigateTo: string = "/desktop") {
     };
 }
 
-// ===========================
-// LOADING STATE
-// ===========================
 function showLoadingState(app: HTMLElement, router: Router) {
     const loadingContent = document.createElement("div");
     loadingContent.style.cssText = `
@@ -144,15 +135,13 @@ function showLoadingState(app: HTMLElement, router: Router) {
     createPageLayout(app, loadingWindow, router);
 }
 
-// ===========================
 // ERROR STATE
-// ===========================
 function showErrorState(app: HTMLElement, router: Router) {
     const errorContent = document.createElement("div");
     errorContent.style.cssText = `text-align: center; padding: 40px;`;
     
     errorContent.innerHTML = `
-        <h2 style="color: red;">❌ Failed to Load Settings</h2>
+        <h2 style="color: red;">Failed to Load Settings</h2>
         <p>Could not load user settings. Please try again.</p>
     `;
 
@@ -168,7 +157,7 @@ function showErrorState(app: HTMLElement, router: Router) {
         UserService.getCurrentUser()
             .then(currentUser => buildSettingsUI(app, router, currentUser))
             .catch(error => {
-                console.error('❌ Retry failed:', error);
+                console.error('Retry failed:', error);
                 showErrorState(app, router);
             });
     });
@@ -194,9 +183,7 @@ function showErrorState(app: HTMLElement, router: Router) {
     createPageLayout(app, errorWindow, router);
 }
 
-// ===========================
 // MAIN SETTINGS UI
-// ===========================
 function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUser) {
     const content = createMainContent();
     addSettingsSections(content, currentUser);
@@ -257,7 +244,7 @@ function addSettingsSections(content: HTMLElement, currentUser: PublicUser) {
     const leftColumn = createColumn();
     const rightColumn = createColumn();
 
-    // Add sections to columns
+    // sections to columns
     leftColumn.appendChild(createUsernameSection(currentUser));
     leftColumn.appendChild(createBioSection(currentUser));
     rightColumn.appendChild(createPasswordSection());
@@ -267,7 +254,7 @@ function addSettingsSections(content: HTMLElement, currentUser: PublicUser) {
     mainContainer.appendChild(rightColumn);
     content.appendChild(mainContainer);
 
-    // Add status messages
+    // status messages
     content.appendChild(createStatusDiv());
 }
 
@@ -281,9 +268,7 @@ function createColumn(): HTMLElement {
     return column;
 }
 
-// ===========================
-// SETTINGS SECTIONS
-// ===========================
+// SETTINGS SECTION
 function createUsernameSection(currentUser: PublicUser): HTMLElement {
     const section = createPanel();
     section.innerHTML = `
@@ -357,6 +342,7 @@ function createAvatarSection(currentUser: PublicUser): HTMLElement {
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        gap: 6px; 
     `;
 
     // Current avatar display
@@ -376,16 +362,14 @@ function createAvatarSection(currentUser: PublicUser): HTMLElement {
     const saveBtn = document.createElement("button");
     saveBtn.id = "save_avatar";
     saveBtn.textContent = "Update Avatar";
-    saveBtn.style.cssText = `width: 100%; font-size: 12px; padding: 4px;`;
+    saveBtn.style.cssText = `width: 100%; font-size: 10px; padding: 3px;`; 
     section.appendChild(saveBtn);
 
     setupAvatarHandlers(section, currentUser, avatarContainer);
     return section;
 }
 
-// ===========================
 // HELPER FUNCTIONS
-// ===========================
 function createPanel(): HTMLElement {
     const panel = document.createElement("div");
     panel.className = "sunken-panel";
@@ -435,20 +419,18 @@ function addBackButton(content: HTMLElement, router: Router) {
     content.appendChild(buttonContainer);
 }
 
-// ===========================
 // AVATAR HELPERS
-// ===========================
 function createCurrentAvatarDisplay(currentUser: PublicUser): HTMLElement {
     const topSection = document.createElement("div");
     
     const currentAvatarDiv = document.createElement("div");
-    currentAvatarDiv.style.cssText = `text-align: center; margin-bottom: 8px;`;
-    currentAvatarDiv.innerHTML = `<label style="display: block; margin-bottom: 3px; font-size: 11px;">Current Avatar:</label>`;
+    currentAvatarDiv.style.cssText = `text-align: center; margin-bottom: 4px;`; 
+    currentAvatarDiv.innerHTML = `<label style="display: block; margin-bottom: 2px; font-size: 10px;">Current Avatar:</label>`;
 
     const currentAvatar = document.createElement("img");
     currentAvatar.src = currentUser.avatarUrl || agent;
-    currentAvatar.width = 35;
-    currentAvatar.height = 35;
+    currentAvatar.width = 32; 
+    currentAvatar.height = 32;
     currentAvatar.style.cssText = `
         border: 2px solid #c0c0c0;
         display: block;
@@ -467,16 +449,16 @@ function createAvatarSelector(): { avatarContainer: HTMLElement, avatarInput: HT
     label.style.cssText = `
         display: block;
         text-align: center;
-        font-size: 11px;
-        margin-bottom: 5px;
+        font-size: 10px; 
+        margin-bottom: 3px; 
     `;
 
     const avatarContainer = document.createElement("div");
     avatarContainer.style.cssText = `
         display: flex;
-        gap: 6px;
+        gap: 4px; 
         justify-content: center;
-        margin-bottom: 8px;
+        margin-bottom: 6px; 
     `;
 
     const avatarInput = document.createElement("input");
@@ -487,8 +469,8 @@ function createAvatarSelector(): { avatarContainer: HTMLElement, avatarInput: HT
     avatars.forEach(src => {
         const img = document.createElement("img");
         img.src = src;
-        img.width = 32;
-        img.height = 32;
+        img.width = 26; 
+        img.height = 26;
         img.style.cssText = `
             cursor: pointer;
             border: 2px solid transparent;
@@ -520,19 +502,70 @@ function createAvatarSelector(): { avatarContainer: HTMLElement, avatarInput: HT
 
 function createAvatarUpload(avatarInput: HTMLInputElement, avatarContainer: HTMLElement): HTMLElement {
     const uploadSection = document.createElement("div");
+    uploadSection.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px; 
+    `;
     
     const uploadLabel = document.createElement("label");
     uploadLabel.textContent = "Or upload:";
-    uploadLabel.style.cssText = `display: block; font-size: 10px; margin-bottom: 3px;`;
+    uploadLabel.style.cssText = `display: block; font-size: 9px; margin-bottom: 2px;`; /* ✅ Smaller font */
 
+    // Hidden file input
     const uploadInput = document.createElement("input");
     uploadInput.type = "file";
     uploadInput.accept = "image/*";
-    uploadInput.style.cssText = `width: 100%; font-size: 10px;`;
+    uploadInput.style.display = "none";
+    uploadInput.id = "avatar-file-input";
+
+    // Custom upload button
+    const uploadButton = document.createElement("button");
+    uploadButton.type = "button";
+    uploadButton.textContent = "Browse Files";
+    uploadButton.style.cssText = `
+        background: #c0c0c0;
+        border: 2px outset #c0c0c0;
+        padding: 2px 8px; /* ✅ Smaller padding */
+        font-size: 9px; /* ✅ Smaller font */
+        cursor: pointer;
+        width: 100%;
+        max-width: 100px; /* ✅ Smaller max width */
+    `;
+
+    // Button hover effects
+    uploadButton.onmouseover = () => {
+        uploadButton.style.backgroundColor = '#d0d0d0';
+    };
+    uploadButton.onmouseout = () => {
+        uploadButton.style.backgroundColor = '#c0c0c0';
+    };
+
+    // File name display
+    const fileNameDisplay = document.createElement("div");
+    fileNameDisplay.style.cssText = `
+        font-size: 8px; 
+        color: #666;
+        text-align: center;
+        min-height: 10px; 
+        word-break: break-all;
+        max-width: 100px; 
+    `;
+
+    // Button click triggers file input
+    uploadButton.addEventListener("click", () => {
+        uploadInput.click();
+    });
 
     uploadInput.addEventListener("change", () => {
         const file = uploadInput.files?.[0];
         if (file) {
+            // Show selected file name
+            fileNameDisplay.textContent = file.name.length > 15  
+                ? file.name.substring(0, 12) + "..." 
+                : file.name;
+            
             const reader = new FileReader();
             reader.onload = (e) => {
                 avatarInput.value = e.target!.result as string;
@@ -543,18 +576,19 @@ function createAvatarUpload(avatarInput: HTMLInputElement, avatarContainer: HTML
                 });
             };
             reader.readAsDataURL(file);
+        } else {
+            fileNameDisplay.textContent = "";
         }
     });
 
     uploadSection.appendChild(uploadLabel);
+    uploadSection.appendChild(uploadButton);
     uploadSection.appendChild(uploadInput);
+    uploadSection.appendChild(fileNameDisplay);
     
     return uploadSection;
 }
 
-// ===========================
-// EVENT HANDLERS
-// ===========================
 function setupUsernameHandlers(section: HTMLElement, currentUser: PublicUser) {
     const saveBtn = section.querySelector("#save_username") as HTMLButtonElement;
     const newUsernameInput = section.querySelector("#new_username") as HTMLInputElement;
@@ -576,18 +610,18 @@ function setupUsernameHandlers(section: HTMLElement, currentUser: PublicUser) {
         setButtonLoading(saveBtn, true);
         
         try {
-            console.log('👤 Updating username to:', newUsername);
+            console.log('Updating username to:', newUsername);
             const updates: ProfileUpdateRequest = { username: newUsername };
             const updatedUser = await UserService.updateProfile(updates);
             
-            console.log('✅ Username updated successfully');
+            console.log('Username updated successfully');
             showStatus("Username updated successfully!");
             
             currentUsernameInput.value = updatedUser.username;
             newUsernameInput.value = "";
             
         } catch (error) {
-            console.error('❌ Failed to update username:', error);
+            console.error('Failed to update username:', error);
             showStatus("Failed to update username. Please try again.", true);
         } finally {
             setButtonLoading(saveBtn, false);
@@ -611,18 +645,18 @@ function setupBioHandlers(section: HTMLElement) {
         setButtonLoading(saveBtn, true);
         
         try {
-            console.log('📝 Updating bio to:', newBio);
+            console.log('Updating bio to:', newBio);
             const updates: ProfileUpdateRequest = { activityType: newBio };
             await UserService.updateProfile(updates);
             
-            console.log('✅ Bio updated successfully');
+            console.log('Bio updated successfully');
             showStatus("Bio updated successfully!");
             
             currentBioInput.value = newBio;
             newBioInput.value = "";
             
         } catch (error) {
-            console.error('❌ Failed to update bio:', error);
+            console.error('Failed to update bio:', error);
             showStatus("Failed to update bio. Please try again.", true);
         } finally {
             setButtonLoading(saveBtn, false);
@@ -659,10 +693,10 @@ function setupPasswordHandlers(section: HTMLElement) {
         setButtonLoading(saveBtn, true);
         
         try {
-            console.log('🔒 Updating password...');
+            console.log('Updating password...');
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            console.log('✅ Password updated successfully');
+            console.log('Password updated successfully');
             showStatus("Password updated successfully!");
             
             currentPasswordInput.value = "";
@@ -670,7 +704,7 @@ function setupPasswordHandlers(section: HTMLElement) {
             confirmPasswordInput.value = "";
             
         } catch (error) {
-            console.error('❌ Failed to update password:', error);
+            console.error('Failed to update password:', error);
             showStatus("Failed to update password. Please try again.", true);
         } finally {
             setButtonLoading(saveBtn, false);
@@ -694,10 +728,10 @@ function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser, avat
         setButtonLoading(saveBtn, true);
         
         try {
-            console.log('🖼️ Updating avatar to:', newAvatarUrl);
+            console.log('Updating avatar to:', newAvatarUrl);
             const updatedUser = await UserService.updateAvatar(newAvatarUrl);
             
-            console.log('✅ Avatar updated successfully');
+            console.log('Avatar updated successfully');
             showStatus("Avatar updated successfully!");
             
             currentAvatar.src = updatedUser.avatarUrl || agent;
@@ -710,7 +744,7 @@ function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser, avat
             });
             
         } catch (error) {
-            console.error('❌ Failed to update avatar:', error);
+            console.error(' Failed to update avatar:', error);
             showStatus("Failed to update avatar. Please try again.", true);
         } finally {
             setButtonLoading(saveBtn, false);
@@ -718,9 +752,6 @@ function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser, avat
     });
 }
 
-// ===========================
-// UTILITY FUNCTIONS
-// ===========================
 function showStatus(message: string, isError: boolean = false) {
     const statusDiv = document.getElementById("status_message")!;
     statusDiv.textContent = message;

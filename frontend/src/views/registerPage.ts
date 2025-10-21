@@ -22,17 +22,17 @@ export function registerView(router: Router) {
     content.innerHTML = `
         <p></p>
 
-        <div class="field-row-stacked" style="width: 200px">
+        <div class="field-row-stacked" style="width: 240px">
             <label for="username">Enter Username</label>
             <input id="username" type="text" />
             <label for="email">Enter Email</label>
             <input id="email" type="text" />
         </div>
-        <div class="field-row-stacked" style="width: 200px">
+        <div class="field-row-stacked" style="width: 240px"> 
             <label for="password">Enter Password</label>
             <input id="password" type="password" />
         </div>
-        <div class="field-row-stacked" style="width: 200px">
+        <div class="field-row-stacked" style="width: 240px">
             <label for="repeat_password">Repeat Password</label>
             <input id="repeat_password" type="password" />
         </div>
@@ -49,9 +49,9 @@ export function registerView(router: Router) {
             </div>
         </div>
         <div class="profileBio">
-            <div class="field-row-stacked" style="width: 200px">
+            <div class="field-row-stacked" style="width: 240px"> 
                 <label for="profileBio">Add a Bio to your Profile</label>
-                <textarea id="profileBio" rows="4"></textarea>
+                <textarea id="profileBio" rows="3"></textarea> 
             </div>
         </div>
     `;
@@ -61,18 +61,28 @@ export function registerView(router: Router) {
     // ----------------------------
     const avatarSection = document.createElement("div");
     avatarSection.innerHTML = `<label>Choose an Avatar</label>`;
-    avatarSection.style.marginTop = "10px";
+    avatarSection.style.cssText = `
+        margin-top: 10px;
+        width: 240px;
+        text-align: center;
+    `;
 
     const avatarContainer = document.createElement("div");
-    avatarContainer.style.display = "flex";
-    avatarContainer.style.gap = "10px";
+    avatarContainer.style.cssText = `
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+        justify-content: center;
+        flex-wrap: wrap;
+    `; 
 
     const avatars = [agent, book_user, rabit];
+    
     avatars.forEach(src => {
         const img = document.createElement("img");
         img.src = src;
-        img.width = 50;
-        img.height = 50;
+        img.width = 45; 
+        img.height = 45;
         img.style.cursor = "pointer";
         img.style.border = "2px solid transparent";
         img.classList.add("avatar-option");
@@ -99,34 +109,9 @@ export function registerView(router: Router) {
     avatarSection.appendChild(avatarContainer);
     avatarSection.appendChild(avatarInput);
 
-    // Upload custom avatar
-    const uploadLabel = document.createElement("label");
-    uploadLabel.textContent = "Or upload custom avatar:";
-    uploadLabel.style.display = "block";
-    uploadLabel.style.marginTop = "10px";
-
-    const uploadInput = document.createElement("input");
-    uploadInput.type = "file";
-    uploadInput.accept = "image/*";
-
-    uploadInput.addEventListener("change", () => {
-        const file = uploadInput.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                avatarInput.value = e.target!.result as string;
-                // Clear preset selections
-                avatarContainer.querySelectorAll(".avatar-option").forEach(a => {
-                    (a as HTMLElement).style.border = "2px solid transparent";
-                    a.classList.remove("selected");
-                });
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    avatarSection.appendChild(uploadLabel);
-    avatarSection.appendChild(uploadInput);
+    
+    const uploadSection = createAvatarUpload(avatarInput, avatarContainer);
+    avatarSection.appendChild(uploadSection);
 
     // Append avatar section
     content.appendChild(avatarSection);
@@ -168,25 +153,20 @@ export function registerView(router: Router) {
     buttonContainer.appendChild(cancelBtn);
     content.appendChild(buttonContainer);
 
-    // ----------------------------
     // Create window
-    // ----------------------------
     const simpleWindow = createWindow({
         title: "Register New Account",
-        width: "260px",
-		initialPosition: {x: 500 , y: 200},
+        width: "280px", 
+        initialPosition: {x: 500 , y: 200},
         content: content,
         titleBarControls: {
-            
-			help: true,
+            help: true,
             close: true,
             onClose: () => router.navigate("/login")
         }
     });
 
-    // ----------------------------
     // Helper functions
-    // ----------------------------
     function showError(message: string) {
         errorMessage.textContent = message;
         errorMessage.style.display = "block";
@@ -206,24 +186,21 @@ export function registerView(router: Router) {
         registerBtn.textContent = "Register";
     }
 
-    // ----------------------------
     // Collect and validate data
-    // ----------------------------
     function getRegistrationData() {
         const username = (content.querySelector<HTMLInputElement>("#username")!).value.trim();
-        const email = (content.querySelector<HTMLInputElement>("#email")!).value.trim();
         const password = (content.querySelector<HTMLInputElement>("#password")!).value;
         const repeatPassword = (content.querySelector<HTMLInputElement>("#repeat_password")!).value;
         const twoFactor = (content.querySelector<HTMLInputElement>('input[name="twofactor"]:checked')!)?.value === "yes";
         const bio = (content.querySelector<HTMLTextAreaElement>("#profileBio")!).value.trim();
         const avatar = (content.querySelector<HTMLInputElement>("#avatar")!).value;
 
-        return { username, email, password, repeatPassword, twoFactor, bio, avatar };
+        return { username, password, repeatPassword, twoFactor, bio, avatar };
     }
 
     function validateRegistrationData(data: ReturnType<typeof getRegistrationData>): string | null {
         // Basic validation
-		/* commented out for testing porpose
+        /* commented out for testing porpose
         if (!data.username) return "Username is required";
         if (data.username.length < 3) return "Username must be at least 3 characters";
         if (data.username.length > 30) return "Username must be less than 30 characters";
@@ -235,7 +212,7 @@ export function registerView(router: Router) {
         if (data.password.length < 6) return "Password must be at least 6 characters";
         
         if (data.password !== data.repeatPassword) return "Passwords don't match";
-		*/
+        */
         return null; // No errors
     }
 
@@ -266,8 +243,6 @@ export function registerView(router: Router) {
             console.log('Registered New User:', authResponse.user.username);
             console.log('User ID:', authResponse.user.id);
 
-    
-
             // Navigate to desktop on success (user is automatically logged in)
             router.navigate("/desktop");
 
@@ -278,9 +253,7 @@ export function registerView(router: Router) {
         }
     }
 
-    // ----------------------------
     // Event listeners
-    // ----------------------------
     registerBtn.addEventListener("click", handleRegistration);
     cancelBtn.addEventListener("click", () => router.navigate("/login"));
 
@@ -292,13 +265,9 @@ export function registerView(router: Router) {
     };
     
     content.querySelector<HTMLInputElement>("#username")?.addEventListener('keypress', handleEnterKey);
-    content.querySelector<HTMLInputElement>("#email")?.addEventListener('keypress', handleEnterKey);
     content.querySelector<HTMLInputElement>("#password")?.addEventListener('keypress', handleEnterKey);
     content.querySelector<HTMLInputElement>("#repeat_password")?.addEventListener('keypress', handleEnterKey);
 
-    // ----------------------------
-    // Attach to DOM
-    // ----------------------------
     root.append(simpleWindow);
 
     // Create the taskbar
@@ -315,4 +284,95 @@ export function registerView(router: Router) {
     setTimeout(() => {
         content.querySelector<HTMLInputElement>("#username")?.focus();
     }, 100);
+}
+
+
+function createAvatarUpload(avatarInput: HTMLInputElement, avatarContainer: HTMLElement): HTMLElement {
+    const uploadSection = document.createElement("div");
+    uploadSection.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+    `;
+    
+    const uploadLabel = document.createElement("label");
+    uploadLabel.textContent = "Or upload custom:";
+    uploadLabel.style.cssText = `display: block; font-size: 11px; margin-bottom: 4px;`;
+
+    // Hidden file input
+    const uploadInput = document.createElement("input");
+    uploadInput.type = "file";
+    uploadInput.accept = "image/*";
+    uploadInput.style.display = "none";
+    uploadInput.id = "avatar-file-input";
+
+    // Custom upload button
+    const uploadButton = document.createElement("button");
+    uploadButton.type = "button";
+    uploadButton.textContent = "Browse Files";
+    uploadButton.style.cssText = `
+        background: #c0c0c0;
+        border: 2px outset #c0c0c0;
+        padding: 4px 12px;
+        font-size: 11px;
+        cursor: pointer;
+        width: 100%;
+        max-width: 120px;
+    `;
+
+    // Button hover effects
+    uploadButton.onmouseover = () => {
+        uploadButton.style.backgroundColor = '#d0d0d0';
+    };
+    uploadButton.onmouseout = () => {
+        uploadButton.style.backgroundColor = '#c0c0c0';
+    };
+
+    // File name display
+    const fileNameDisplay = document.createElement("div");
+    fileNameDisplay.style.cssText = `
+        font-size: 9px;
+        color: #666;
+        text-align: center;
+        min-height: 12px;
+        word-break: break-all;
+        max-width: 120px;
+    `;
+
+    // Button click triggers file input
+    uploadButton.addEventListener("click", () => {
+        uploadInput.click();
+    });
+
+    uploadInput.addEventListener("change", () => {
+        const file = uploadInput.files?.[0];
+        if (file) {
+            // Show selected file name
+            fileNameDisplay.textContent = file.name.length > 18 
+                ? file.name.substring(0, 15) + "..." 
+                : file.name;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                avatarInput.value = e.target!.result as string;
+                // Clear preset selections
+                avatarContainer.querySelectorAll(".avatar-option").forEach(a => {
+                    (a as HTMLElement).style.border = "2px solid transparent";
+                    a.classList.remove("selected");
+                });
+            };
+            reader.readAsDataURL(file);
+        } else {
+            fileNameDisplay.textContent = "";
+        }
+    });
+
+    uploadSection.appendChild(uploadLabel);
+    uploadSection.appendChild(uploadButton);
+    uploadSection.appendChild(uploadInput);
+    uploadSection.appendChild(fileNameDisplay);
+    
+    return uploadSection;
 }

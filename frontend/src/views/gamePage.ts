@@ -6,7 +6,6 @@ export function gameView(router: Router) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
 
-	// Create the main content for the window
 	const content = document.createElement("div");
 
 	// Header with scores
@@ -80,8 +79,8 @@ export function gameView(router: Router) {
 		titleBarControls: {
 			close: true,
 			onClose: () => {
-				router.navigate("/desktop");
-				// put back for local game later window.history.back();
+				//router.navigate("/desktop");
+				window.history.back();
 			}
 		}
 	});
@@ -148,7 +147,7 @@ export function gameView(router: Router) {
 			width: "320px",    // Increased from 280px
 			height: "240px",   // Increased from 220px
 			content: resultContent,
-			initialPosition: { x: 300, y: 190 },
+			initialPosition: { x: 300, y: 300 },
 			titleBarControls: {
 				close: true,
 				onClose: () => {
@@ -161,7 +160,7 @@ export function gameView(router: Router) {
 		});
 
 		// Add high z-index with Tailwind
-		resultWindow.className += " z-50";
+		resultWindow.style.zIndex = "50000";
 		root.appendChild(resultWindow);
 	};
 

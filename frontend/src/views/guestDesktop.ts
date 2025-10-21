@@ -16,7 +16,7 @@ type IconData = {
   img: string;     // image path
   x: number;       // horizontal position
   y: number;       // vertical position
-  enabled: boolean; // ✅ Add enabled property
+  enabled: boolean; // enabled property for logout turnament and localgame
 };
 
 // Export a function that renders the desktop
@@ -203,19 +203,19 @@ function showErrorDialog(message: string) {
         }
     });
 
-    // Add custom class for identification
+    // add custom class for identification
     errorWindow.classList.add('error-dialog-window');
 
-    // Add window to backdrop
+    // add window to backdrop
     backdrop.appendChild(errorWindow);
     document.body.appendChild(backdrop);
 
-    // Auto-close after 8 seconds (longer since it uses your window)
+    // Auto-close 
     setTimeout(() => {
         if (backdrop.parentNode) {
             backdrop.remove();
         }
-    }, 8000);
+    }, 5000);
 
    
 }

@@ -25,10 +25,9 @@ export function localGameSetupView(router: Router) {
 	label.textContent = 'Score to Win:';
 	label.className = 'text-lg';
 
-	// Use a select styled with 98.css
 	const select = document.createElement('select');
 	select.id = 'winning-score';
-	select.className = 'select'; // 98.css style
+	select.className = 'select'; 
 
 	const options = [
 	  { value: '10', text: '10 - Extra long Game' },
@@ -58,7 +57,6 @@ export function localGameSetupView(router: Router) {
 	form.append(title, label, select, startButton);
 	content.appendChild(form);
 
-	// --- Use createWindow ---
 	const setupWindow = createWindow({
 		title: "Local Game Setup",
 		width: "400px",

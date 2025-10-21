@@ -19,7 +19,7 @@ import { notFoundView } from './views/notFoundPage'
 document.addEventListener("DOMContentLoaded", () => {
 	const router = new Router("app");
 	router.register("/", () => loginView(router));
-	router.register("/og", () => remoteGameSetupView(router));
+	router.register("/onlineGame", () => remoteGameSetupView(router));
 	router.register("/game", () => gameView(router));
 	router.register("/friends",() => friendsView(router));
 	router.register("/friendsProfile", () => friendsProfileView(router));

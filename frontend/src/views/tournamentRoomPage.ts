@@ -153,11 +153,9 @@ export function tournamentRoomView(
 		},
 		clock: true,
 	});
-	// Add the taskbar to the root
 	root.appendChild(taskbar);
 
 }
-
 	// Helper to create a match box
 	function createMatch(
 	player1: string | null,

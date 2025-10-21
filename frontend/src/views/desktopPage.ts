@@ -83,7 +83,7 @@ export function desktopView(router: Router) {
 					router.navigate("/login");
 					break;
 				case "Remotepong":
-					router.navigate("/og");
+					router.navigate("/onlineGame");
 					break;
 				case "friends":
 					router.navigate("/friends");
