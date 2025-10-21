@@ -2,43 +2,46 @@ import { Router } from '../router';
 import { createWindow } from './_components';
 import { PongGame } from '../game/PongGame';
 import { createTaskbar, createStaticDesktopBackground } from "./_components";
-//import {TournamentStatsComponent} from "./_statisticComponents"
+import {createTournamentStatsComponent} from "./_userComponents";
+
 let currentPongGame: PongGame | undefined = undefined;
 
 export function tournamentView(router: Router) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
 
-	// --- Window Content ---
 	const content = document.createElement("div");
     content.style.padding = "15px";
 
-	 // Add static desktop background
     const staticBackground = createStaticDesktopBackground();
     staticBackground.attachToPage(root);
 
-    // Add Tournament Statistics (Compact view)
-    //const tournamentStatsContainer = document.createElement("div");
-    /*new TournamentStatsComponent({
-        container: tournamentStatsContainer,
-        showTitle: true,
-        onError: (error) => {
-            console.error('Tournament stats error:', error);
-            // Handle error as needed
-        }
+    const statsContainer = document.createElement("div");
+    statsContainer.style.cssText = `
+        flex-shrink: 0;
+        height: 140px;
+    `;
+	
+	const tournamentStatsComponent = createTournamentStatsComponent({
+        container: statsContainer,
+        userId: undefined, // Will use current user's stats
+        width: '100%',
+        height: '140px',
+        showTitle: true
     });
-    content.appendChild(tournamentStatsContainer);
-*/
+
+    content.appendChild(statsContainer);
+
+
 	// Form
 	const form = document.createElement("form");
 	form.id = "joinOnlineGameForm";
-	form.className = "join-game-form";
+	form.className = "join-game-form mt-4";
 
 	const label = document.createElement("label");
 	label.htmlFor = "alias";
 	label.textContent = "Enter your alias:";
-	//label.className = "block mb-4"; // Block display + bottom margin
-
+	
 	const input = document.createElement("input");
 	input.type = "text";
 	input.id = "alias";
@@ -65,26 +68,7 @@ export function tournamentView(router: Router) {
 	canvas.style.display = "none";
 	content.appendChild(canvas);
 
-	// Loading, error, success messages
-	const loading = document.createElement("div");
-	loading.id = "loading";
-	loading.className = "loading";
-	loading.textContent = "Loading...";
-	loading.style.display = "none";
-	content.appendChild(loading);
-
-	const errorMessage = document.createElement("div");
-	errorMessage.id = "errorMessage";
-	errorMessage.className = "error-message";
-	errorMessage.style.display = "none";
-	content.appendChild(errorMessage);
-
-	const successMessage = document.createElement("div");
-	successMessage.id = "successMessage";
-	successMessage.className = "success-message";
-	successMessage.style.display = "none";
-	content.appendChild(successMessage);
-
+	
 	
 	const setupWindow = createWindow({
 		title: "Tournament Setup",
@@ -94,7 +78,7 @@ export function tournamentView(router: Router) {
 			help: true,
 			close: true,
 			onClose: () => {
-				router.navigate("/desktop");
+				window.history.back();
 			}
 		}
 	});
@@ -109,10 +93,8 @@ export function tournamentView(router: Router) {
 			clock: true,
 		});
 	
-		// Add the taskbar to the root
 		root.appendChild(taskbar);
 
-	// --- Form Submit Handler ---
 	form.addEventListener("submit", async (e: Event) => {
 		e.preventDefault();
 		const alias = input.value.trim();
@@ -120,9 +102,6 @@ export function tournamentView(router: Router) {
 
 		joinClassicBtn.disabled = true;
 		joinClassicBtn.textContent = "Waiting for opponent...";
-		loading.style.display = "block";
-		errorMessage.style.display = "none";
-		successMessage.style.display = "none";
 
 		// Dispose of previous game if it exists
 		if (currentPongGame) {
@@ -143,11 +122,8 @@ export function tournamentView(router: Router) {
 			await game.joinGame();
 		} catch (error) {
 			console.error("Failed to join game:", error);
-			errorMessage.textContent = "Failed to join game";
-			errorMessage.style.display = "block";
 			joinClassicBtn.disabled = false;
 			joinClassicBtn.textContent = "Join Online Game";
-			loading.style.display = "none";
 		}
 	});
 }

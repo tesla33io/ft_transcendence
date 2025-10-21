@@ -173,10 +173,12 @@ export function registerView(router: Router) {
     // ----------------------------
     const simpleWindow = createWindow({
         title: "Register New Account",
-        width: "400px",
+        width: "260px",
+		initialPosition: {x: 500 , y: 200},
         content: content,
         titleBarControls: {
-            help: true,
+            
+			help: true,
             close: true,
             onClose: () => router.navigate("/login")
         }

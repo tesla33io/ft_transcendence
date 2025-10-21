@@ -23,6 +23,7 @@ export function loginView(router: Router) {
 	const usernameInput = document.createElement("input");
 	usernameInput.id = "text18";
 	usernameInput.type = "text";
+	usernameInput.className = "mb-4"; // margin-bottom: 16px
 
 	usernameField.appendChild(usernameLabel);
 	usernameField.appendChild(usernameInput);
@@ -39,6 +40,7 @@ export function loginView(router: Router) {
 	const passwordInput = document.createElement("input");
 	passwordInput.id = "text19";
 	passwordInput.type = "password";
+	passwordInput.className = "mb-4";  // margin-bottom: 16px
 
 	passwordField.appendChild(passwordLabel);
 	passwordField.appendChild(passwordInput);
@@ -64,6 +66,7 @@ export function loginView(router: Router) {
 	const loginBtn = document.createElement("button");
 	loginBtn.id = "loginBtn";
 	loginBtn.textContent = "Login";
+	
 
 	const registerBtn = document.createElement("button");
 	registerBtn.id = "registerBtn";

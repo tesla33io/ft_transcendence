@@ -61,7 +61,7 @@ function initializePage(app: HTMLElement) {
 // ===========================
 // SHARED UI CREATORS
 // ===========================
-function createPageLayout(app: HTMLElement, window: HTMLElement) {
+function createPageLayout(app: HTMLElement, window: HTMLElement, router: Router) {
     app.innerHTML = '';
     app.appendChild(window);
     
@@ -131,7 +131,7 @@ function showLoadingState(app: HTMLElement, router: Router) {
     loadingContent.appendChild(cancelBtn);
 
     const loadingWindow = createWindow({
-        title: "⚙️ Settings",
+        title: "Settings",
         width: "300px",
         height: "200px",
         content: loadingContent,
@@ -141,7 +141,7 @@ function showLoadingState(app: HTMLElement, router: Router) {
         }
     });
 
-    createPageLayout(app, loadingWindow);
+    createPageLayout(app, loadingWindow, router);
 }
 
 // ===========================
@@ -191,7 +191,7 @@ function showErrorState(app: HTMLElement, router: Router) {
         }
     });
 
-    createPageLayout(app, errorWindow);
+    createPageLayout(app, errorWindow, router);
 }
 
 // ===========================
@@ -214,7 +214,7 @@ function buildSettingsUI(app: HTMLElement, router: Router, currentUser: PublicUs
         }
     });
 
-    createPageLayout(app, setupWindow);
+    createPageLayout(app, setupWindow, router);
 }
 
 function createMainContent(): HTMLElement {
@@ -232,7 +232,9 @@ function createMainContent(): HTMLElement {
     mainHeading.style.cssText = `
         text-align: center;
         margin: 0 0 15px 0;
-        font-size: 18px;
+        font-size: 24px;
+        font-weight: bold;
+		color: #1e40af;
         border-bottom: 1px solid #c0c0c0;
         padding-bottom: 8px;
     `;
