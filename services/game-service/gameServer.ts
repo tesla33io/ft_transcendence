@@ -16,10 +16,10 @@ server.register(require('@fastify/cors'), {
 	credentials: true
 })
 
-// server.post("/join-classic", async (req, reply) => {
-// 	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
-// 	return result
-// })
+server.post("/join-classic", async (req, reply) => {
+	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
+	return result
+})
 
 server.post("/join-tournament", async (req, reply) => {
 	const result = await gameMatchmaker.joinTournament(req.body as JoinGameRequest)
@@ -28,13 +28,13 @@ server.post("/join-tournament", async (req, reply) => {
 
 //for testing chage to the bot-classic to join-classic for now,
 //when there is functionality in the frontend for AI-bot change to bot-classic
-server.post("/join-classic", async(req, reply) => {
+server.post("/bot-classic", async(req, reply) => {
 	const result = await gameMatchmaker.joinBotClassic(req.body as JoinGameRequest)
 	return result
 })
 
-server.get("/test", async (req, reply) => {
-	return {test: 'OK'}
+server.get("/test/status", async (req, reply) => {
+	return {status: 'OK'}
 })
 
 server.get("/test/checkNumberBotInstance", async (req, reply) => {
