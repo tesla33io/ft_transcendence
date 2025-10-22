@@ -13,7 +13,7 @@
 	champion: string //name of player or null
 }
 
-//websocket messaging struckt 
+//websocket messaging struct 
 {
 	"event": string ,//for example "error" or "gameUpdate" etc
 	"type": string ,//for example on game update "paddleMove" or "scoreUpdate" etc
