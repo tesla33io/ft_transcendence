@@ -15,7 +15,7 @@
 
 //websocket messaging struckt 
 {
-	"event": string ,//for example "error" or "gameUpadate" etc
+	"event": string ,//for example "error" or "gameUpdate" etc
 	"type": string ,//for example on game update "paddleMove" or "scoreUpdate" etc
 	"data": any //json object with all needed data for the event and type 
 }
