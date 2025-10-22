@@ -24,15 +24,28 @@ async function testBlockchainFlow() {
     console.log('\n1.5️⃣ Creating tournament matches...');
     // We'll use a SQL insert directly since there's no matches API endpoint yet
     // For now, just create some sample match data
-    const dbPath = '/Users/helensirenko/Documents/42/ft_transcendence/services/user-service/user-service.db';
+    const dbPath = './user-service.db';
+
+    // Sanitize user IDs and tournamentId before SQL interpolation
+    const userIds = [0, 1, 2, 3].map(i => {
+      const id = Number(users[i].id);
+      if (!Number.isFinite(id)) {
+        throw new Error(`Invalid user id at users[${i}]: ${users[i].id}`);
+      }
+      return id;
+    });
+    const tournamentIdNum = Number(tournamentId);
+    if (!Number.isFinite(tournamentIdNum)) {
+      throw new Error(`Invalid tournamentId: ${tournamentId}`);
+    }
 
     // Insert 3 matches for the tournament
     execSync(`sqlite3 ${dbPath} "
-    INSERT INTO match_history (user_id, opponent_id, tournament_id, tournament_won, result, user_score, opponent_score, played_at) 
-    VALUES 
-        (${users[0].id}, ${users[1].id}, ${tournamentId}, true, 'win', 11, 5, datetime('now')),
-        (${users[0].id}, ${users[2].id}, ${tournamentId}, false, 'win', 11, 7, datetime('now')),
-        (${users[0].id}, ${users[3].id}, ${tournamentId}, false, 'win', 11, 3, datetime('now'));
+      INSERT INTO match_history (user_id, opponent_id, tournament_id, tournament_won, result, user_score, opponent_score, played_at) 
+      VALUES 
+          (${userIds[0]}, ${userIds[1]}, ${tournamentIdNum}, true, 'win', 11, 5, datetime('now')),
+          (${userIds[0]}, ${userIds[2]}, ${tournamentIdNum}, false, 'win', 11, 7, datetime('now')),
+          (${userIds[0]}, ${userIds[3]}, ${tournamentIdNum}, false, 'win', 11, 3, datetime('now'));
     "`);
     console.log('   ✓ Created tournament matches');
 

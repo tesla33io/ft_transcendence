@@ -1,16 +1,22 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
+    "module": "ESNext",
+    "moduleResolution": "node",
     "outDir": "dist",
-    "rootDir": "../../",  // Change to parent directory
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "baseUrl": ".",
+    "paths": {
+      "@blockchain-service/*": ["../blockchain-service/src/*"]
+    }
   },
-  "include": ["src/**/*", "../blockchain-service/src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
 }

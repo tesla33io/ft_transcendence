@@ -6,6 +6,7 @@ import fastifyStatic from '@fastify/static';
 import mikroConfig from './mikro-orm.config';
 import userRoutes from './routes/users';
 import tournamentRoutes from './routes/tournament';
+import { initializeServices } from './services/initialization';
 import { join } from 'path';
 //import { setup2FARoutes } from './routes/2fa';
 
@@ -21,6 +22,10 @@ async function buildServer() {
     app.addHook('onClose', async () => {
         await orm.close();
     });
+
+    // Initialize external services (dependency injection)
+    initializeServices();
+    console.log('✅ External services initialized');
 
     await app.register(fastifyStatic, {
         root: join(process.cwd(), 'public'),

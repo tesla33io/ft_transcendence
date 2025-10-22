@@ -2,9 +2,15 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { MatchHistory } from '../entities/MatchHistory';
 import { User } from '../entities/User';
 import { ethers } from 'ethers';
-//import { blockchainService } from '../../../blockchain-service/src/blockchainService';
-// import { blockchainService } from '../../../blockchain-service/src/blockchainService';
-import { blockchainService } from '../../../blockchain-service/src/blockchainService';
+import { IBlockchainService, BlockchainError } from '../interfaces/blockchain';
+
+// Dependency injection - blockchain service should be injected
+// This makes the service more testable and decoupled
+let blockchainService: IBlockchainService | null = null;
+
+export function setBlockchainService(service: IBlockchainService) {
+    blockchainService = service;
+}
 
 export default async function tournamentRoutes(app: FastifyInstance) {
     
@@ -42,6 +48,13 @@ export default async function tournamentRoutes(app: FastifyInstance) {
             );
             
             // 5. Record on blockchain
+            if (!blockchainService) {
+                return reply.code(503).send({ 
+                    error: 'Blockchain service not available',
+                    details: 'Service is not properly configured'
+                });
+            }
+
             const txHash = await blockchainService.recordTournament(
                 parseInt(id),
                 winnerAddress,
@@ -53,7 +66,7 @@ export default async function tournamentRoutes(app: FastifyInstance) {
             // 6. Update database with blockchain transaction hash
             const finalMatch = matches.find(m => m.tournamentWon === true);
             if (finalMatch) {
-                finalMatch.blockchainTxHash = txHash; // Add this field to MatchHistory entity
+                finalMatch.blockchainTxHash = txHash;
                 await app.em.persistAndFlush(finalMatch);
             }
             
@@ -68,8 +81,6 @@ export default async function tournamentRoutes(app: FastifyInstance) {
             
         } catch (error) {
             app.log.error('Error finalizing tournament:' + String(error));
-            app.log.error(error);  // Log the full error object
-            console.error('Full error:', error);  // Also console log
             return reply.code(500).send({ error: 'Internal server error' });
         }
     });
@@ -78,6 +89,13 @@ export default async function tournamentRoutes(app: FastifyInstance) {
     app.get('/:id/verify', async (request: FastifyRequest, reply: FastifyReply) => {
         try {
             const { id } = request.params as any;
+            
+            if (!blockchainService) {
+                return reply.code(503).send({ 
+                    error: 'Blockchain service not available',
+                    details: 'Service is not properly configured'
+                });
+            }
             
             // Check blockchain verification
             const isVerified = await blockchainService.verifyTournament(parseInt(id));

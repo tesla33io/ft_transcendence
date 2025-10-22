@@ -1,6 +1,5 @@
 import type { HardhatUserConfig } from "hardhat/config";
 import "dotenv/config";
-//import "@nomicfoundation/hardhat-ignition";
 
 import hardhatToolboxMochaEthersPlugin from "@nomicfoundation/hardhat-toolbox-mocha-ethers";
 import { configVariable } from "hardhat/config";

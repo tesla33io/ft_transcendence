@@ -290,7 +290,7 @@ export default async function userRoutes(app: FastifyInstance) {
 
             // TODO: Delete old profile picture if exists
 
-            user.profilePicURI = uri;
+            user.avatarUrl = uri;
             await app.em.persistAndFlush(user);
 
             return { 
