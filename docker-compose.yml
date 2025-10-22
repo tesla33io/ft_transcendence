@@ -11,8 +11,6 @@ services:
       - gateway-service
     networks:
       - pong-network
-    volumes:
-      - ./frontend:/app
 
   gateway-service:
     build:
@@ -43,6 +41,16 @@ services:
     volumes:
       - ./services/game-service:/game-service
       - /app/node_modules
+
+  ai-service:
+    build:
+      context: ./services/AI-service
+      dockerfile: Dockerfile
+    container_name: AI-service
+    ports:
+      - "5100:5100"
+    networks:
+      - pong-network
 
 networks:
   pong-network:

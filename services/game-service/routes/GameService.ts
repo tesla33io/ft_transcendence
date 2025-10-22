@@ -1,9 +1,11 @@
 import { GameEngine } from "../engine/GameEngine";
 import { GameWebSocketServer } from "../types/GameWebsocketServer";
-import { Game, GameMode, Player, Tournament } from "../types/types"
+import { GameMode, } from "../types/types"
+import { Game, Player, Tournament  } from "../types/interfaces";
 import { GameModeEngineProvider } from "../engine/GameEngineProvider";
 import { GameMatchmaker } from "./GameMatchmaker";
 import { TournamentPong } from "../engine/TournamentPong";
+import { ClassicPong } from "../engine/ClassicPong";
 
 export class GameService{
 	private gameEngine: GameEngine
@@ -46,13 +48,11 @@ export class GameService{
 							return
 					}
 				}
-
 			if (this.gameEngine.allPlayerReady(gameId, playerId)){
 				console.log(`Classic players are ready: true`)
 				this.gameEngine.startGame(gameId)
 				return
 			}
-
 
 		}
 		this.webSocketServer.clientDisconnect = (playerId: string) => {

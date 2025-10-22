@@ -1,3 +1,5 @@
+import {Player, Ball, Game} from "./interfaces"
+
 export const GAME_HEIGHT = Number(process.env.GAME_HEIGHT || "550")
 export const GAME_WIDTH = Number(process.env.GAME_WIDTH || "900")
 export const PADDLE_HEIGHT = Number(process.env.PADDLE_HEIGHT || "50")
@@ -5,7 +7,7 @@ export const PADDLE_WIDTH = Number(process.env.PADDLE_WIDTH || "10")
 export const FPS = Number(process.env.FPS || "60")
 export const PLAYER_OFFSET = Number(process.env.PLAYER_OFFSET || "20")
 
-export type GameMode = 'classic' | 'tournament'
+export type GameMode = 'classic' | 'tournament' | 'bot-classic'
 
 export const generateGameId = (): string => {
 	return Math.random().toString(36).substring(2, 15);
@@ -24,28 +26,6 @@ export enum GAME_STATE {
 	FINISHED = 5
 }
 
-export interface JoinGameRequest {
-	playerName: string,
-	playerId: string,
-	gameMode?: GameMode
-}
-
-export interface Player {
-		id: string
-		name: string
-		Y: number
-		X: number
-		score: number
-		ready: boolean
-}
-
-export interface Ball {
-	x: number
-	y: number
-	vx: number
-	vy: number
-}
-
 export const generateBallPos = (): Ball => {
 	let ball = {
 		x: Math.floor(Math.random() * GAME_WIDTH),
@@ -56,33 +36,52 @@ export const generateBallPos = (): Ball => {
 	return ball
 }
 
-export interface Game {
-		id: string
-		gameMode: string
-		status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
-		player1: Player
-		player2: Player
-		ball: Ball
+export const generateDefaultPlayer = (playerName: string, playerId: string): Player => {
+	let player: Player = {
+		id: playerId,
+		name: playerName,
+		score: 0,
+		Y: 0,
+		X: 0,
+		ready: false
+	}
+	return player
 }
 
-export interface Tournament {
-	id: string
-	status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
-	players: Player[]
-	bracket: TournamentMatch[]
-	winner: Player | null
+export const generateDefaultGame = (opponent: Player, player: Player): Game =>{
+	const game: Game ={
+		id: generateGameId(),
+		gameMode: 'classic',
+		status: 'connected',
+		player1: opponent,
+		player2: player,
+		ball: generateBallPos()
+	};
+	return game;
 }
 
-export interface TournamentMatch {
-	id: string
-	tournamentId: string
-	status: 'waiting' | 'playing' | 'finished' | 'ready' | 'connected'
-	player1: Player
-	player2: Player
-	winner: Player | null
+export const generateBot = async (nameSuffix: string, gameId: string, difficulty: string): Promise<string> => {
+	const response = await fetch ('http://ai-service:5100/api/v1/aibot/get-bot/classic', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({nameSuffix: `${nameSuffix}`, gameId: `${gameId}`, difficulty: 'easy'})
+			})
+
+			if (!response.ok){
+				throw new Error('Failed to generate bot')
+			}
+
+	const data = await response.json()
+	const botId: string = data.botId
+	return botId
 }
 
-
+export type WaitingResponse = {
+	status: 'waiting';
+	playerId: string;
+	gameId?: string;
+	message: string;
+};
 
 
 
