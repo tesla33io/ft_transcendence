@@ -1,4 +1,4 @@
-import { defineConfig } from '@mikro-orm/sqlite';
+import { defineConfig } from '@mikro-orm/better-sqlite';
 import { TsMorphMetadataProvider } from '@mikro-orm/reflection';
 
 export default defineConfig({
@@ -13,4 +13,3 @@ export default defineConfig({
         pathTs: './migrations',
     },
 });
-

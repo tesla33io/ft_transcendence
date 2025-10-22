@@ -3,6 +3,8 @@ import Fastify from 'fastify';
 import { MikroORM } from '@mikro-orm/core';
 import mikroConfig from './mikro-orm.config';
 import userRoutes from './routes/users';
+import userStatisticsRoutes from './routes/userStats';
+import matchHistoryRoutes from './routes/matchHistory';
 //import { setup2FARoutes } from './routes/2fa';
 
 async function buildServer() {
@@ -19,6 +21,8 @@ async function buildServer() {
     });
 
     await app.register(userRoutes, { prefix: '/users' });
+    await app.register(userStatisticsRoutes, { prefix: '/user-stats' });
+    await app.register(matchHistoryRoutes, { prefix: '/match-history' });
     //await app.register(setup2FARoutes, { prefix: 'auth' });
 
     return app;
