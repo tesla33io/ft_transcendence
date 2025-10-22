@@ -5,6 +5,7 @@ import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import mikroConfig from './mikro-orm.config';
 import userRoutes from './routes/users';
+import tournamentRoutes from './routes/tournament';
 import { join } from 'path';
 //import { setup2FARoutes } from './routes/2fa';
 
@@ -27,6 +28,9 @@ async function buildServer() {
     });
     await app.register(multipart);
     await app.register(userRoutes, { prefix: '/users' });
+    console.log('✅ User routes registered');
+    await app.register(tournamentRoutes, { prefix: '/tournaments' });
+    console.log('✅ Tournament routes registered');
     //await app.register(setup2FARoutes, { prefix: 'auth' });
 
     return app;

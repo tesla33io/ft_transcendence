@@ -40,6 +40,12 @@ export class MatchHistory {
     @Property({ type: 'number', default: 0 })
     opponentScore: number = 0;
 
+    @Property({ type: 'string', nullable: true, columnType: 'text' })
+    blockchainTxHash?: string;
+
+    @Property({ type: 'boolean', default: false })
+    onBlockchain: boolean = false;
+
     // Timing information
     @Property({ type: 'datetime', nullable: true })
     startTime?: Date;
