@@ -1,7 +1,7 @@
 import fastify from 'fastify'
 import { GameMatchmaker} from "./routes/GameMatchmaker"
 import { GameServiceManager } from './routes/GameServiceManager'
-import { JoinGameRequest, GameMode } from './types/types'
+import { JoinGameRequest } from './types/interfaces'
 
 const server = fastify({ logger: true })
 const PORT = 5000
@@ -16,31 +16,39 @@ server.register(require('@fastify/cors'), {
 	credentials: true
 })
 
-server.get("/test", async (req, reply) => {
-	return {test: 'OK'}
-})
-
-server.post("/join-classic", async (req, reply) => {
-	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
-	return result
-})
+// server.post("/join-classic", async (req, reply) => {
+// 	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
+// 	return result
+// })
 
 server.post("/join-tournament", async (req, reply) => {
 	const result = await gameMatchmaker.joinTournament(req.body as JoinGameRequest)
 	return result
 })
 
-server.get('/join-classic', async (req, reply) => {
-	return { message: 'Use POST method to join game' }
+//for testing chage to the bot-classic to join-classic for now,
+//when there is functionality in the frontend for AI-bot change to bot-classic
+server.post("/join-classic", async(req, reply) => {
+	const result = await gameMatchmaker.joinBotClassic(req.body as JoinGameRequest)
+	return result
 })
 
-server.get("/get-gameMode-port", async (req, reply) =>{
-	const url = new URL(req.url!, 'http://game-service')
-	const gameMode = url.searchParams.get('gameMode')
-	if (gameMode !== 'classic' && gameMode !== 'tournament')
-		return {status: 404, port: undefined}
-	const result = await gameServiceManager.getGameModePort(gameMode as GameMode)
-	return {status: 200, port: result }
+server.get("/test", async (req, reply) => {
+	return {test: 'OK'}
+})
+
+server.get("/test/checkNumberBotInstance", async (req, reply) => {
+	const response = await fetch("http://ai-service:5100/api/v1/aibot/numbers-of-bots")
+
+	if (!response.ok) {
+		throw new Error(`HTTP error! Status: ${response.status}`);
+	}
+	return response
+})
+
+server.post("/test/multipleInstance", async (req, reply) => {
+	const result = await gameMatchmaker.test_multipleBotInstance(req.body as JoinGameRequest)
+	return result
 })
 
 const start = async () => {

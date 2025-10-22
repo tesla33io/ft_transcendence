@@ -1,4 +1,5 @@
-import {Game, GAME_HEIGHT, FPS} from "../types/types"
+import { GAME_HEIGHT, FPS} from "../types/types"
+import { Game } from "../types/interfaces"
 
 export abstract class GameEngine {
 	protected activeGames: Map<string, Game> = new Map()
