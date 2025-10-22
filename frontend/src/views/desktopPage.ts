@@ -88,6 +88,9 @@ export function desktopView(router: Router) {
 				case "friends":
 					router.navigate("/friends");
 					break;
+				case "Ai":
+					router.navigate("/Ai");
+					break;
 				case "tournament":
 					router.navigate("/tournament");
 					break;

@@ -13,6 +13,7 @@ import {desktopView} from './views/desktopPage'
 import {localGameView} from './views/localGamePage'
 import {localGameSetupView} from './views/localGameSetupPage'
 import {remoteGameSetupView} from './views/remoteGameSetup'
+import {aiGameSetupView} from './views/aiSetupPage.ts'
 import {settingsView} from './views/settingsPage'
 import { notFoundView } from './views/notFoundPage'
 
@@ -32,6 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	router.register("/settings", () => settingsView(router));
 	router.register("/localgame", () => localGameSetupView(router));
 	router.register("/localgame/play", () => localGameView(router));
+	router.register("/Ai", () => aiGameSetupView(router));
 	router.register("/404", () => notFoundView(router));
 
 
