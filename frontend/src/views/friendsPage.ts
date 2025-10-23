@@ -1,38 +1,103 @@
 import { Router } from "../router";
-import { createWindow } from "./components";
-
+import { createWindow } from "./_components";
+import { createTaskbar, createStaticDesktopBackground } from "./_components";
+import { createFriendsComponent, createSimpleFriendsActionsComponent } from "./_userComponents";
+import { createFriendProfilePage } from "./_profilePageBuilder"; // ✅ Add this import
 
 export function friendsView(router: Router) {
-	const root = document.getElementById("app")!;
-		root.innerHTML = "";
+    const root = document.getElementById("app");
+    if (!root) {
+        console.error("App root element not found!");
+        return;
+    }
+    root.innerHTML = "";
 
-		const content = document.createElement("div");
-		content.innerHTML = `
-			<p>Add your friend</p>
+    const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(document.body);
+        
+    // Create content container
+    const content = document.createElement('div');
+    content.style.cssText = `
+        padding: 15px;
+        display: flex;
+        gap: 15px;
+        height: 100%;
+    `;
 
-			<div class="field-row-stacked" style="width: 200px">
-			<label for="text18">Friends username:</label>
-			<input id="text18" type="text" />
-			</div>
+    // Friends list container
+    const friendsContainer = document.createElement('div');
+    
+    // Friends actions container
+    const actionsContainer = document.createElement('div');
 
-			<div class="field-row">
-				<button id="send_Friend_Request">send Friend Request</button>
+    // ✅ Function to open friend profile
+    const openFriendProfile = (friend: any) => {
+        console.log('Opening profile for friend:', friend);
+        
+        // Close current friends window and open profile
+        staticBackground.remove();
+        
+        // Use the profile builder to create a friend profile page
+        createFriendProfilePage(friend.id || friend.userId, router);
+    };
 
-			</div>
-		`;
+    // Create simplified friends actions component
+    const friendsActions = createSimpleFriendsActionsComponent({
+        container: actionsContainer,
+        onRefreshFriends: () => {
+            friendsComponent.refresh();
+        },
+        // ✅ Pass the profile opening function
+        onViewProfile: openFriendProfile
+    });
 
-		const simpleWindow = createWindow({
-		title: "Friends",
-		width: "400px",
-		content: content,
-		titleBarControls: {
-			close: true,
-			onClose: () => {
-				router.navigate("/desktop")
-			}
-		}
-	});
+    // Create friends component
+    const friendsComponent = createFriendsComponent({
+        container: friendsContainer,
+        height: '350px',
+        width: '400px',
+        showTitle: true,
+        onFriendSelect: (friend) => {
+            console.log('Selected friend:', friend);
+            // Update the actions component with selected friend
+            friendsActions.updateSelectedFriend(friend);
+        },
+        onError: (error) => {
+            console.error('Friends component error:', error);
+        }
+    });
 
-	root.append(simpleWindow);
+    content.appendChild(friendsContainer);
+    content.appendChild(actionsContainer);
 
+    // Create window
+    const window = createWindow({
+        title: 'Friends',
+        width: '650px',
+        height: '450px',
+        content: content,
+        titleBarControls: {
+            help: true,
+            close: true,
+            onClose: () => {
+                staticBackground.remove();
+                router.navigate('/desktop');
+            }
+        }
+    });
+
+    root.appendChild(window);
+
+    const { taskbar } = createTaskbar({
+        startButton: {
+            label: "Start",
+            onClick: () => {
+                staticBackground.remove();
+                router.navigate("/");
+            }
+        },
+        clock: true,
+    });
+    
+    root.appendChild(taskbar);
 }
