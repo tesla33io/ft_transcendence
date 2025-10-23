@@ -1,0 +1,15 @@
+.exit
+const contract = TournamentScores.attach("0xAC5C83eD911a846e968AF3E4B70907e03Cab31E5");
+const TournamentScores = await ethers.getContractFactory("TournamentScores");
+const { ethers } = hre;
+.exit
+console.log(count.toString());
+const count = await contract.getTournamentCount();
+const contract = TournamentScores.attach("0xAC5C83eD911a846e968AF3E4B70907e03Cab31E5");
+const TournamentScores = await ethers.getContractFactory("TournamentScores");
+console.log("Owner:", owner);
+console.log("Tournament 1 exists:", exists);
+const exists = await contract.verifyTournament(1);
+const contract = TournamentScores.attach("0xAC5C83eD911a846e968AF3E4B70907e03Cab31E5");
+const TournamentScores = await ethers.getContractFactory("TournamentScores");
+await contract.getTournamentCount();
