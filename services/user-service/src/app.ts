@@ -6,6 +6,9 @@ import fastifyStatic from '@fastify/static';
 import mikroConfig from './mikro-orm.config';
 import userRoutes from './routes/users';
 import { join } from 'path';
+
+import userStatisticsRoutes from './routes/userStats';
+import matchHistoryRoutes from './routes/matchHistory';
 import { SessionManager, setupSessionMiddleware } from './utils/SessionManager';
 
 async function buildServer() {
@@ -34,7 +37,8 @@ async function buildServer() {
     await setupSessionMiddleware(app, sm);
     await app.register(multipart);
     await app.register(userRoutes, { prefix: '/users' });
-    //await app.register(setup2FARoutes, { prefix: 'auth' });
+    await app.register(userStatisticsRoutes, { prefix: '/user-stats' });
+    await app.register(matchHistoryRoutes, { prefix: '/match-history' });
 
     return app;
 }

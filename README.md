@@ -1,21 +1,11 @@
 # ft_transcendence
 
-{
-	gameMode: 'tournament',
-	status: 'ready',
-	id: tournament.id,
-	player1: tournament.players[0],
-	player2: tournament.players[1],
-	player3: tournament.players[2],
-	player4: tournament.players[3]
-	finalist1: string //name of player or null 
-	finalist2: string //name of player or null
-	champion: string //name of player or null
-}
+## Overview
+The 42 Transcendence Project is a real-time, multiplayer online Pong game with
+user authentication, matchmaking and different game-modes.
+Built to showcase advanced full-stack development, it integrates WebSockets,
+a retro-looking front-end, and a scalable Node.js backend with SQLite3 and TypeScript.
 
-//websocket messaging struckt 
-{
-	"event": string ,//for example "error" or "gameUpadate" etc
-	"type": string ,//for example on game update "paddleMove" or "scoreUpdate" etc
-	"data": any //json object with all needed data for the event and type 
-}
+
+## License
+MIT
