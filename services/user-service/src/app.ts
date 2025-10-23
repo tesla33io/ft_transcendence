@@ -13,9 +13,10 @@ import swaggerUI from '@fastify/swagger-ui'
 import userStatisticsRoutes from './routes/userStats';
 import matchHistoryRoutes from './routes/matchHistory';
 import { SessionManager, setupSessionMiddleware } from './utils/SessionManager';
+import { setupGlobalErrorHandling } from './utils/ErrorHandling';
 
 async function buildServer() {
-    const app = Fastify();
+    const app = Fastify({ logger: true });
 
     /////////// DEBUG ////////
     app.register(swagger, {
@@ -42,6 +43,8 @@ async function buildServer() {
     app.addHook('onClose', async () => {
         await orm.close();
     });
+
+    setupGlobalErrorHandling(app);
 
     await app.register(fastifyStatic, {
         root: join(process.cwd(), 'public'),

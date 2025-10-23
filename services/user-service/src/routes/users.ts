@@ -119,7 +119,7 @@ const FriendSchema = {
         lastLogin: { type: 'string', format: 'date-time', nullable: true }
     }
 };
-type FriendResponse = FromSchema<typeof FriendSchema>;
+type FriendResponse = FromSchema<typeof FriendResponse>;
 
 
 export default async function userRoutes(app: FastifyInstance) {
@@ -346,7 +346,7 @@ export default async function userRoutes(app: FastifyInstance) {
         }
     }, async (req: FastifyRequest, reply: FastifyReply) => {
         console.log(req);
-        if (!req.session.userId) {
+        if (!req.cookies.sessionId || !req.session.userId) {
             return reply.status(401).send({ error: 'Not authenticated' });
         }
 
@@ -421,7 +421,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 'Uploads and saves a new profile picture for the authenticated user.',
         }
     }, async (req: FastifyRequest, reply) => {
-        if (!req.session.userId) {
+        if (!req.cookies.sessionId || !req.session.userId) {
             return reply.status(401).send({ error: 'Not authenticated' });
         }
 
@@ -509,25 +509,26 @@ export default async function userRoutes(app: FastifyInstance) {
     // GET /api/v1/users/friends - Get user's friends list
     app.get<{Reply: FriendResponse}>('/friends', {
         schema: {
-            tags: ['Friends'],
-            summary: 'Get user friends list',
-            response: {
-                200: {
-                    type: 'object',
-                    properties: {
-                        friends: {
-                            type: 'array',
-                            items: FriendSchema
-                        }
+        tags: ['Friends'],
+        summary: 'Get user friends list',
+        response: {
+            200: {
+                type: 'object',
+                properties: {
+                    friends: {
+                        type: 'array',
+                        items: FriendSchema
                     }
-                },
-                401: ErrorSchema,
-                404: ErrorSchema,
-                500: ErrorSchema
-            }
+                }
+            },
+            401: ErrorSchema,
+            404: ErrorSchema,
+            500: ErrorSchema
         }
+    }
+
     }, async (req: FastifyRequest, reply: FastifyReply) => {
-        if (!req.session.userId) {
+        if (!req.cookies.sessionId || !req.session.userId) {
             return reply.status(401).send({ error: 'Not authenticated' });
         }
 
@@ -557,41 +558,8 @@ export default async function userRoutes(app: FastifyInstance) {
     });
 
     // POST /api/v1/users/friends - Add a friend
-    app.post('/friends', {
-        schema: {
-            tags: ['Friends'],
-            summary: 'Add a friend',
-            body: {
-                type: 'object',
-                required: ['username'],
-                properties: {
-                    username: { type: 'string' }
-                }
-            },
-            response: {
-                200: {
-                    type: 'object',
-                    properties: {
-                        message: { type: 'string' },
-                        friend: {
-                            type: 'object',
-                            properties: {
-                                id: { type: 'string' },
-                                username: { type: 'string' },
-                                onlineStatus: { type: 'string' }
-                            }
-                        }
-                    }
-                },
-                400: ErrorSchema,
-                401: ErrorSchema,
-                404: ErrorSchema,
-                409: ErrorSchema,
-                500: ErrorSchema
-            }
-        }
-    }, async (req: FastifyRequest, reply: FastifyReply) => {
-        if (!req.session.userId) {
+    app.post('/friends', async (req: FastifyRequest, reply: FastifyReply) => {
+        if (!req.cookies.sessionId || !req.session.userId) {
             return reply.status(401).send({ error: 'Not authenticated' });
         }
 
@@ -651,31 +619,8 @@ export default async function userRoutes(app: FastifyInstance) {
     });
 
     // DELETE /api/v1/users/friends/:username - Remove a friend
-    app.delete('/friends/:username', {
-        schema: {
-            tags: ['Friends'],
-            summary: 'Remove a friend',
-            params: {
-                type: 'object',
-                required: ['username'],
-                properties: {
-                    username: { type: 'string' }
-                }
-            },
-            response: {
-                200: {
-                    type: 'object',
-                    properties: {
-                        message: { type: 'string' }
-                    }
-                },
-                401: ErrorSchema,
-                404: ErrorSchema,
-                500: ErrorSchema
-            }
-        }
-    }, async (req: FastifyRequest, reply: FastifyReply) => {
-        if (!req.session.userId) {
+    app.delete('/friends/:username', async (req: FastifyRequest, reply: FastifyReply) => {
+        if (!req.cookies.sessionId || !req.session.userId) {
             return reply.status(401).send({ error: 'Not authenticated' });
         }
 
@@ -715,49 +660,8 @@ export default async function userRoutes(app: FastifyInstance) {
     });
 
     // GET /api/v1/users/search/:username - Search for users by username
-    app.get('/search/:username', {
-        schema: {
-            tags: ['user'],
-            summary: 'Search for users by username',
-                params: {
-                    type: 'object',
-                    required: ['username'],
-                    properties: {
-                        username: { type: 'string' }
-                    }
-                },
-                querystring: {
-                    type: 'object',
-                    properties: {
-                        limit: { type: 'integer', default: 20 },
-                        offset: { type: 'integer', default: 0 }
-                    }
-                },
-                response: {
-                    200: {
-                        type: 'object',
-                        properties: {
-                            users: {
-                                type: 'array',
-                                items: {
-                                    type: 'object',
-                                    properties: {
-                                        id: { type: 'string' },
-                                        username: { type: 'string' },
-                                        avatarUrl: { type: 'string', nullable: true },
-                                        onlineStatus: { type: 'string' },
-                                        activityType: { type: 'string', nullable: true }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    401: ErrorSchema,
-                    500: ErrorSchema
-                }
-        }
-    }, async (req: FastifyRequest, reply: FastifyReply) => {
-        if (!req.session.userId) {
+    app.get('/search/:username', async (req: FastifyRequest, reply: FastifyReply) => {
+        if (!req.cookies.sessionId || !req.session.userId) {
             return reply.status(401).send({ error: 'Not authenticated' });
         }
 
