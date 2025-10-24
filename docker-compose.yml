@@ -11,9 +11,9 @@ services:
       - gateway-service
     networks:
       - pong-network
-    volumes:
+    volumes: 
       - ./frontend:/app
-      - /app/node_modules # This is a hack to avoid the issue of the node_modules directory being created in the root of the project.
+      - /app/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
 
   gateway-service:
     build:
@@ -28,7 +28,7 @@ services:
       - pong-network
     volumes:
       - ./services/gateway-service:/gateway-service
-      - /gateway-service/node_modules # This is a hack to avoid the issue of the node_modules directory being created in the root of the project.
+      - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
 
   game-service:
     build:
@@ -79,6 +79,15 @@ services:
     environment:
       - NODE_ENV=development
       # No PORT needed
+  ai-service:
+    build:
+      context: ./services/AI-service
+      dockerfile: Dockerfile
+    container_name: AI-service
+    ports:
+      - "5100:5100"
+    networks:
+      - pong-network
 
 networks:
   pong-network:

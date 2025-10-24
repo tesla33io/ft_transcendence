@@ -108,3 +108,160 @@ export interface GameResult{
 	winner: string;
 	loser: number;
 }
+
+
+//user Realted data 
+// ===== ENUMS =====
+export enum OnlineStatus {
+    ONLINE = 'ONLINE',
+    OFFLINE = 'OFFLINE', 
+    IN_GAME = 'IN_GAME',
+    BUSY = 'BUSY'
+}
+
+export enum UserRole {
+    USER = 'USER',
+    ADMIN = 'ADMIN'
+}
+
+export enum MatchResult {
+    WIN = 'WIN',
+    LOSS = 'LOSS',
+    FORFEIT = 'FORFEIT',
+    TIMEOUT = 'TIMEOUT'
+}
+
+// ===== USER ENTITY =====
+export interface User {
+    id: number;
+    username: string;
+    avatarUrl?: string;
+    onlineStatus: OnlineStatus;
+    activityType?: string;
+    role: UserRole;
+    twoFactorEnabled: boolean;
+    lastLogin?: string; // ISO date string
+}
+
+// Sanitized user data (what frontend actually receives)
+export interface PublicUser {
+    id: number;
+    username: string;
+    avatarUrl?: string;
+    onlineStatus: OnlineStatus;
+    activityType?: string;
+    role: UserRole;
+    lastLogin?: string;
+}
+
+// ===== USER STATISTICS ENTITY =====
+export interface UserStatistics {
+    userId: number; // Foreign key reference
+    totalGames: number;
+    wins: number;
+    losses: number;
+    draws: number;
+    averageGameDuration: number; // in seconds
+    longestGame: number; // in seconds
+    bestWinStreak: number;
+    currentRating: number;
+    highestRating: number;
+    ratingChange: number;
+    createdAt: string; // ISO date string
+    updatedAt: string; // ISO date string
+    lastGameAt?: string; // ISO date string
+}
+
+// ===== MATCH HISTORY ENTITY =====
+export interface MatchHistory {
+    id: number;
+    userId: number; // Foreign key to User
+    opponentId: number; // Foreign key to User (opponent)
+    tournamentId?: number; // Optional tournament reference
+    tournamentWon?: boolean;
+    result: MatchResult;
+    userScore: number;
+    opponentScore: number;
+    startTime?: string; // ISO date string
+    endTime?: string; // ISO date string
+    playedAt: string; // ISO date string
+}
+
+// ===== POPULATED/JOINED DATA =====
+// When you want user data WITH statistics
+export interface UserWithStats {
+    user: PublicUser;
+    statistics: UserStatistics;
+}
+
+// When you want match history WITH user details
+export interface MatchHistoryWithUsers {
+    id: number;
+    user: PublicUser; // Player 1 details
+    opponent: PublicUser; // Player 2 details  
+    tournamentId?: number;
+    tournamentWon?: boolean;
+    result: MatchResult;
+    userScore: number;
+    opponentScore: number;
+    startTime?: string;
+    endTime?: string;
+    playedAt: string;
+    gameDuration?: number; // Calculated field (endTime - startTime)
+}
+
+// ===== FRONTEND-SPECIFIC INTERFACES =====
+// For authentication responses
+export interface AuthResponse {
+    user: PublicUser;
+    token: string;
+    refreshToken?: string;
+    expiresAt: string;
+}
+
+// For login requests
+export interface LoginRequest {
+    username: string;
+    password: string;
+    twoFactorCode?: string;
+}
+
+// For registration requests  
+export interface RegisterRequest {
+    username: string;
+    password: string;
+    avatarUrl?: string;
+}
+
+// For profile updates
+export interface ProfileUpdateRequest {
+    username?: string;
+    avatarUrl?: string;
+    onlineStatus?: OnlineStatus;
+    activityType?: string;
+}
+
+// ===== DASHBOARD/SUMMARY DATA =====
+// Combined data for profile/dashboard views
+export interface UserProfileData {
+    profile: PublicUser;
+    statistics: UserStatistics;
+    recentMatches: MatchHistoryWithUsers[];
+}
+
+// ===== API RESPONSE WRAPPERS =====
+export interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+    message?: string;
+    error?: string;
+}
+
+export interface PaginatedResponse<T> {
+    items: T[];
+    totalCount: number;
+    currentPage: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+}
