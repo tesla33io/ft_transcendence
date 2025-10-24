@@ -8,10 +8,32 @@ import userRoutes from './routes/users';
 import tournamentRoutes from './routes/tournament';
 import { initializeServices } from './services/initialization';
 import { join } from 'path';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 //import { setup2FARoutes } from './routes/2fa';
 
 async function buildServer() {
     const app = Fastify();
+
+    await app.register(swagger, {
+        openapi: {
+          info: {
+            title: 'ft_transcendence API',
+            description: 'User and tournament endpoints',
+            version: '1.0.0',
+          },
+          servers: [{ url: 'http://127.0.0.1:8000', description: 'Local dev' }],
+        },
+      });
+   
+      await app.register(swaggerUi, {
+        routePrefix: '/docs',
+        uiConfig: {
+          docExpansion: 'list',
+          deepLinking: true,
+        },
+        staticCSP: true,
+      });
 
     const orm = await MikroORM.init(mikroConfig as any);
     const em = orm.em.fork();

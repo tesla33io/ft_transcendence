@@ -11,4 +11,9 @@ else
   echo "[user-service] node_modules already populated."
 fi
 
+if [ ! -d node_modules ] || [ ! -f node_modules/sqlite3/package.json ]; then
+  echo "[user-service] Installing dependencies..."
+  npm install
+fi
+
 exec "$@"
