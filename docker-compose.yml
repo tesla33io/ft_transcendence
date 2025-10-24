@@ -28,7 +28,7 @@ services:
       - pong-network
     volumes:
       - ./services/gateway-service:/gateway-service
-      - /gateway-service/node_modules # This is a hack to avoid the issue of the node_modules directory being created in the root of the project.
+      - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
 
   game-service:
     build:
