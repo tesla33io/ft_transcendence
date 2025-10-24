@@ -11,7 +11,7 @@ services:
       - gateway-service
     networks:
       - pong-network
-    volumes:
+    volumes: 
       - ./frontend:/app
       - /app/node_modules # This is a hack to avoid the issue of the node_modules directory being created in the root of the project.
 
@@ -79,6 +79,15 @@ services:
     environment:
       - NODE_ENV=development
       # No PORT needed
+  ai-service:
+    build:
+      context: ./services/AI-service
+      dockerfile: Dockerfile
+    container_name: AI-service
+    ports:
+      - "5100:5100"
+    networks:
+      - pong-network
 
 networks:
   pong-network:

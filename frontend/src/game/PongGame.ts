@@ -21,7 +21,7 @@ export class PongGame {
     constructor(
     	playerName: string,
 		playerId: string,
-		gameMode: string, //classic or Tournament
+		gameMode: string, //classic, Tournament or ai
 		router: Router
 		
     ) {
@@ -44,7 +44,7 @@ export class PongGame {
 			// on Game end one player win
 			(result: GameResult) => this.handleGameResult(result),
 
-			(message: string) => this.showError(message),
+			(message: string) => console.error('Game Error:', message),
 
 			(tournamentData:any) => this.handleTournamentNotification(tournamentData)
         );
@@ -72,8 +72,16 @@ export class PongGame {
      async joinGame(): Promise<void> {
         try {
             console.log(`PlayerID: ${this.playerId} - ${this.gameMode}`);
-            const apiEndpoint = this.gameMode === 'tournament' ? '/api/v1/game/join-tournament' : '/api/v1/game/join-classic'
-
+			let apiEndpoint: string;
+			if (this.gameMode === 'tournament') {
+				apiEndpoint = '/api/v1/game/join-tournament';
+			} else if (this.gameMode === 'ai') {
+				apiEndpoint = '/api/v1/game/bot-classic';
+				this.gameMode = 'classic';
+			} else {
+				apiEndpoint = '/api/v1/game/join-classic'; // Default for 'classic' mode
+			}
+				
             const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {

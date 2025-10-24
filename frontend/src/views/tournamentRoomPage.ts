@@ -1,6 +1,7 @@
 import { Router } from "../router";
-import { createWindow } from "./components";
+import { createWindow } from "./_components";
 import { WebSocketHandler } from "../game/websocketHandler";
+import { createTaskbar, createStaticDesktopBackground } from "./_components";
 
 export function tournamentRoomView(
 	router: Router,
@@ -9,7 +10,10 @@ export function tournamentRoomView(
 	) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
-
+	
+	const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(root);
+	
 	const content = document.createElement("div");
 	content.className = "grid grid-cols-3 gap-4 p-4 relative";
 
@@ -141,8 +145,17 @@ export function tournamentRoomView(
 	});
 
 	root.append(bracketsWindow);
-	}
+	
+	const { taskbar } = createTaskbar({
+		startButton: {
+		label: "Start",
+		onClick: () => router.navigate("/"),
+		},
+		clock: true,
+	});
+	root.appendChild(taskbar);
 
+}
 	// Helper to create a match box
 	function createMatch(
 	player1: string | null,

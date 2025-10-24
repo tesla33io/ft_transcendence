@@ -8,6 +8,10 @@ server.register(require('@fastify/cors'),{
 	credentials: true
 })
 
+server.get("/test", async (req, reply) => {
+	return {test: 'OK\n'}
+})
+
 server.register(require('@fastify/http-proxy'), {
 	upstream: 'http://game-service:5000',
 	prefix: '/api/v1/game',

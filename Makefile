@@ -1,4 +1,6 @@
 #detach mode
+JAVA_JAR:="aibot/target/aibot-0.0.1-SNAPSHOT.jar"
+
 all: build
 
 upd:
@@ -12,5 +14,7 @@ down:
 
 build:
 	docker compose build
+
+red: down build upd
 
 PHONY: up down build

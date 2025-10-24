@@ -1,5 +1,6 @@
 import { Router } from '../router';
-import { createWindow } from './components';
+import { createWindow } from './_components';
+import { createTaskbar, createStaticDesktopBackground } from "./_components";
 
 export function localGameSetupView(router: Router) {
 	const app = document.getElementById('app');
@@ -7,7 +8,7 @@ export function localGameSetupView(router: Router) {
 		console.error("App element not found!");
 		return;
 	}
-
+	
 	// --- Setup Form Content ---
 	const content = document.createElement('div');
 	content.className = 'flex flex-col items-center justify-center';
@@ -24,10 +25,9 @@ export function localGameSetupView(router: Router) {
 	label.textContent = 'Score to Win:';
 	label.className = 'text-lg';
 
-	// Use a select styled with 98.css
 	const select = document.createElement('select');
 	select.id = 'winning-score';
-	select.className = 'select'; // 98.css style
+	select.className = 'select'; 
 
 	const options = [
 	  { value: '10', text: '10 - Extra long Game' },
@@ -57,7 +57,6 @@ export function localGameSetupView(router: Router) {
 	form.append(title, label, select, startButton);
 	content.appendChild(form);
 
-	// --- Use createWindow ---
 	const setupWindow = createWindow({
 		title: "Local Game Setup",
 		width: "400px",
@@ -73,4 +72,17 @@ export function localGameSetupView(router: Router) {
 	
 	app.innerHTML = '';
 	app.appendChild(setupWindow);
-	}
+	// Create the taskbar
+	const { taskbar } = createTaskbar({
+		startButton: {
+		label: "Start",
+		onClick: () => router.navigate("/"),
+		},
+		clock: true,
+	});
+	// Add the taskbar to the root
+	app.appendChild(taskbar);
+
+	const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(app);
+}
