@@ -77,7 +77,7 @@ export class PongGame {
 				apiEndpoint = '/api/v1/game/join-tournament';
 			} else if (this.gameMode === 'ai') {
 				apiEndpoint = '/api/v1/game/bot-classic';
-				this.gameMode = 'classic';
+				this.gameMode = 'classic'
 			} else {
 				apiEndpoint = '/api/v1/game/join-classic'; // Default for 'classic' mode
 			}
@@ -140,7 +140,7 @@ export class PongGame {
 				oldCanvas.remove();
 			}
 			// 3. Create game view
-			this.gameView = gameView(this.router);
+			this.gameView = gameView(this.router, this);
 			// Verify view creation
 			if (!this.gameView?.canvas) {
 				console.error('Failed to create game view');
@@ -180,7 +180,7 @@ export class PongGame {
 	private handleGameResult(data: GameResult): void{
 		const isWin = data.winner === this.playerId;
         const finalScore = `${data.player1Score} - ${data.player2Score}`;
-		if(this.gameMode != 'tournament'){
+		if(this.gameMode != 'tournament'){ 
 			this.wsHandler?.disconnect();
 			this.wsHandler = undefined;
 		}
@@ -219,10 +219,11 @@ export class PongGame {
     // Cleanup method
    public dispose(): void {
     // Only disconnect if not in tournament mode
-    if (this.gameMode !== "tournament") {
+	this.gameView?.dispose();
+    //if (this.gameMode !== "tournament") {
 			this.wsHandler?.disconnect();
 			this.wsHandler = undefined;
-		}
+		//}
 		document.removeEventListener("keydown", this.handleKeyPress.bind(this));
 	}
 }

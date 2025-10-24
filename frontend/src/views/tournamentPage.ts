@@ -2,15 +2,13 @@ import { Router } from '../router';
 import { createWindow } from './_components';
 import { PongGame } from '../game/PongGame';
 import { createTaskbar, createStaticDesktopBackground } from "./_components";
-import {createTournamentStatsComponent} from "./_userComponents";
-
-let currentPongGame: PongGame | undefined = undefined;
+import { createTournamentStatsComponent } from "./_userComponents";
 
 export function tournamentView(router: Router) {
-	const root = document.getElementById("app")!;
-	root.innerHTML = "";
+    const root = document.getElementById("app")!;
+    root.innerHTML = "";
 
-	const content = document.createElement("div");
+    const content = document.createElement("div");
     content.style.padding = "15px";
 
     const staticBackground = createStaticDesktopBackground();
@@ -21,10 +19,10 @@ export function tournamentView(router: Router) {
         flex-shrink: 0;
         height: 140px;
     `;
-	
-	const tournamentStatsComponent = createTournamentStatsComponent({
+    
+    const tournamentStatsComponent = createTournamentStatsComponent({
         container: statsContainer,
-        userId: undefined, // Will use current user's stats
+        userId: undefined,
         width: '100%',
         height: '140px',
         showTitle: true
@@ -32,98 +30,144 @@ export function tournamentView(router: Router) {
 
     content.appendChild(statsContainer);
 
+    // Store current game instance for cleanup
+    let currentPongGame: PongGame | undefined = undefined;
+    let listeners: Array<{ element: Element; event: string; handler: EventListener }> = [];
 
-	// Form
-	const form = document.createElement("form");
-	form.id = "joinOnlineGameForm";
-	form.className = "join-game-form mt-4";
+    // Form
+    const form = document.createElement("form");
+    form.id = "joinOnlineGameForm";
+    form.className = "join-game-form mt-4";
 
-	const label = document.createElement("label");
-	label.htmlFor = "alias";
-	label.textContent = "Enter your alias:";
-	
-	const input = document.createElement("input");
-	input.type = "text";
-	input.id = "alias";
-	input.name = "alias";
-	input.placeholder = " ";
-	input.minLength = 1;
-	input.maxLength = 20;
-	input.required = true;
-	input.className = " ml-4 "
+    const label = document.createElement("label");
+    label.htmlFor = "alias";
+    label.textContent = "Enter your alias:";  // ✅ Safe - textContent
+    
+    const input = document.createElement("input");
+    input.type = "text";
+    input.id = "alias";
+    input.name = "alias";
+    input.placeholder = " ";
+    input.minLength = 1;
+    input.maxLength = 20;
+    input.required = true;
+    input.className = "ml-4";
 
-	const joinClassicBtn = document.createElement("button");
-	joinClassicBtn.type = "submit";
-	joinClassicBtn.id = "joinBtn";
-	joinClassicBtn.textContent = "Join Tournament";
+    const joinClassicBtn = document.createElement("button");
+    joinClassicBtn.type = "submit";
+    joinClassicBtn.id = "joinBtn";
+    joinClassicBtn.textContent = "Join Tournament";  // ✅ Safe - textContent
 
-	form.append(label, input, joinClassicBtn);
-	content.appendChild(form);
+    form.append(label, input, joinClassicBtn);
+    content.appendChild(form);
 
-	// Canvas (hidden until game starts)
-	const canvas = document.createElement("canvas");
-	canvas.id = "gameCanvas";
-	canvas.width = 900;
-	canvas.height = 500;
-	canvas.style.display = "none";
-	content.appendChild(canvas);
+    // Canvas (hidden until game starts)
+    const canvas = document.createElement("canvas");
+    canvas.id = "gameCanvas";
+    canvas.width = 900;
+    canvas.height = 500;
+    canvas.style.display = "none";
+    content.appendChild(canvas);
 
-	
-	
-	const setupWindow = createWindow({
-		title: "Tournament Setup",
-		width: "400px",
-		content: content,
-		titleBarControls: {
-			help: true,
-			close: true,
-			onClose: () => {
-				window.history.back();
-			}
-		}
-	});
+    // Cleanup function
+    const cleanup = () => {
+		console.log('Caled cle<n up');
+        // Dispose current game if active
+        if (currentPongGame) {
+			console.log('there is a Ponggame');
+            currentPongGame.dispose();
+            currentPongGame = undefined;
+        }
 
-	root.appendChild(setupWindow);
+        // Remove all event listeners
+        listeners.forEach(({ element, event, handler }) => {
+            element.removeEventListener(event, handler);
+        });
+        listeners = [];
+    };
 
-		const { taskbar } = createTaskbar({
-			startButton: {
-				label: "Start",
-				onClick: () => router.navigate("/"),
-			},
-			clock: true,
-		});
-	
-		root.appendChild(taskbar);
+    const setupWindow = createWindow({
+        title: "Tournament Setup",
+        width: "400px",
+        content: content,
+        titleBarControls: {
+            help: true,
+            close: true,
+            onClose: () => {
+                // ✅ Cleanup before navigating
+                cleanup();
+                window.history.back();
+            }
+        }
+    });
 
-	form.addEventListener("submit", async (e: Event) => {
-		e.preventDefault();
-		const alias = input.value.trim();
-		if (!alias) return;
+    root.appendChild(setupWindow);
 
-		joinClassicBtn.disabled = true;
-		joinClassicBtn.textContent = "Waiting for opponent...";
+    const { taskbar } = createTaskbar({
+        startButton: {
+            label: "Start",
+            onClick: () => {
+                // ✅ Cleanup before navigating
+                cleanup();
+                router.navigate("/");
+            }
+        },
+        clock: true,
+    });
 
-		// Dispose of previous game if it exists
-		if (currentPongGame) {
-			currentPongGame.dispose();
-			currentPongGame = undefined;
-		}
+    root.appendChild(taskbar);
 
-		const playerId = Math.random().toString().substring(2, 7);
+    // Handle form submission
+    const handleFormSubmit = async (e: Event) => {
+        e.preventDefault();
+        const alias = input.value.trim();
+        if (!alias) return;
 
-		try {
-			const game = new PongGame(
-				alias,
-				playerId,
-				'tournament',
-				router
-			);
-			currentPongGame = game; // Save reference for later disposal
-			await game.joinGame();
-		} catch (error) {
-			console.error("Failed to join game:", error);
-			joinClassicBtn.disabled = false;
-			joinClassicBtn.textContent = "Join Online Game";
-		}
-	});
+        joinClassicBtn.disabled = true;
+        joinClassicBtn.textContent = "Waiting for opponent...";  // ✅ Safe - textContent
+
+        // Dispose of previous game if it exists
+        if (currentPongGame) {
+            currentPongGame.dispose();
+            currentPongGame = undefined;
+        }
+
+        const playerId = Math.random().toString().substring(2, 7);
+
+        try {
+            const game = new PongGame(
+                alias,
+                playerId,
+                'tournament',
+                router
+            );
+            currentPongGame = game; // Save reference for later disposal
+            await game.joinGame();
+        } catch (error) {
+            console.error("Failed to join game:", error);
+            currentPongGame = undefined;
+            joinClassicBtn.disabled = false;
+            joinClassicBtn.textContent = "Join Tournament";  // ✅ Safe - textContent
+        }
+    };
+
+    form.addEventListener("submit", handleFormSubmit);
+    listeners.push({ element: form, event: "submit", handler: handleFormSubmit });
+
+    // Handle browser refresh - prevent it
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+        if (currentPongGame) {
+            event.preventDefault();
+            event.returnValue = "";
+            return "";
+        }
+    };
+
+    // Handle browser window close - disconnect
+    const handleUnload = () => {
+        cleanup();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("unload", handleUnload);
 }

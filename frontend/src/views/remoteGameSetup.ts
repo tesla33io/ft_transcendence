@@ -12,12 +12,15 @@ export function remoteGameSetupView(router: Router) {
     staticBackground.attachToPage(root);
     const content = document.createElement("div");
 
+    // Store current game instance
+    let currentGame: PongGame | undefined;
+
     const statsContainer = document.createElement("div");
     statsContainer.className = "mb-4";
 
     const statsComponent = new OneVOneStatsComponent({
         container: statsContainer,
-        userId: undefined, // Will use current user's stats
+        userId: undefined,
         width: '100%',
         height: '200px',
         showTitle: false
@@ -32,7 +35,6 @@ export function remoteGameSetupView(router: Router) {
     joinClassicBtn.type = "submit";
     joinClassicBtn.id = "joinBtn";
     joinClassicBtn.textContent = "Join Online Game";
-    
     joinClassicBtn.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-bold';
 
     buttonContainer.appendChild(joinClassicBtn);
@@ -45,7 +47,6 @@ export function remoteGameSetupView(router: Router) {
     canvas.style.display = "none";
     content.appendChild(canvas);
 
-
     const setupWindow = createWindow({
         title: "Online Game Setup",
         width: "400px",
@@ -55,6 +56,11 @@ export function remoteGameSetupView(router: Router) {
             help: true,
             close: true,
             onClose: () => {
+                // Disconnect game if active
+                if (currentGame) {
+                    currentGame.dispose();
+                    currentGame = undefined;
+                }
                 router.navigate("/desktop");
             }
         }
@@ -65,7 +71,14 @@ export function remoteGameSetupView(router: Router) {
     const { taskbar } = createTaskbar({
         startButton: {
             label: "Start",
-            onClick: () => router.navigate("/"),
+            onClick: () => {
+                // Disconnect game if navigating away
+                if (currentGame) {
+                    currentGame.dispose();
+                    currentGame = undefined;
+                }
+                router.navigate("/");
+            }
         },
         clock: true,
     });
@@ -83,15 +96,16 @@ export function remoteGameSetupView(router: Router) {
         const playerId = Math.random().toString().substring(2, 7);
 
         try {
-            const game = new PongGame(
+            currentGame = new PongGame(
                 playerName,
                 playerId,
                 'classic',
                 router
             );
-            await game.joinGame();
+            await currentGame.joinGame();
         } catch (error) {
             console.error("Failed to join game:", error);
+            currentGame = undefined;
             joinClassicBtn.disabled = false;
             joinClassicBtn.textContent = "Join Online Game";
             joinClassicBtn.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-bold';
