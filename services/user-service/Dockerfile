@@ -1,6 +1,6 @@
-FROM node:18
+FROM node:20-bullseye
 
-WORKDIR /gateway-service
+WORKDIR /user-service
 
 COPY package.json package-lock.json* ./
 
@@ -11,7 +11,9 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 COPY . .
 
-EXPOSE 3000
+RUN npm run build
+
+EXPOSE 8000
 
 ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["npm", "run", "dev"]
