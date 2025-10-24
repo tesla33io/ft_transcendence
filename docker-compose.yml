@@ -13,6 +13,7 @@ services:
       - pong-network
     volumes:
       - ./frontend:/app
+      - /app/node_modules # This is a hack to avoid the issue of the node_modules directory being created in the root of the project.
 
   gateway-service:
     build:
@@ -27,6 +28,7 @@ services:
       - pong-network
     volumes:
       - ./services/gateway-service:/gateway-service
+      - /gateway-service/node_modules # This is a hack to avoid the issue of the node_modules directory being created in the root of the project.
 
   game-service:
     build:
@@ -43,6 +45,40 @@ services:
     volumes:
       - ./services/game-service:/game-service
       - /app/node_modules
+
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - blockchain-service
+    networks:
+      - pong-network
+    volumes:
+      - ./services/user-service:/user-service
+      - /user-service/node_modules
+
+  blockchain-service:
+    build:
+      context: ./services/blockchain-service
+      dockerfile: Dockerfile
+    container_name: blockchain-service
+    # NO PORTS - this is a library service
+    env_file:
+      - .env
+    networks:
+      - pong-network
+    volumes:
+      - ./services/blockchain-service:/blockchain-service
+      - /blockchain-service/node_modules
+    environment:
+      - NODE_ENV=development
+      # No PORT needed
 
 networks:
   pong-network:
