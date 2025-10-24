@@ -13,7 +13,7 @@ services:
       - pong-network
     volumes: 
       - ./frontend:/app
-      - /app/node_modules # This is a hack to avoid the issue of the node_modules directory being created in the root of the project.
+      - /app/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
 
   gateway-service:
     build:
