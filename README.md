@@ -16,6 +16,7 @@ ft_transcendence/
 └── docs/                       # API Documentation & Technical Docs
 ```
 
+<<<<<<< HEAD
 For register send:
 Usernamen, Password, if2Factor,AvatarUrl,bio(string caped to 128 char)
 ---> User created succesfuly or error for example username exist already
@@ -64,6 +65,19 @@ For each Match:
 
 For profilePage:
 userId, userName, AvatarUrl, BioText, isOnline, lastOnline, accountCreationDate,
+=======
+## Overview
+The 42 Transcendence Project is a real-time, multiplayer online Pong game with
+user authentication, matchmaking and different game-modes.
+Built to showcase advanced full-stack development, it integrates WebSockets,
+a retro-looking front-end, and a scalable Node.js backend with SQLite3 and TypeScript.
+
+<<<<<<< HEAD
+
+## License
+MIT
+=======
+>>>>>>> user_management_merge
 //websocket messaging struckt 
 {
 	"event": string ,//for example "error" or "gameUpadate" etc
@@ -213,3 +227,7 @@ Each service has its own configuration:
 - Performance monitoring
 - Error tracking
 
+<<<<<<< HEAD
+=======
+>>>>>>> main
+>>>>>>> user_management_merge
