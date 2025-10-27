@@ -5,8 +5,15 @@ import { User } from '../entities/User';
 declare module 'fastify' {
   interface FastifyInstance {
     em: EntityManager;
+    //sm: SessionManager;
   }
   interface FastifyRequest {
     user?: User;
+  }
+
+  interface FastifySchema {
+    tags?: string[];
+    summary?: string;
+    description?: string;
   }
 }

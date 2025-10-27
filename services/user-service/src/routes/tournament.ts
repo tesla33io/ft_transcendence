@@ -3,6 +3,89 @@ import { MatchHistory } from '../entities/MatchHistory';
 import { User } from '../entities/User';
 import { ethers } from 'ethers';
 import { IBlockchainService, BlockchainError } from '../interfaces/blockchain';
+import { FromSchema } from 'json-schema-to-ts';
+
+//Schema
+const finalizeParamsSchema = {
+    type: 'object',
+    required: ['id'],
+    properties: {
+      id: { type: 'integer', minimum: 1 },
+    },
+  } as const;
+  type FinalizeParams = FromSchema<typeof finalizeParamsSchema>;
+  
+  const finalizeBodySchema = {
+    type: 'object',
+    required: ['winnerId', 'finalScore', 'participantIds'],
+    properties: {
+      winnerId: { type: 'integer', minimum: 1 },
+      finalScore: { type: 'integer', minimum: 0 },
+      participantIds: {
+        type: 'array',
+        minItems: 1,
+        items: { type: 'integer', minimum: 1 },
+      },
+    },
+    additionalProperties: false,
+  } as const;
+  type FinalizeBody = FromSchema<typeof finalizeBodySchema>;
+  
+  const finalizeSuccessSchema = {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean' },
+      tournamentId: { type: 'integer' },
+      winner: { type: 'string' },
+      finalScore: { type: 'integer' },
+      blockchainTxHash: { type: 'string' },
+      message: { type: 'string' },
+    },
+    required: [
+      'success',
+      'tournamentId',
+      'winner',
+      'finalScore',
+      'blockchainTxHash',
+      'message',
+    ],
+  } as const;
+  
+  const finalizeErrorSchema = {
+    type: 'object',
+    properties: {
+      error: { type: 'string' },
+      details: { type: ['string', 'array', 'object', 'null'] },
+    },
+    required: ['error'],
+  } as const;
+  
+  const verifyParamsSchema = {
+    type: 'object',
+    required: ['id'],
+    properties: {
+      id: { type: 'integer', minimum: 1 },
+    },
+  } as const;
+  type VerifyParams = FromSchema<typeof verifyParamsSchema>;
+  
+  const verifyResponseSchema = {
+    type: 'object',
+    properties: {
+      verified: { type: 'boolean' },
+      message: { type: 'string' },
+      blockchain: { type: 'object', nullable: true },
+      database: {
+        type: 'object',
+        properties: {
+          matchCount: { type: 'integer' },
+          tournamentId: { type: 'integer' },
+        },
+        required: ['matchCount', 'tournamentId'],
+      },
+    },
+    required: ['verified', 'message'],
+  } as const;
 
 // Dependency injection - blockchain service should be injected
 // This makes the service more testable and decoupled
@@ -15,7 +98,23 @@ export function setBlockchainService(service: IBlockchainService) {
 export default async function tournamentRoutes(app: FastifyInstance) {
     
     // POST /tournaments/:id/finalize - Finalize tournament and store on blockchain
-    app.post('/:id/finalize', async (request: FastifyRequest, reply: FastifyReply) => {
+    app.post<{
+        Params: FinalizeParams;
+        Body: FinalizeBody;
+      }>('/:id/finalize', {
+        schema: {
+          tags: ['tournaments'],
+          summary: 'Finalize tournament and record on blockchain',
+          params: finalizeParamsSchema,
+          body: finalizeBodySchema,
+          response: {
+            200: finalizeSuccessSchema,
+            404: finalizeErrorSchema,
+            500: finalizeErrorSchema,
+            503: finalizeErrorSchema,
+          },
+        },
+      }, async (request: FastifyRequest, reply: FastifyReply) => {
         try {
             const { id } = request.params as any;
             const { winnerId, finalScore, participantIds } = request.body as any;
@@ -86,7 +185,18 @@ export default async function tournamentRoutes(app: FastifyInstance) {
     });
     
     // GET /tournaments/:id/verify - Verify tournament on blockchain
-    app.get('/:id/verify', async (request: FastifyRequest, reply: FastifyReply) => {
+    app.get<{ Params: VerifyParams }>('/:id/verify', {
+        schema: {
+          tags: ['tournaments'],
+          summary: 'Verify tournament state on blockchain',
+          params: verifyParamsSchema,
+          response: {
+            200: verifyResponseSchema,
+            500: finalizeErrorSchema,
+            503: finalizeErrorSchema,
+          },
+        },
+      }, async (request: FastifyRequest, reply: FastifyReply) => {
         try {
             const { id } = request.params as any;
             
