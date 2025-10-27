@@ -30,8 +30,7 @@
     "dotenv": "^16.4.0",
     "ethers": "^5.8.0",
     "fastify": "^5.6.1",
-    "jsonwebtoken": "^9.0.2",
-    "json-schema-to-ts": "^3.1.1"
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@mikro-orm/cli": "^6.5.5",
