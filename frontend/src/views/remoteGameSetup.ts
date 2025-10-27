@@ -130,8 +130,8 @@ export function remoteGameSetupView(router: Router) {
         errorMessage.style.display = "none";
         successMessage.style.display = "none";
 
-        // Generate a random playerId for testing later switch with the values from backend
-        const playerId = Math.random().toString().substring(2, 7);
+        // Generate a cryptographically secure playerId
+        const playerId = crypto.getRandomValues(new Uint8Array(8)).reduce((str, byte) => str + byte.toString(16).padStart(2, '0'), '');
 
         try {
             const game = new PongGame(

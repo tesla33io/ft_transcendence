@@ -69,12 +69,12 @@ export class User {
     @OneToMany(() => UserStatistics, (stats) => stats.user)
     statistics = new Collection<UserStatistics>(this);
 
-  @OneToMany(() => MatchHistory, (match) => match.user)
-  matchHistory = new Collection<MatchHistory>(this);
+    @OneToMany(() => MatchHistory, (match) => match.user)
+    matchHistory = new Collection<MatchHistory>(this);
 
-  // Friend relationships
-  @ManyToMany(() => User)
-  friends = new Collection<User>(this);
+    // Friend relationships
+    @ManyToMany(() => User)
+    friends = new Collection<User>(this);
 
     // Helper methods for business logic
     //isOnline(): boolean {
