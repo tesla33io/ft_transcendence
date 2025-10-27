@@ -10,7 +10,7 @@ export class Session {
     data: Record<string, any> = {};
 
     @Property({ type: 'datetime', nullable: false })
-    expiresAt!: Date;
+    expiresAt: Date = new Date();;
 
     @Property({ type: 'datetime', nullable: false })
     createdAt: Date = new Date();

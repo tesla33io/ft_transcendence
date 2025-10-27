@@ -14,6 +14,8 @@ export class SessionManager {
             id: sessionId,
             data,
             expiresAt: new Date(Date.now() + ttl),
+            createdAt: new Date(Date.now()),
+            updatedAt: new Date(Date.now())
         });
 
         await em.persistAndFlush(session);

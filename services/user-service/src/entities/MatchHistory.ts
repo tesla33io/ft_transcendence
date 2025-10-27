@@ -51,31 +51,31 @@ export class MatchHistory {
     playedAt!: Date;
 
     // Helper methods
-    //isWin(): boolean {
-    //    return this.result === MatchResult.WIN;
-    //}
+    isWin(): boolean {
+        return this.result === MatchResult.WIN;
+    }
 
-    //isLoss(): boolean {
-    //    return this.result === MatchResult.LOSS;
-    //}
+    isLoss(): boolean {
+        return this.result === MatchResult.LOSS;
+    }
 
-    //isDraw(): boolean {
-    //    return this.result === MatchResult.DRAW;
-    //}
+    isDraw(): boolean {
+        return this.result === MatchResult.DRAW;
+    }
 
-    //isForfeit(): boolean {
-    //    return this.result === MatchResult.FORFEIT || this.result === MatchResult.TIMEOUT;
-    //}
+    isForfeit(): boolean {
+        return this.result === MatchResult.FORFEIT || this.result === MatchResult.TIMEOUT;
+    }
 
-    //getScoreDifference(): number {
-    //    return this.userScore - this.opponentScore;
-    //}
+    getScoreDifference(): number {
+        return this.userScore - this.opponentScore;
+    }
 
-    //isCloseGame(): boolean {
-    //    return Math.abs(this.getScoreDifference()) <= 2;
-    //}
+    isCloseGame(): boolean {
+        return Math.abs(this.getScoreDifference()) <= 2;
+    }
 
-    //isBlowout(): boolean {
-    //    return Math.abs(this.getScoreDifference()) >= 10;
-    //}
+    isBlowout(): boolean {
+        return Math.abs(this.getScoreDifference()) >= 10;
+    }
 }

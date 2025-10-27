@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { EntityManager } from '@mikro-orm/core';
 import { User } from '../entities/User';
+import { SessionManager } from '../utils/SessionManager';
 
 declare module 'fastify' {
     interface FastifyInstance {
@@ -13,5 +14,11 @@ declare module 'fastify' {
     }
     interface RouteShorthandOptions {
         skipSession?: boolean;
+    }
+    interface FastifyContextConfig {
+        skipSession?: boolean;
+    }
+    interface FastifyInstance {
+        sm: SessionManager;
     }
 }

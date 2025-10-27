@@ -7,9 +7,6 @@ import mikroConfig from './mikro-orm.config';
 import userRoutes from './routes/users';
 import { join } from 'path';
 
-import swagger from '@fastify/swagger'
-import swaggerUI from '@fastify/swagger-ui'
-
 import userStatisticsRoutes from './routes/userStats';
 import matchHistoryRoutes from './routes/matchHistory';
 import { SessionManager, setupSessionMiddleware } from './utils/SessionManager';
@@ -19,19 +16,23 @@ async function buildServer() {
     const app = Fastify({ logger: true });
 
     /////////// DEBUG ////////
-    app.register(swagger, {
-        openapi: {
-            info: {
-                title: 'ft_transcendence',
-                description: 'Fastify API docs',
-                version: '1.0.0'
-            }
-        }
-    })
+    if (process.env.NODE_ENV !== 'production') {
 
-    app.register(swaggerUI, {
-        routePrefix: '/docs'
-    })
+        import('@fastify/swagger').then((swagger) => {app.register(swagger, {
+            openapi: {
+                info: {
+                    title: 'ft_transcendence',
+                    description: 'Fastify API docs',
+                    version: '1.0.0'
+                }
+            }
+        })});
+
+        import('@fastify/swagger-ui').then((swaggerUI) => {
+            app.register(swaggerUI, {
+                routePrefix: '/docs'
+            })});
+    }
     //////////// DEBUG /////////
 
     const orm = await MikroORM.init(mikroConfig as any);

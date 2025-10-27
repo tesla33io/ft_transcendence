@@ -8,6 +8,7 @@ import { join } from 'path';
 import { randomBytes } from 'crypto';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
+import { FromSchema } from "json-schema-to-ts";
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'profiles');
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -118,8 +119,8 @@ const FriendSchema = {
         activityType: { type: 'string', nullable: true },
         lastLogin: { type: 'string', format: 'date-time', nullable: true }
     }
-};
-type FriendResponse = FromSchema<typeof FriendResponse>;
+} as const;
+type FriendResponse = FromSchema<typeof FriendSchema>;
 
 
 export default async function userRoutes(app: FastifyInstance) {
@@ -422,7 +423,7 @@ export default async function userRoutes(app: FastifyInstance) {
         }
     }, async (req: FastifyRequest, reply) => {
         if (!req.cookies.sessionId || !req.session.userId) {
-            return reply.status(401).send({ error: 'Not authenticated' });
+            return reply.status(401).send({ error: 'Not authenticated', uri:"", message: "Not authenticated" });
         }
 
         try {
@@ -431,7 +432,8 @@ export default async function userRoutes(app: FastifyInstance) {
             if (!userId) {
                 return reply.code(401).send({ 
                     error: 'User ID required',
-                    details: 'Please provide userId in request'
+                    uri: "",
+                    message: 'Please provide userId in request'
                 });
             }
 
@@ -440,14 +442,16 @@ export default async function userRoutes(app: FastifyInstance) {
             if (!data) {
                 return reply.code(400).send({ 
                     error: 'No file provided',
-                    details: 'Please upload an image file'
+                    uri: "",
+                    message: 'Please upload an image file'
                 });
             }
 
             if (!ALLOWED_MIME_TYPES.includes(data.mimetype)) {
                 return reply.code(400).send({ 
                     error: 'Invalid file type',
-                    details: `Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
+                    uri: "",
+                    message: `Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
                 });
             }
 
@@ -459,7 +463,8 @@ export default async function userRoutes(app: FastifyInstance) {
                 if (size > MAX_FILE_SIZE) {
                     return reply.code(400).send({ 
                         error: 'File too large',
-                        details: `Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`
+                        uri: "",
+                        message: `Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`
                     });
                 }
                 chunks.push(chunk);
@@ -483,7 +488,9 @@ export default async function userRoutes(app: FastifyInstance) {
 
             if (!user) {
                 return reply.code(404).send({ 
-                    error: 'User not found'
+                    error: 'User not found',
+                    uri: "",
+                    message: 'User not found'
                 });
             }
 
@@ -501,7 +508,8 @@ export default async function userRoutes(app: FastifyInstance) {
             app.log.error('Profile picture upload error: ' + String(error));
             return reply.code(500).send({ 
                 error: 'Internal server error',
-                details: 'Unable to upload profile picture at this time'
+                uri: "",
+                message: 'Unable to upload profile picture at this time'
             });
         }
     });

@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3002:3002"
+      - "8000:8000"
     environment:
       - NODE_ENV=production
       - PORT=3002
