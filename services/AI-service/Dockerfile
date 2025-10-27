@@ -1,4 +1,4 @@
-FROM maven:sapmachine as jarBuilder
+FROM maven:sapmachine AS jar_builder
 
 WORKDIR /app
 
@@ -18,7 +18,7 @@ FROM openjdk:26-jdk-bookworm
 
 WORKDIR /app
 
-COPY --from=jarBuilder /app/aibot/target/aibot-0.0.1-SNAPSHOT.jar app.jar
+COPY --from=jar_builder /app/aibot/target/aibot-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 5100
 
