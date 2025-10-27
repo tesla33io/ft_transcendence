@@ -185,7 +185,7 @@ export default async function tournamentRoutes(app: FastifyInstance) {
     });
     
     // GET /tournaments/:id/verify - Verify tournament on blockchain
-    app.get<{ Params: VerifyParams }> ('/:id/verify', {
+    app.get<{ Params: VerifyParams }>('/:id/verify', {
         schema: {
           tags: ['tournaments'],
           summary: 'Verify tournament state on blockchain',
