@@ -1,12 +1,13 @@
 import { Router } from '../router';
 import { createWindow } from '../components/_components';
 import { PongGame } from '../game/PongGame';
+import { WebSocketHandler } from '../game/websocketHandler';
 import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
 import {createTournamentStatsComponent} from "../components/_userComponents";
 
 let currentPongGame: PongGame | undefined = undefined;
 
-export function tournamentView(router: Router) {
+export function tournamentView(router: Router, wsHandler: WebSocketHandler) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
 
@@ -21,7 +22,7 @@ export function tournamentView(router: Router) {
         flex-shrink: 0;
         height: 140px;
     `;
-	
+
 	const tournamentStatsComponent = createTournamentStatsComponent({
         container: statsContainer,
         userId: undefined, // Will use current user's stats
@@ -41,7 +42,7 @@ export function tournamentView(router: Router) {
 	const label = document.createElement("label");
 	label.htmlFor = "alias";
 	label.textContent = "Enter your alias:";
-	
+
 	const input = document.createElement("input");
 	input.type = "text";
 	input.id = "alias";
@@ -68,8 +69,8 @@ export function tournamentView(router: Router) {
 	canvas.style.display = "none";
 	content.appendChild(canvas);
 
-	
-	
+
+
 	const setupWindow = createWindow({
 		title: "Tournament Setup",
 		width: "400px",
@@ -79,6 +80,7 @@ export function tournamentView(router: Router) {
 			close: true,
 			onClose: () => {
 				window.history.back();
+				wsHandler.disconnect();
 			}
 		}
 	});
@@ -88,11 +90,13 @@ export function tournamentView(router: Router) {
 		const { taskbar } = createTaskbar({
 			startButton: {
 				label: "Start",
-				onClick: () => router.navigate("/"),
-			},
+				onClick: () => {
+				router.navigate("/");
+				wsHandler.disconnect();
+			},},
 			clock: true,
 		});
-	
+
 		root.appendChild(taskbar);
 
 	form.addEventListener("submit", async (e: Event) => {

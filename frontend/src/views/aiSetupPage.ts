@@ -2,9 +2,10 @@ import { Router } from '../router';
 import { createWindow } from '../components/_components';
 import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
 import { PongGame } from '../game/PongGame';
+import { WebSocketHandler } from '../game/websocketHandler';
 import { createPlayerVsAIStatsComponent } from '../components/_userComponents';
 
-export function aiGameSetupView(router: Router) {
+export function aiGameSetupView(router: Router, wsHandler: WebSocketHandler) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
 
@@ -20,7 +21,7 @@ export function aiGameSetupView(router: Router) {
 
 	 const playerVsAIComponent = createPlayerVsAIStatsComponent({
         container: playerVsAIContainer,
-        
+
         width: '100%',
         height: '140px',
         showTitle: true
@@ -35,7 +36,7 @@ export function aiGameSetupView(router: Router) {
 	joinClassicBtn.type = "submit";
 	joinClassicBtn.id = "joinBtn";
 	joinClassicBtn.textContent = "Join Game against AI";
-	
+
 	joinClassicBtn.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-bold';
 
 	buttonContainer.appendChild(joinClassicBtn);
@@ -59,6 +60,7 @@ export function aiGameSetupView(router: Router) {
 			close: true,
 			onClose: () => {
 				router.navigate("/desktop");
+				wsHandler.disconnect();
 			}
 		}
 	});
@@ -68,8 +70,10 @@ export function aiGameSetupView(router: Router) {
 	const { taskbar } = createTaskbar({
 		startButton: {
 			label: "Start",
-			onClick: () => router.navigate("/"),
-		},
+			onClick: () => {
+				router.navigate("/");
+				wsHandler.disconnect();
+			},},
 		clock: true,
 	});
 
@@ -77,7 +81,7 @@ export function aiGameSetupView(router: Router) {
 
 	joinClassicBtn.addEventListener("click", async (e: Event) => {
 		e.preventDefault();
-		
+
 		joinClassicBtn.disabled = true;
 		joinClassicBtn.textContent = "Waiting for opponent...";
 		joinClassicBtn.className = 'px-6 py-2 bg-gray-400 rounded-md font-bold cursor-not-allowed';

@@ -203,6 +203,7 @@ export class WebSocketHandler {
     }
 
     public disconnect(): void {
-        this.ws?.close();
+        if (this.ws)
+            this.ws.close();
     }
 }

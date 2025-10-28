@@ -23,7 +23,7 @@ export class PongGame {
 		playerId: string,
 		gameMode: string, //classic, Tournament or ai
 		router: Router
-		
+
     ) {
 		this.playerName = playerName;
 		this.playerId = playerId;
@@ -81,7 +81,7 @@ export class PongGame {
 			} else {
 				apiEndpoint = '/api/v1/game/join-classic'; // Default for 'classic' mode
 			}
-				
+
             const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {
@@ -140,7 +140,8 @@ export class PongGame {
 				oldCanvas.remove();
 			}
 			// 3. Create game view
-			this.gameView = gameView(this.router);
+			if (this.wsHandler)
+			this.gameView = gameView(this.router, this.wsHandler);
 			// Verify view creation
 			if (!this.gameView?.canvas) {
 				console.error('Failed to create game view');

@@ -54,11 +54,11 @@ export function createWindow(options: WindowOptions): HTMLElement {
 		// Center the window on screen
 		const windowWidth = parseInt(options.width || '400');
 		const windowHeight = parseInt(options.height || '300');
-		
+
 		// Calculate center position
 		const centerX = (window.innerWidth - windowWidth) / 2;
 		const centerY = (window.innerHeight - windowHeight) / 2;
-		
+
 		windowDiv.style.left = `${Math.max(0, centerX)}px`;
 		windowDiv.style.top = `${Math.max(0, centerY)}px`;
 	}
@@ -266,7 +266,7 @@ export class MatchHistory {
 }
 
 
-//stats component 
+//stats component
 export interface StatsData{
 	wins: number,
 	losses: number,
@@ -404,7 +404,7 @@ export class Stats {
 
 
 
-//task bar 
+//task bar
 interface TaskbarOptions {
   startButton?: {
 	label: string;
