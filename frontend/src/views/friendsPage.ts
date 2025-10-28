@@ -1,8 +1,8 @@
 import { Router } from "../router";
-import { createWindow } from "./_components";
-import { createTaskbar, createStaticDesktopBackground } from "./_components";
-import { createFriendsComponent, createSimpleFriendsActionsComponent } from "./_userComponents";
-import { createFriendProfilePage } from "./_profilePageBuilder"; // ✅ Add this import
+import { createWindow } from "../components/_components";
+import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
+import { createFriendsComponent, createSimpleFriendsActionsComponent } from "../components/_userComponents";
+import { createFriendProfilePage } from "../components/_profilePageBuilder"; 
 
 export function friendsView(router: Router) {
     const root = document.getElementById("app");

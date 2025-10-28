@@ -1,7 +1,7 @@
 // For friends component
 
 import { UserService } from '../game/userService';
-import { createWindow } from './_components';
+import { createWindow } from '../components/_components';
 import type { Friend, FriendRequest } from '../game/userService';
 import type { 
     OneVOneStatistics, 

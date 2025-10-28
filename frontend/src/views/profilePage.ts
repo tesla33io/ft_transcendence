@@ -1,4 +1,4 @@
-import { createMyProfilePage } from "./_profilePageBuilder";
+import { createMyProfilePage } from "../components/_profilePageBuilder";
 import { Router } from "../router";
 
 export function profileView(router: Router) {

@@ -1,8 +1,8 @@
 import { Router } from '../router';
-import { createWindow } from './_components';
-import { createTaskbar, createStaticDesktopBackground } from "./_components";
+import { createWindow } from '../components/_components';
+import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
 import { PongGame } from '../game/PongGame';
-import { createPlayerVsAIStatsComponent } from './_userComponents';
+import { createPlayerVsAIStatsComponent } from '../components/_userComponents';
 
 export function aiGameSetupView(router: Router) {
 	const root = document.getElementById("app")!;

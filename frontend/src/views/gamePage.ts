@@ -1,6 +1,6 @@
 import { Router } from "../router";
-import { createWindow } from "./_components";
-import { createTaskbar,createStaticDesktopBackground } from "./_components";
+import { createWindow } from "../components/_components";
+import { createTaskbar,createStaticDesktopBackground } from "../components/_components";
 
 export function gameView(router: Router) {
 	const root = document.getElementById("app")!;
