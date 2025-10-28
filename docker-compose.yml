@@ -1,5 +1,5 @@
 services:
-  # Frontend
+
   frontend:
     build:
       context: ./frontend
@@ -11,7 +11,7 @@ services:
       - gateway-service
     networks:
       - pong-network
-    volumes: 
+    volumes:
       - ./frontend:/app
       - /app/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
 
@@ -26,9 +26,9 @@ services:
       - game-service
     networks:
       - pong-network
-    volumes:
-      - ./services/gateway-service:/gateway-service
-      - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
+    # volumes: #REMOVE FOR production
+    #   - ./services/gateway-service:/gateway-service
+    #   - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
 
   game-service:
     build:
@@ -42,9 +42,15 @@ services:
       - .env
     networks:
       - pong-network
-    volumes:
-      - ./services/game-service:/game-service
-      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f","http://localhost:5000/test/status"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+    # volumes: #REMOVE FOR production
+    #   - ./services/game-service:/game-service
+    #   - /app/node_modules
 
   user-service:
     build:
@@ -69,7 +75,6 @@ services:
       dockerfile: Dockerfile
     container_name: blockchain-service
     # NO PORTS - this is a library service
-    #  - "3002:3002"
     env_file:
       - .env
     networks:
@@ -79,6 +84,7 @@ services:
       - /blockchain-service/node_modules
     environment:
       - NODE_ENV=development
+      # No PORT needed
   ai-service:
     build:
       context: ./services/AI-service
@@ -88,11 +94,6 @@ services:
       - "5100:5100"
     networks:
       - pong-network
-
-networks:
-  pong-network:
-        - ./services/user-service:/user-service
-        - /app/node_modules
 
 networks:
   pong-network:

@@ -1,9 +1,11 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { User } from '../entities/User.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+const JWT_SECRET: Secret = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_EXPIRES_IN: SignOptions['expiresIn'] = 
+(process.env.JWT_EXPIRES_IN as SignOptions['expiresIn']) || '24h';
+
 
 export class AuthService {
   static async generateToken(user: User): Promise<string> {

@@ -9,4 +9,4 @@ import buildServer from './app';
         }
         console.log(`🚀 Server ready at ${address}`);
     });
-});
+})();
