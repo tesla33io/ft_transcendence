@@ -1,7 +1,7 @@
 import { LocalPongGame } from '../game/LocalPongGame';
 import { GAME_CONFIG } from '../types';
 import { Router } from '../router';
-import { GAME_MODES } from '../constants';
+import { GAME_MODES } from '../constants.ts';
 
 export function localGameView(router: Router) {
     const app = document.getElementById('app');
