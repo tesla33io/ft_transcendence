@@ -36,8 +36,7 @@ export class GameService{
 		this.webSocketServer.onPaddleMove = (gameId: string, playerId: string, deltaY: number) =>{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
-		this.webSocketServer.clientReady = (gameId: string, playerId: string, tournamentId?: string) => {
-
+		this.webSocketServer.clientReady = (gameId: string | undefined, playerId: string, tournamentId?: string) => {
 			if (tournamentId && !gameId){
 					if (this.gameEngine instanceof TournamentPong &&
 						this.gameEngine.tournamentAllPlayersReady(tournamentId, playerId)){
@@ -48,7 +47,7 @@ export class GameService{
 							return
 					}
 				}
-			if (this.gameEngine.allPlayerReady(gameId, playerId)){
+			if (gameId && this.gameEngine.allPlayerReady(gameId, playerId)){
 				console.log(`Classic players are ready: true`)
 				this.gameEngine.startGame(gameId)
 				return
@@ -66,6 +65,14 @@ export class GameService{
 						this.gameEngine.declareWinner(game, winnerId)
 				}
 			}
+			else if (this.gameEngine instanceof TournamentPong && game === undefined &&
+					this.gameEngine.findPlayerInTournamnet(playerId)){
+					const tournamentId = this.gameEngine.findPlayerInTournamnet(playerId)
+					if (this.webSocketServer.clientReady){
+						let unde: string | undefined
+						this.webSocketServer.clientReady(unde, playerId, tournamentId)
+					}
+				}
 			else{
 				if (this.matchmaker)
 					this.matchmaker.removePlayerFromQueue(playerId, this.gameMode)

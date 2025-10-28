@@ -15,7 +15,7 @@ export class GameWebSocketServer{
 	}
 
 	public onPaddleMove?: (gameId: string, playerId: string, paddleY: number) => void
-	public clientReady?: (gameId: string, playerId: string, tournamentId?: string) => void
+	public clientReady?: (gameId: string | undefined, playerId: string, tournamentId?: string) => void
 	public clientDisconnect?: (playerId: string) => void
 
 	private setupWebsocketServer(){
@@ -97,15 +97,26 @@ export class GameWebSocketServer{
 			player1Ws.send(messagePlayer1)
 			console.log(`Sent game_matched to player1: ${gameData.player1.id}`)
 		}
-		else
+		else{
 			console.log(`Websocket for player1 ${gameData.player1.id} not found`)
+			if (this.clientDisconnect){
+				gameData.player1.ready = true
+				this.clientDisconnect(gameData.player1.id)
+			}
+		}
 
 		if (player2Ws) {
 			player2Ws.send(messagePlayer2)
 			console.log(`Sent game_matched to player2: ${gameData.player2.id}`)
 		}
-		else
+		else{
 			console.log(`Websocket for player2 ${gameData.player2.id} not found`)
+			if (this.clientDisconnect){
+				gameData.player2.ready = true
+				this.clientDisconnect(gameData.player2.id)
+			}
+		}
+
 	}
 
 	public notifyTournamentReady(tournament: Tournament){
