@@ -1,8 +1,8 @@
 import { Router } from '../router';
-import { createWindow } from './_components';
+import { createWindow } from '../components/_components';
 import { PongGame } from '../game/PongGame';
-import { createTaskbar, createStaticDesktopBackground } from "./_components";
-import {createTournamentStatsComponent} from "./_userComponents";
+import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
+import {createTournamentStatsComponent} from "../components/_userComponents";
 
 let currentPongGame: PongGame | undefined = undefined;
 

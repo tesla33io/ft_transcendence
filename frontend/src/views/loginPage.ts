@@ -1,5 +1,5 @@
 import { Router } from "../router";
-import { createWindow } from "./_components";
+import { createWindow } from "../components/_components";
 import { UserService } from "../game/userService";
 import type { LoginRequest } from "../types";
 
