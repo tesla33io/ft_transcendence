@@ -1,5 +1,5 @@
 import { Router } from '../router';
-import { GAME_MODES } from '../constants';
+import { GAME_MODES } from '../types';
 import { 
     createWindow,
     createTaskbar,

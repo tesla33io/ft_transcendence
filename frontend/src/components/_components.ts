@@ -1,3 +1,23 @@
+
+//images for taskbar
+import start from '../views/images/windows-0.png'
+import volumepic from '../views/images/loudspeaker.png';
+import networkPic from '../views/images/gps.png';
+
+
+//  desktop icons
+import joystickIcon from '../views/images/joystick.png';
+import padlock from '../views/images/padlock.png';
+import remote from '../views/images/remote.png'
+import usergreen from '../views/images/users_green.png'
+import network from '../views/images/network.png'
+import spider from '../views/images/spider.png'
+import phone from '../views/images/phone.png'
+import gear from '../views/images/gears.png'
+
+
+
+
 interface WindowOptions {
 	title: string;
 	width?: string;
@@ -382,9 +402,7 @@ export class Stats {
 }
 
 
-import start from '../views/images/windows-0.png'
-import volumepic from '../views/images/loudspeaker.png';
-import networkPic from '../views/images/gps.png';
+
 
 //task bar 
 interface TaskbarOptions {
@@ -474,18 +492,6 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
 	return { taskbar, taskArea };
 }
 
-
-//static desktop icons 
-// Import your existing desktop icons
-import joystickIcon from '../views/images/joystick.png';
-import padlock from '../views/images/padlock.png';
-import remote from '../views/images/remote.png'
-import usergreen from '../views/images/users_green.png'
-import network from '../views/images/network.png'
-import spider from '../views/images/spider.png'
-import phone from '../views/images/phone.png'
-import gear from '../views/images/gears.png'
-// Define the icon data type (same as your desktop)
 type StaticIconData = {
     id: string;
     title: string;

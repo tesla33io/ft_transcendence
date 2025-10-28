@@ -1,7 +1,7 @@
 import { LocalPongGame } from '../game/LocalPongGame';
 import { GAME_CONFIG } from '../types';
 import { Router } from '../router';
-import { GAME_MODES } from '../constants';
+import { GAME_MODES } from '../types';
 import { 
     createStaticDesktopBackground,
     createGameHeader,
@@ -117,7 +117,7 @@ function getModeName(mode: string): string {
         'speed': 'Speed Mode',
         'pellet': 'Pellet Mode',
         'multiball': 'Multi-Ball Mode',
-        'twod': '2D Mode'
+        '2d': '2D Mode'
     };
     return modeNames[mode] || 'Classic';
 }
@@ -129,7 +129,7 @@ function getModeControlsText(mode: string): string {
         'speed': 'P1: W/S to move | P2: ↑/↓ to move',
         'pellet': 'P1: W/S move, D shoot, A magnet | P2: ↑/↓ move, ← shoot, → magnet',
         'multiball': 'P1: W/S move, A speedup, D grow | P2: ↑/↓ move, → speedup, ← grow',
-        'twod': 'P1: W/A/S/D to move freely | P2: ↑/←/↓/→ to move freely'
+        '2d': 'P1: W/A/S/D to move freely | P2: ↑/←/↓/→ to move freely'
     };
     return controls[mode] || controls['classic'];
 }

@@ -1,7 +1,7 @@
 import { Renderer } from './renderCanvas';
 import { GAME_CONFIG, type Ball } from '../types';
 import { Router } from '../router';
-import { GAME_MODES } from '../constants';
+import { GAME_MODES } from '../types';
 
 interface Pellet {
     x: number;
@@ -570,7 +570,7 @@ export class LocalPongGame {
         buttonContainer.append(playAgainButton, selectionButton, homeButton);
         overlay.append(winnerText, subText, buttonContainer);
 
-        this.gameContainer.appendChild(overlay);
+        this.canvas.parentElement?.appendChild(overlay);
     }
 
     private handleGameOverKeyDown = (event: KeyboardEvent): void => {

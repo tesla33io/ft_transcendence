@@ -1,5 +1,5 @@
 import { Router } from '../router';
-import { GAME_MODES } from '../constants';
+import { GAME_MODES } from '../types';
 import { 
     createWindow,
     createTaskbar,
@@ -109,7 +109,7 @@ function getModeName(mode: string): string {
         'speed': 'Speed Mode',
         'pellet': 'Pellet Mode',
         'multiball': 'Multi-Ball Mode',
-        'twod': '2D Mode'
+        '2d': '2D Mode'
     };
     return modeNames[mode] || 'Classic';
 }
