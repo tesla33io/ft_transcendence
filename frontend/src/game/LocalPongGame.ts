@@ -9,9 +9,9 @@ interface Pellet {
     dx: number;
     owner: 'player' | 'opponent';
 }
-
-// ✅ FIXED: Proper Player interface for local game (different from multiplayer)
 interface Player {
+    id: string;  
+    ready: boolean;  
     name: string;
     score: number;
     X: number;
@@ -19,12 +19,11 @@ interface Player {
     paddleHeight: number;
 }
 
-// ✅ FIXED: GameState with correct property names (opponent not opponet)
 interface LocalGameState {
     status: 'countdown' | 'playing' | 'finished';
     gameid: string;
     player: Player;
-    opponent: Player;  // ✅ FIXED: Was "opponet"
+    opponent: Player;  
     ball: Ball;
     pellets: Pellet[];
     extra_balls: Ball[];
@@ -78,13 +77,17 @@ export class LocalPongGame {
             status: 'countdown',
             gameid: 'local',
             player: {
+                id: 'player-1',        
+                ready: true,           
                 name: 'Player 1',
                 score: 0,
                 X: GAME_CONFIG.PADDLE.OFFSET_FROM_EDGE,
                 Y: GAME_CONFIG.CANVAS.HEIGHT / 2,
                 paddleHeight: GAME_CONFIG.PADDLE.HEIGHT,
             },
-            opponent: {  // ✅ FIXED: Was "opponet"
+            opponent: {
+                id: 'player-2',        
+                ready: true,          
                 name: 'Player 2',
                 score: 0,
                 X: GAME_CONFIG.CANVAS.WIDTH - GAME_CONFIG.PADDLE.OFFSET_FROM_EDGE - GAME_CONFIG.PADDLE.WIDTH,
@@ -401,8 +404,8 @@ export class LocalPongGame {
     }
 
     private updateScoreboard(): void {
-        const p1Score = document.getElementById('player1-score');
-        const p2Score = document.getElementById('player2-score');
+        const p1Score = document.getElementById('player-score');
+        const p2Score = document.getElementById('opponent-score');
         if (p1Score) p1Score.textContent = this.gameState.player.score.toString();
         if (p2Score) p2Score.textContent = this.gameState.opponent.score.toString();  // ✅ FIXED
     }
@@ -442,11 +445,11 @@ export class LocalPongGame {
 
         for (let i = extra_balls.length - 1; i >= 0; i--) {
             const ball = extra_balls[i];
-            ball.x += ball.vx;  // ✅ FIXED: vx not dx
-            ball.y += ball.vy;  // ✅ FIXED: vy not dy
+            ball.x += ball.vx;  // 
+            ball.y += ball.vy;  
 
             if (ball.y + GAME_CONFIG.BALL.RADIUS > GAME_CONFIG.CANVAS.HEIGHT || ball.y - GAME_CONFIG.BALL.RADIUS < 0) {
-                ball.vy *= -1;  // ✅ FIXED: vy not dy
+                ball.vy *= -1;  
             }
 
             const collidesWithPaddle = (paddle: Player) => {
@@ -459,12 +462,12 @@ export class LocalPongGame {
             };
 
             if ((ball.vx < 0 && collidesWithPaddle(player)) || (ball.vx > 0 && collidesWithPaddle(opponent))) {  // ✅ FIXED
-                ball.vx *= -1.05;  // ✅ FIXED: vx not dx
+                ball.vx *= -1.05;  
             }
 
             let scored = false;
             if (ball.x - GAME_CONFIG.BALL.RADIUS < 0) {
-                this.gameState.opponent.score++;  // ✅ FIXED
+                this.gameState.opponent.score++;  
                 scored = true;
             } else if (ball.x + GAME_CONFIG.BALL.RADIUS > GAME_CONFIG.CANVAS.WIDTH) {
                 this.gameState.player.score++;

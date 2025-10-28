@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	router.register("/tournament", () => tournamentView(router));
 	router.register("/guest", () => guestDesktopView(router));
 	router.register("/desktop", () => desktopView(router));
+	router.register("/Desktop", () => desktopView(router));
 	router.register("/settings", () => settingsView(router));
 
 	router.register("/localgame", () => localModeSelectionView(router));

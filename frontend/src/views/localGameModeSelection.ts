@@ -1,5 +1,10 @@
 import { Router } from '../router';
 import { GAME_MODES } from '../constants';
+import { 
+    createWindow,
+    createTaskbar,
+    createStaticDesktopBackground
+} from '../components';
 
 export function localModeSelectionView(router: Router) {
     const app = document.getElementById('app');
@@ -8,65 +13,119 @@ export function localModeSelectionView(router: Router) {
         return;
     }
 
-    const selectionContainer = document.createElement('div');
-    selectionContainer.className = 'flex flex-col items-center justify-center h-screen bg-gray-900 text-white';
+    app.innerHTML = '';
 
-    const title = document.createElement('h1');
-    title.className = 'text-4xl font-bold mb-8';
+    // ✅ NEW: Add background like other pages
+    const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(app);
+
+    // ✅ CHANGED: Create window content
+    const content = document.createElement('div');
+    content.className = 'p-6 flex flex-col gap-4';
+
+    // ✅ NEW: Title
+    const title = document.createElement('h2');
+    title.className = 'text-lg font-bold text-center mb-4';
     title.textContent = 'Select a Game Mode';
 
+    // ✅ CHANGED: Modes container for Windows 98 style
     const modesContainer = document.createElement('div');
-    modesContainer.className = 'flex flex-col gap-4';
+    modesContainer.className = 'flex flex-col gap-3';
 
-    // Classic Pong Button
-    const classicButton = document.createElement('button');
-    classicButton.textContent = 'Classic Pong';
-    classicButton.className = 'px-8 py-4 bg-blue-600 hover:bg-blue-700 rounded-md font-bold text-xl';
-    classicButton.addEventListener('click', () => {
-        // Unify flow: always pass the mode to the setup page
-        router.navigate(`/localgame/setup?mode=${GAME_MODES.CLASSIC}`);
+    // ✅ CHANGED: Game mode buttons with Windows 98 styling
+    const gameModes = [
+        { 
+            name: 'Classic Pong', 
+            mode: GAME_MODES.CLASSIC,
+            description: 'Traditional pong gameplay'
+        },
+        { 
+            name: 'Speed Mode', 
+            mode: GAME_MODES.SPEED,
+            description: 'Ball accelerates with each paddle hit'
+        },
+        { 
+            name: 'Pellet Mode', 
+            mode: GAME_MODES.PELLET,
+            description: 'Shoot pellets at your opponent'
+        },
+        { 
+            name: 'Multi-Ball Mode', 
+            mode: GAME_MODES.MULTIBALL,
+            description: 'Multiple balls in play'
+        },
+        { 
+            name: '2D Mode', 
+            mode: GAME_MODES.TWOD,
+            description: 'Move paddles in 2D space'
+        }
+    ];
+
+    gameModes.forEach(gameMode => {
+        const buttonContainer = document.createElement('div');
+        // ✅ CHANGED: Use rgb(224, 224, 224) background color
+        buttonContainer.className = `
+            border-2 p-3 cursor-pointer transition-all
+            border-t-2 border-l-2 border-t-white border-l-white
+            border-b-2 border-r-2 border-b-gray-400 border-r-gray-400
+            hover:brightness-110
+            active:border-t-gray-400 active:border-l-gray-400
+            active:border-b-white active:border-r-white
+        `;
+        // ✅ CHANGED: Set background color via style
+        buttonContainer.style.backgroundColor = 'rgb(224, 224, 224)';
+        buttonContainer.style.minHeight = '50px';
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.flexDirection = 'column';
+        buttonContainer.style.justifyContent = 'center';
+        
+        const buttonLabel = document.createElement('div');
+        buttonLabel.className = 'font-semibold text-sm text-gray-800';
+        buttonLabel.textContent = gameMode.name;
+        
+        const buttonDesc = document.createElement('div');
+        buttonDesc.className = 'text-xs text-gray-600 mt-1';
+        buttonDesc.textContent = gameMode.description;
+        
+        buttonContainer.append(buttonLabel, buttonDesc);
+        
+        buttonContainer.addEventListener('click', () => {
+            router.navigate(`/localgame/setup?mode=${gameMode.mode}`);
+        });
+
+        modesContainer.appendChild(buttonContainer);
     });
 
-    // Example of a future mode
-    const futureModeButton = document.createElement('button');
-    futureModeButton.textContent = 'Speed Mode';
-    futureModeButton.className = 'px-8 py-4 bg-green-600 hover:bg-green-700 rounded-md font-bold text-xl';
-    futureModeButton.addEventListener('click', () => {
-        // Navigate to the setup page for speed mode
-        router.navigate(`/localgame/setup?mode=${GAME_MODES.SPEED}`);
+  
+   
+
+    content.append(title, modesContainer);
+
+    // ✅ CHANGED: Bigger window
+    const selectionWindow = createWindow({
+        title: 'Local Pong - Mode Selection',
+        width: '500px',  // ✅ CHANGED: Increased from 400px
+        height: '570px',  // ✅ CHANGED: Increased from 380px
+        content: content,
+        titleBarControls: {
+            close: true,
+            onClose: () => {
+                router.navigate('/Desktop');
+            }
+        }
     });
 
-    // Pellet Mode Button
-    const pelletModeButton = document.createElement('button');
-    pelletModeButton.textContent = 'Pellet Mode';
-    pelletModeButton.className = 'px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-md font-bold text-xl';
-    pelletModeButton.addEventListener('click', () => {
-        // Navigate to the setup page for pellet mode
-        router.navigate(`/localgame/setup?mode=${GAME_MODES.PELLET}`);
+    app.appendChild(selectionWindow);
+
+    // ✅ NEW: Add taskbar (like other pages)
+    const { taskbar } = createTaskbar({
+        startButton: {
+            label: "Start",
+            onClick: () => router.navigate("/"),
+        },
+        clock: true,
     });
-
-    // Multi-Ball Mode Button
-    const multiBallButton = document.createElement('button');
-    multiBallButton.textContent = 'Multi-Ball Mode';
-    multiBallButton.className = 'px-8 py-4 bg-red-600 hover:bg-red-700 rounded-md font-bold text-xl';
-    multiBallButton.addEventListener('click', () => {
-        // Navigate to the setup page for multi-ball mode
-        router.navigate(`/localgame/setup?mode=${GAME_MODES.MULTIBALL}`);
-    });
-
-    // 2D Mode Button
-    const twoDButton = document.createElement('button');
-    twoDButton.textContent = '2D Mode';
-    twoDButton.className = 'px-8 py-4 bg-yellow-500 hover:bg-yellow-600 rounded-md font-bold text-xl';
-    twoDButton.addEventListener('click', () => {
-        router.navigate(`/localgame/setup?mode=${GAME_MODES.TWOD}`);
-    });
-
-    modesContainer.append(classicButton, futureModeButton, pelletModeButton, multiBallButton, twoDButton);
-    selectionContainer.append(title, modesContainer);
-
-    app.innerHTML = '';
-    app.appendChild(selectionContainer);
+    app.appendChild(taskbar);
 
     return {
         dispose: () => {}

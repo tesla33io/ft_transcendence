@@ -1,5 +1,10 @@
 import { Router } from '../router';
 import { GAME_MODES } from '../constants';
+import { 
+    createWindow,
+    createTaskbar,
+    createStaticDesktopBackground
+} from '../components';
 
 export function localGameSetupView(router: Router) {
     const app = document.getElementById('app');
@@ -8,50 +13,103 @@ export function localGameSetupView(router: Router) {
         return;
     }
 
+    app.innerHTML = '';
+
+    const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(app);
+
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode') || GAME_MODES.CLASSIC;
 
-    const setupContainer = document.createElement('div');
-    setupContainer.className = 'flex flex-col items-center justify-center h-screen bg-gray-900 text-white';
+    const content = document.createElement('div');
+    content.className = 'p-4 flex flex-col gap-4';
 
-    const form = document.createElement('form');
-    form.className = 'flex flex-col items-center gap-4 p-8 bg-gray-800 rounded-lg';
+    const title = document.createElement('h2');
+    title.className = 'text-lg font-bold text-center mb-2';
+    title.textContent = 'Game Setup';
 
-    const title = document.createElement('h1');
-    title.className = 'text-3xl font-bold mb-4';
-    title.textContent = 'Local Game Setup';
+    // Score selection with Windows 98 select
+    const scoreField = document.createElement('div');
+    scoreField.className = 'field-row-stacked';
 
-    const label = document.createElement('label');
-    label.htmlFor = 'winning-score';
-    label.textContent = 'Score to Win:';
-    label.className = 'text-lg';
+    const scoreLabel = document.createElement('label');
+    scoreLabel.htmlFor = 'winning-score';
+    scoreLabel.textContent = 'Winning Score:';
+    scoreLabel.className = 'text-sm font-semibold';
 
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.id = 'winning-score';
-    // Retrieve last score for this mode from session storage, or default to 5
-    input.value = sessionStorage.getItem(`lastScore_${mode}`) || '5';
-    input.min = '1';
-    input.max = '21';
-    input.className = 'w-24 text-center bg-white border border-gray-600 rounded-md p-2 text-black';
+    const select = document.createElement('select');
+    select.id = 'winning-score';
+    select.className = 'w-full px-2 py-1 bg-white border-2 border-gray-400 font-retro';
+ 
+    select.innerHTML = `
+        <option value="5">10 - Long Game</option>
+        <option value="4">5 - Normal Game </option>
+        <option value="3" selected>3 - Quick Game</option>
+        <option value="1">1 - Ultra short Game</option>
+    `;
+
+    scoreField.append(scoreLabel, select);
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.className = 'flex gap-2 justify-center mt-4';
 
     const startButton = document.createElement('button');
-    startButton.type = 'submit';
+    startButton.type = 'button';
     startButton.textContent = 'Start Game';
-    startButton.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-bold';
-
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const score = input.value;
-        
-        // Store the score for this mode in session storage for next time
-        sessionStorage.setItem(`lastScore_${mode}`, score);
+    startButton.className = 'button px-6 py-1 font-retro';
+    startButton.addEventListener('click', () => {
+        const score = select.value;
         router.navigate(`/localgame/play?mode=${mode}&score=${score}`);
     });
 
-    form.append(title, label, input, startButton);
-    setupContainer.appendChild(form);
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.textContent = 'Back';
+    cancelButton.className = 'button px-6 py-1 font-retro';
+    cancelButton.addEventListener('click', () => {
+        router.navigate('/localgame');
+    });
 
-    app.innerHTML = '';
-    app.appendChild(setupContainer);
+    buttonContainer.append(startButton, cancelButton);
+
+    const helpText = document.createElement('div');
+    helpText.className = 'text-xs text-gray-600 text-center mt-2 italic';
+    helpText.textContent = 'First player to reach the winning score wins the game!';
+
+    content.append(title, scoreField, buttonContainer, helpText);
+
+    const setupWindow = createWindow({
+        title: `Setup - ${getModeName(mode)}`,
+        width: '350px',
+        height: '280px',
+        content: content,
+        titleBarControls: {
+            close: true,
+            onClose: () => {
+                router.navigate('/Desktop');
+            }
+        }
+    });
+
+    app.appendChild(setupWindow);
+
+    const { taskbar } = createTaskbar({
+        startButton: {
+            label: "Start",
+            onClick: () => router.navigate("/"),
+        },
+        clock: true,
+    });
+    app.appendChild(taskbar);
+}
+
+function getModeName(mode: string): string {
+    const modeNames: { [key: string]: string } = {
+        'classic': 'Classic',
+        'speed': 'Speed Mode',
+        'pellet': 'Pellet Mode',
+        'multiball': 'Multi-Ball Mode',
+        'twod': '2D Mode'
+    };
+    return modeNames[mode] || 'Classic';
 }

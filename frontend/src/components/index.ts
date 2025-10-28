@@ -82,3 +82,14 @@ export {
 } from './_profilePageBuilder';
 
 export type { ProfilePageOptions } from './_profilePageBuilder';
+
+// ...existing exports...
+
+export {
+    createLocalGameLayout,
+    getModeName
+} from './_gamePageComponents';
+
+export type { 
+    LocalGameLayoutConfig
+} from './_gamePageComponents';

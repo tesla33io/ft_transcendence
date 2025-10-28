@@ -1,6 +1,3 @@
-
-
-
 export interface ScoreboardConfig {
     player1Name: string;
     player2Name: string;
@@ -105,5 +102,125 @@ export function createGameCanvasContainer(config: CanvasConfig = {}): {
     container.appendChild(canvas);
 
     return { container, canvas };
+}
+
+export interface LocalGameLayoutConfig {
+    header: HTMLElement;
+    canvas: HTMLCanvasElement;
+    mode: string;
+    winningScore: number;
+    onBackClick: () => void;
+}
+
+export function createLocalGameLayout(config: LocalGameLayoutConfig): {
+    container: HTMLElement;
+    canvas: HTMLCanvasElement;
+} {
+    const gameContainer = document.createElement('div');
+    gameContainer.className = 'grid grid-cols-3 gap-4 p-4 relative h-screen';
+
+    // ✅ Left sidebar - Player 1 Info
+    const leftSidebar = document.createElement('div');
+    leftSidebar.className = 'flex flex-col items-center justify-start text-white pt-8';
+    
+    const player1Label = document.createElement('h2');
+    player1Label.className = 'text-2xl font-bold mb-4';
+    player1Label.textContent = 'Player 1';
+    
+    const player1Score = document.createElement('div');
+    player1Score.className = 'text-6xl font-bold mb-4';
+    player1Score.id = 'player1-score';
+    player1Score.textContent = '0';
+    
+    const player1Controls = document.createElement('div');
+    player1Controls.className = 'text-sm text-gray-400 text-center mt-8 space-y-2';
+    player1Controls.innerHTML = `<p><span class="font-bold text-white">Move:</span> W/S</p>`;
+    
+    if (config.mode === 'pellet') {
+        player1Controls.innerHTML += `
+            <p><span class="font-bold text-white">Shoot:</span> D</p>
+            <p><span class="font-bold text-white">Magnet:</span> A</p>
+            <p id="player1-resources" class="text-yellow-400 mt-4"></p>
+        `;
+    } else if (config.mode === 'multiball') {
+        player1Controls.innerHTML += `
+            <p><span class="font-bold text-white">Speed:</span> A</p>
+            <p><span class="font-bold text-white">Grow:</span> D</p>
+            <p id="player1-abilities" class="text-green-400 mt-4"></p>
+        `;
+    }
+    
+    leftSidebar.append(player1Label, player1Score, player1Controls);
+
+    // ✅ Center - Game Canvas
+    const centerContent = document.createElement('div');
+    centerContent.className = 'flex flex-col items-center justify-center h-full';
+    
+    const gameCanvasContainer = document.createElement('div');
+    gameCanvasContainer.className = 'relative';
+    gameCanvasContainer.appendChild(config.header);
+    gameCanvasContainer.appendChild(config.canvas);
+    
+    centerContent.appendChild(gameCanvasContainer);
+
+    // ✅ Right sidebar - Player 2 Info
+    const rightSidebar = document.createElement('div');
+    rightSidebar.className = 'flex flex-col items-center justify-start text-white pt-8';
+    
+    const player2Label = document.createElement('h2');
+    player2Label.className = 'text-2xl font-bold mb-4';
+    player2Label.textContent = 'Player 2';
+    
+    const player2Score = document.createElement('div');
+    player2Score.className = 'text-6xl font-bold mb-4';
+    player2Score.id = 'player2-score';
+    player2Score.textContent = '0';
+    
+    const player2Controls = document.createElement('div');
+    player2Controls.className = 'text-sm text-gray-400 text-center mt-8 space-y-2';
+    player2Controls.innerHTML = `<p><span class="font-bold text-white">Move:</span> ↑/↓</p>`;
+    
+    if (config.mode === 'pellet') {
+        player2Controls.innerHTML += `
+            <p><span class="font-bold text-white">Shoot:</span> ←</p>
+            <p><span class="font-bold text-white">Magnet:</span> →</p>
+            <p id="player2-resources" class="text-yellow-400 mt-4"></p>
+        `;
+    } else if (config.mode === 'multiball') {
+        player2Controls.innerHTML += `
+            <p><span class="font-bold text-white">Speed:</span> →</p>
+            <p><span class="font-bold text-white">Grow:</span> ←</p>
+            <p id="player2-abilities" class="text-green-400 mt-4"></p>
+        `;
+    }
+    
+    rightSidebar.append(player2Label, player2Score, player2Controls);
+
+    // ✅ Top right corner - Back button
+    const backButton = document.createElement('button');
+    backButton.textContent = '← Back to Menu';
+    backButton.className = 'absolute top-4 right-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md text-sm font-bold transition-colors z-10';
+    backButton.addEventListener('click', config.onBackClick);
+
+    // ✅ Mode info badge
+    const modeBadge = document.createElement('div');
+    modeBadge.className = 'absolute top-4 left-4 px-3 py-1 bg-blue-600 text-white rounded-md text-xs font-bold z-10';
+    modeBadge.textContent = `Winning Score: ${config.winningScore}`;
+
+    gameContainer.append(leftSidebar, centerContent, rightSidebar, backButton, modeBadge);
+
+    return { container: gameContainer, canvas: config.canvas };
+}
+
+// ✅ Helper function to get readable mode name
+export function getModeName(mode: string): string {
+    const modeNames: { [key: string]: string } = {
+        'classic': 'Classic',
+        'speed': 'Speed Mode',
+        'pellet': 'Pellet Mode',
+        'multiball': 'Multi-Ball Mode',
+        'twod': '2D Mode'
+    };
+    return modeNames[mode] || 'Classic';
 }
 
