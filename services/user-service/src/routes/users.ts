@@ -247,7 +247,7 @@ export default async function userRoutes(app: FastifyInstance) {
                     },
                 },
                 tags: ['auth'],
-                summary: 'Atuhencticate user with given credentials',
+                summary: 'Authenticate user with given credentials',
                 description: 'Verifies user credentials and sets a session cookie.',
             }}, async (req: FastifyRequest<{Body: AuthBody}>, reply: FastifyReply) => {
                 try {
@@ -423,7 +423,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
             }, async (req: FastifyRequest, reply) => {
                 if (!req.cookies.sessionId || !req.session.userId) {
-                    return reply.status(401).send({ error: 'Not authenticated', uri:"", message: "Not authenticated" });
+                    return reply.status(401).send({ error: 'Not authenticated' });
                 }
 
                 try {
@@ -541,7 +541,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
 
                 try {
-                    const user = await app.em.findOne(User, { id: req.user!.id }, {
+                    const user = await app.em.findOne(User, { id: req.session.userId }, {
                         populate: ['friends']
                     });
 

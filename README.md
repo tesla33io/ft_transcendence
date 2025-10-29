@@ -16,7 +16,6 @@ ft_transcendence/
 └── docs/                       # API Documentation & Technical Docs
 ```
 
-<<<<<<< HEAD
 For register send:
 Usernamen, Password, if2Factor,AvatarUrl,bio(string caped to 128 char)
 ---> User created succesfuly or error for example username exist already
@@ -227,7 +226,3 @@ Each service has its own configuration:
 - Performance monitoring
 - Error tracking
 
-<<<<<<< HEAD
-=======
->>>>>>> main
->>>>>>> user_management_merge
