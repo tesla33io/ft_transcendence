@@ -247,7 +247,7 @@ export default async function userRoutes(app: FastifyInstance) {
                     },
                 },
                 tags: ['auth'],
-                summary: 'Atuhencticate user with given credentials',
+                summary: 'Authenticate user with given credentials',
                 description: 'Verifies user credentials and sets a session cookie.',
             }}, async (req: FastifyRequest<{Body: AuthBody}>, reply: FastifyReply) => {
                 try {
