@@ -227,7 +227,3 @@ Each service has its own configuration:
 - Performance monitoring
 - Error tracking
 
-<<<<<<< HEAD
-=======
->>>>>>> main
->>>>>>> user_management_merge
