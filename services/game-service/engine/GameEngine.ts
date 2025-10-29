@@ -43,6 +43,7 @@ export abstract class GameEngine {
 		game.ball.x += game.ball.vx
 		game.ball.y += game.ball.vy
 
+		this.paddleCollisionCheck(game)
 		if (game.ball.y <= 0){
 			game.ball.y = 10
 			game.ball.vy *= -1
@@ -53,7 +54,7 @@ export abstract class GameEngine {
 			game.ball.vy *= -1
 			game.ball.vx = game.ball.vx < 0 ? --game.ball.vx : ++game.ball.vx
 		}
-		this.collisionCheck(game)
+
 	}
 
 	public findPlayerInGame(playerId: string): Game | undefined{
@@ -71,7 +72,7 @@ export abstract class GameEngine {
 	protected abstract updateGame(game: Game): void
 	public abstract updatePlayerPaddle(gameId: string, playerId: string, paddleY: number): void
 	public abstract allPlayerReady(gameId: string, playerId: string): boolean
-	protected abstract collisionCheck(game: Game): void
+	protected abstract paddleCollisionCheck(game: Game): void
 }
 
 

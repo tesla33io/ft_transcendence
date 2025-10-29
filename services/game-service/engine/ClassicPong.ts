@@ -18,9 +18,6 @@ export class ClassicPong extends GameEngine {
 		this.activeGames.set(game.id, game)
 		console.log(`Game ${game.id} initialized:`)
 		console.log("Saved to active games")
-		console.log(`- Player 1 (${game.player1.name}): paddle at (${game.player1.X}, ${game.player1.Y})`)
-		console.log(`- Player 2 (${game.player2.name}): paddle at (${game.player2.X}, ${game.player2.Y})`)
-		console.log(`- Ball: position (${game.ball.x}, ${game.ball.y}), velocity (${game.ball.vx}, ${game.ball.vy})`)
 	}
 
 	private ballReset(game: Game){
@@ -45,15 +42,15 @@ export class ClassicPong extends GameEngine {
 	}
 
 	private updatePlayerScore(game: Game){
-		if (game.ball.x <= PLAYER_OFFSET - 10){
+		if (game.ball.x < PLAYER_OFFSET - 10 && game.ball.vx < 0){
 			game.player2.score++
 			this.ballReset(game)
-			console.log(`Player 2 (${game.player2.name}|${game.player2.id}) score!`)
+			console.log(`Player 2 (${game.player2.name}|${game.player2.id} | ${game.ball.x} | ${game.ball.vx}) score!`)
 		}
-		else if (game.ball.x >= GAME_WIDTH - PLAYER_OFFSET + 10){
+		else if (game.ball.x > GAME_WIDTH - PLAYER_OFFSET + 10 && game.ball.vx > 0){
 			game.player1.score++
 			this.ballReset(game)
-			console.log(`Player 1 (${game.player1.name}|${game.player1.id}) score!`)
+			console.log(`Player 1 (${game.player1.name}|${game.player1.id}) score!| ${game.ball.x} | ${game.ball.vx}`)
 		}
 	}
 
@@ -84,7 +81,7 @@ export class ClassicPong extends GameEngine {
 		return (game.player1.ready && game.player2.ready ? true : false)
 	}
 
-	protected collisionCheck(game: Game): void {
+	protected paddleCollisionCheck(game: Game): void {
 		const K = 4
 		if (game.ball.x <= game.player1.X + PADDLE_WIDTH){
 			this.paddleCollision(game, game.player1)
@@ -103,8 +100,8 @@ export class ClassicPong extends GameEngine {
 			game.ball.vx *= -1
 		}
 
-		else if ((game.ball.y === player.Y - PADDLE_HEIGHT / 2 ||
-			game.ball.y === player.Y + PADDLE_HEIGHT / 2)){
+		else if ((game.ball.y === player.Y - PADDLE_HEIGHT / 2 - K ||
+			game.ball.y === player.Y + PADDLE_HEIGHT / 2 + K)){
 			game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
 			game.ball.vx *= -1
 			game.ball.vy *= -1
