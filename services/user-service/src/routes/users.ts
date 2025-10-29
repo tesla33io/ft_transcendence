@@ -541,7 +541,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
 
                 try {
-                    const user = await app.em.findOne(User, { id: req.user!.id }, {
+                    const user = await app.em.findOne(User, { id: req.session.userId }, {
                         populate: ['friends']
                     });
 
