@@ -26,11 +26,57 @@ export class Renderer {
         return this.isInitialized;
     }
 
+    // Track where ball was last and when it updated
+    private lastBallPosition?: { x: number; y: number };
+    private ballUpdateTime: number = 0;
+    private ballInterpolationAlpha: number = 0;
+
+	 
+
     public render(gameState: GameState): void {
-        //console.log("Rendering frame", gameState);
 		this.clear();
         this.drawPaddles(gameState);
-        this.drawBall(gameState.ball);
+        
+        // STEP 1: Calculate interpolated position
+        const interpolatedBall = this.getInterpolatedBall(gameState.ball);
+        this.drawBall(interpolatedBall);
+        
+        // STEP 2: Did the ball position change? If yes, reset interpolation
+        if (!this.lastBallPosition || 
+            gameState.ball.x !== this.lastBallPosition.x || 
+            gameState.ball.y !== this.lastBallPosition.y) {
+            // New server update received - store it and reset timer
+            this.lastBallPosition = { x: gameState.ball.x, y: gameState.ball.y };
+            this.ballUpdateTime = performance.now();  // ← Mark when update happened
+            this.ballInterpolationAlpha = 0;  // ← Start fresh interpolation
+        }
+    }
+
+    private getInterpolatedBall(currentBall: Ball): Ball {
+        if (!this.lastBallPosition) {
+            // First frame - no previous position to interpolate from
+            return currentBall;
+        }
+
+        // STEP 3: Calculate how far through the current frame we are (0 to 1)
+        const timeSinceUpdate = performance.now() - this.ballUpdateTime;
+        const frameTime = 1000 / 60; // ~16.67ms per frame at 60 FPS
+        
+        this.ballInterpolationAlpha = Math.min(
+            timeSinceUpdate / frameTime,
+            1  // Cap at 1.0 (don't go beyond current position)
+        );
+
+        // STEP 4: Apply interpolation formula
+        // Mix last position with current position based on alpha
+        return {
+            x: this.lastBallPosition.x + 
+               (currentBall.x - this.lastBallPosition.x) * this.ballInterpolationAlpha,
+            y: this.lastBallPosition.y + 
+               (currentBall.y - this.lastBallPosition.y) * this.ballInterpolationAlpha,
+            vx: currentBall.vx,
+            vy: currentBall.vy
+        };
     }
 
     private clear(): void {
