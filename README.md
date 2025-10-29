@@ -16,7 +16,6 @@ ft_transcendence/
 └── docs/                       # API Documentation & Technical Docs
 ```
 
-<<<<<<< HEAD
 For register send:
 Usernamen, Password, if2Factor,AvatarUrl,bio(string caped to 128 char)
 ---> User created succesfuly or error for example username exist already
