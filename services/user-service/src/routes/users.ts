@@ -423,7 +423,11 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
             }, async (req: FastifyRequest, reply) => {
                 if (!req.cookies.sessionId || !req.session.userId) {
-                    return reply.status(401).send({ error: 'Not authenticated' });
+                    return reply.status(401).send({
+                        error: 'Not authenticated',
+                        message: 'Not authenticated',
+                        uri: ''
+                      });
                 }
 
                 try {
@@ -537,9 +541,12 @@ export default async function userRoutes(app: FastifyInstance) {
 
             }, async (req: FastifyRequest, reply: FastifyReply) => {
                 if (!req.cookies.sessionId || !req.session.userId) {
-                    return reply.status(401).send({ error: 'Not authenticated' });
+                    return reply.status(401).send({ 
+                        error: 'Not authenticated',
+                        message: 'Not authenticated',
+                        uri: ''
+                    });
                 }
-
                 try {
                     const user = await app.em.findOne(User, { id: req.session.userId }, {
                         populate: ['friends']
