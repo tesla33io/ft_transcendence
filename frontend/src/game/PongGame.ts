@@ -210,8 +210,8 @@ export class PongGame {
             const now = Date.now();
             const deltaTime = now - this.lastRenderTime;
 
-            //Only process once per frame (~16.67ms)
-            if (deltaTime >= this.FRAME_TIME) {
+            //Only process once per frame (~16.67ms) with a bit of tolerance 
+            if (deltaTime >= this.FRAME_TIME * 0.9) {
                 this.calculateFrameInput();
                 this.sendInput();
                 if (this.gameState && this.renderer) {
@@ -238,9 +238,6 @@ export class PongGame {
             this.wsHandler?.disconnect();
             this.wsHandler = undefined;
         }
-        if (this.gameState) {
-            this.renderer?.render(this.gameState);
-        }
         requestAnimationFrame(() => {
             this.gameView?.showGameResult(isWin, finalScore);
 
@@ -250,6 +247,7 @@ export class PongGame {
                 this.gameState = undefined;
             }
         });
+		this.stopGameLoop();
     }
 
     private handleTournamentNotification(data: any): void {
@@ -268,15 +266,18 @@ export class PongGame {
         document.removeEventListener("keydown", this.boundHandleKeyPress);
         document.removeEventListener("keyup", this.boundHandleKeyRelease);
         
-        // ✅ NEW - Stop game loop
-        if (this.gameLoopId) {
-            cancelAnimationFrame(this.gameLoopId);
-            this.gameLoopId = undefined;
-        }
+        //- Stop game loop
+        this.stopGameLoop();
         
         if (this.gameMode !== "tournament") {
             this.wsHandler?.disconnect();
             this.wsHandler = undefined;
         }
     }
+	private stopGameLoop(): void{
+		if (this.gameLoopId) {
+            cancelAnimationFrame(this.gameLoopId);
+            this.gameLoopId = undefined;
+        }
+	}
 }

@@ -115,7 +115,7 @@ export class WebSocketHandler {
 	}
 
     private handleGameUpdate(data: any): void {
-        if (!data.player || !data.opponent || !data.ball) {
+		if (!data.player || !data.opponent || !data.ball) {
             console.error('Invalid game update data:', data);
             return;
         }
