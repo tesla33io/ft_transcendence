@@ -423,7 +423,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
             }, async (req: FastifyRequest, reply) => {
                 if (!req.cookies.sessionId || !req.session.userId) {
-                    return reply.status(401).send({ error: 'Not authenticated', uri:"", message: "Not authenticated" });
+                    return reply.status(401).send({ error: 'Not authenticated' });
                 }
 
                 try {
