@@ -8,8 +8,8 @@ server.register(require('@fastify/cors'),{
 	credentials: true
 })
 
-server.get("/test", async (req, reply) => {
-	return {test: 'OK\n'}
+server.get("/test/status", async (req, reply) => {
+	return reply.status(200).send({test: 'OK\n'})
 })
 
 server.register(require('@fastify/http-proxy'), {
