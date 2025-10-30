@@ -1,3 +1,7 @@
+**/**/migrations/*
+*.db
+services/user-service/public/*
+
 # Logs
 logs
 *.log

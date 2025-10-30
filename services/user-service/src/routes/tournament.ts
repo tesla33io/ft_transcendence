@@ -198,43 +198,61 @@ export default async function tournamentRoutes(app: FastifyInstance) {
         },
       }, async (request: FastifyRequest, reply: FastifyReply) => {
         try {
-            const { id } = request.params as any;
+            const { id } = request.params as VerifyParams;
+            const tournamentId = Number(id);
+
+            if (!Number.isInteger(tournamentId) || tournamentId <= 0) {
+              return reply.code(400).send({ error: 'Invalid tournament id' });
+            }
+      
+            const dbMatches = await app.em.find(MatchHistory, { tournamentId });
             
-            if (!blockchainService) {
-                return reply.code(503).send({ 
-                    error: 'Blockchain service not available',
-                    details: 'Service is not properly configured'
+            if (dbMatches.length === 0) {
+                return reply.code(404).send({ 
+                    verified: false,
+                    message: 'Tournament not found locally',
+                    blockchain: null,
+                    database: {
+                        matchCount: 0,
+                        tournamentId
+                    }
                 });
+            }
+
+            if (!blockchainService) {
+              return reply.code(503).send({
+                error: 'Blockchain service not available',
+                details: 'Service is not properly configured',
+              });
             }
             
             // Check blockchain verification
-            const isVerified = await blockchainService.verifyTournament(parseInt(id));
+            const isVerified = await blockchainService.verifyTournament(tournamentId);
             
             if (!isVerified) {
-                return reply.send({
+                return reply.code(404).send({
                     verified: false,
-                    message: 'Tournament not found on blockchain'
+                    message: 'Tournament not found on blockchain',
+                    blockchain: null,
+                    database: {
+                        matchCount: dbMatches.length,
+                        tournamentId
+                    }
                 });
             }
             
             // Get tournament details from blockchain
-            const blockchainData = await blockchainService.getTournament(parseInt(id));
-            
-            // Get database data for comparison
-            const dbMatches = await app.em.find(MatchHistory, {
-                tournamentId: parseInt(id)
-            });
-            
+            const blockchainData = await blockchainService.getTournament(tournamentId);
+
             return reply.send({
-                verified: true,
-                blockchain: blockchainData,
-                database: {
-                    matchCount: dbMatches.length,
-                    tournamentId: parseInt(id)
-                },
-                message: 'Tournament verified on blockchain'
-            });
-            
+              verified: true,
+              blockchain: blockchainData,
+              database: {
+                  matchCount: dbMatches.length,
+                  tournamentId,
+              },
+              message: 'Tournament verified on blockchain',
+          });
         } catch (error) {
             app.log.error('Error verifying tournament: ' + String(error));
             return reply.code(500).send({ error: 'Internal server error' });
