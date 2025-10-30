@@ -2,6 +2,7 @@ import fastify from 'fastify'
 import { GameMatchmaker} from "./routes/GameMatchmaker"
 import { GameServiceManager } from './routes/GameServiceManager'
 import { JoinGameRequest } from './types/interfaces'
+import { get } from 'http'
 
 const server = fastify({ logger: true })
 const PORT = 5000
@@ -17,22 +18,42 @@ server.register(require('@fastify/cors'), {
 })
 
 server.post("/join-classic", async (req, reply) => {
+	// authentication place holder
+	if (0){
+		let errorMsg = "something" //will be work on
+		return reply.status(401).send(errorMsg)
+	}
 	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
-	return result
+	return reply.status(201).send(result)
 })
 
 server.post("/join-tournament", async (req, reply) => {
+	// authentication place holder
+	if (0){
+		let errorMsg = "something" //will be work on
+		return reply.status(401).send(errorMsg)
+	}
 	const result = await gameMatchmaker.joinTournament(req.body as JoinGameRequest)
-	return result
+	return reply.status(201).send(result)
 })
 
 server.post("/bot-classic", async(req, reply) => {
+	// authentication place holder
+	if (0){
+		let errorMsg = "something" //will be work on
+		return reply.status(401).send(errorMsg)
+	}
+	//check status of ai service
+	else if (!((await fetch("http://ai-service:5100/api/v1/aibot/test/status")).ok)){
+		let errorMsg = "something" //will be work on
+		return reply.status(503).send(errorMsg)
+	}
 	const result = await gameMatchmaker.joinBotClassic(req.body as JoinGameRequest)
-	return result
+	return reply.status(201).send(result)
 })
 
 server.get("/test/status", async (req, reply) => {
-	return {status: 'OK'}
+	return reply.status(200).send({status: 'OK'})
 })
 
 server.get("/test/checkNumberBotInstance", async (req, reply) => {

@@ -5,7 +5,6 @@ import { Game, Player, Tournament  } from "../types/interfaces";
 import { GameModeEngineProvider } from "../engine/GameEngineProvider";
 import { GameMatchmaker } from "./GameMatchmaker";
 import { TournamentPong } from "../engine/TournamentPong";
-import { ClassicPong } from "../engine/ClassicPong";
 
 export class GameService{
 	private gameEngine: GameEngine
@@ -28,6 +27,7 @@ export class GameService{
 		}
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnounce(game, playerId)
+			//place holder for sending match result to user management
 			if (this.gameMode === 'tournament'){
 				this.tournamentHandling(game, playerId)
 			}
