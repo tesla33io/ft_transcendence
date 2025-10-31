@@ -26,9 +26,9 @@ services:
       - game-service
     networks:
       - pong-network
-    # volumes: #REMOVE FOR production
-    #   - ./services/gateway-service:/gateway-service
-    #   - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
+    volumes: #REMOVE FOR production
+      - ./services/gateway-service:/gateway-service
+      - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
 
   game-service:
     build:
@@ -48,9 +48,9 @@ services:
       timeout: 30s
       retries: 5
       start_period: 10s
-    # volumes: #REMOVE FOR production
-    #   - ./services/game-service:/game-service
-    #   - /app/node_modules
+    volumes: #REMOVE FOR production
+      - ./services/game-service:/game-service
+      - /app/node_modules
 
   user-service:
     build:

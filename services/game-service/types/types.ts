@@ -77,6 +77,13 @@ export const generateBot = async (nameSuffix: string, gameId: string, difficulty
 	return botId
 }
 
+export const validateUserData = async(): Promise<boolean> => {
+
+
+	return true
+}
+
+
 export type WaitingResponse = {
 	status: 'waiting';
 	playerId: string;
