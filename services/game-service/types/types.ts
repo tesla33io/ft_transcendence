@@ -77,7 +77,7 @@ export const generateBot = async (nameSuffix: string, gameId: string, difficulty
 	return botId
 }
 
-export const valiadteSessionId = async (cookie: string, playerId: string): Promise<boolean> => {
+export const validateSessionId = async (cookie: string, playerId: string): Promise<boolean> => {
 
 	const response = await fetch ('http://user-service:8000/users/me',{
 		method: 'GET',
