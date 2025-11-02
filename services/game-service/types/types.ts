@@ -77,12 +77,28 @@ export const generateBot = async (nameSuffix: string, gameId: string, difficulty
 	return botId
 }
 
-export const validateUserData = async(): Promise<boolean> => {
+export const valiadteSessionId = async (cookie: string, playerId: string): Promise<boolean> => {
 
+	const response = await fetch ('http://user-service:8000/users/me',{
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			'Cookie': `${cookie}`
+		},
+	})
 
-	return true
+	console.log("status: ", response.ok)
+
+	if (response.ok){
+		const data = await response.json()
+		console.log(data)
+		return data.id == Number(playerId)
+	}
+	else {
+		console.log(`Request failed with status ${response.status}: ${response.statusText}`)
+		return false
+	}
 }
-
 
 export type WaitingResponse = {
 	status: 'waiting';
