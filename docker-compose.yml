@@ -26,6 +26,12 @@ services:
       - game-service
     networks:
       - pong-network
+    healthcheck:
+      test: ["CMD", "curl", "-f","http://localhost:3000/test/status"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
     volumes: #REMOVE FOR production
       - ./services/gateway-service:/gateway-service
       - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
@@ -94,6 +100,12 @@ services:
       - "5100"
     networks:
       - pong-network
+    healthcheck:
+      test: ["CMD", "curl", "-f","http://localhost:5100/api/v1/aibot/test/status"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
 
 networks:
   pong-network:
