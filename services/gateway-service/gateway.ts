@@ -32,6 +32,14 @@ server.register(require('@fastify/http-proxy'), {
 	http2: false
 })
 
+//added for frontend to usermanagment comunication
+server.register(require('@fastify/http-proxy'), {
+    upstream: 'http://user-service:8000',
+    prefix: '/users',
+	rewritePrefix: '/users',
+    http2: false
+})
+
 const start = async() =>{
 	try{
 		await server.listen({port:PORT, host:'0.0.0.0'})

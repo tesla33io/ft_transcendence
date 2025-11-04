@@ -93,16 +93,16 @@ export class UserService {
     // ===== AUTHENTICATION (SENDERS) ====
     // Send login request
     static async login(credentials: LoginRequest): Promise<AuthResponse> {
-        // TODO: Uncomment when backend is ready
-        // const authData = await ApiService.post<AuthResponse>('/auth/login', credentials);
-        
-        // Mock response for now
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
+        const response = await ApiService.post<{
+            id: number;
+            username: string;
+            message: string;
+        }>('/users/auth/login', credentials);
         
         const mockAuthData: AuthResponse = {
             user: {
-                id: 123,
-                username: credentials.username,
+                id: response.id,
+                username: response.username,
                 avatarUrl: '/images/default-avatar.png',
                 onlineStatus: OnlineStatus.ONLINE,
                 activityType: 'browsing',
@@ -122,16 +122,22 @@ export class UserService {
 
     // Send registration request
     static async register(userData: RegisterRequest): Promise<AuthResponse> {
-        // TODO: Uncomment when backend is ready
-        // return await ApiService.post<AuthResponse>('/auth/register', userData);
-        
+         const response = await ApiService.post<{
+            id: number;
+            username: string;
+            message: string;
+        }>('/users/auth/register', {
+            username: userData.username,
+            password: userData.password
+        });
+		console.log("Response for register:", response);
         // Mock response for now
         await new Promise(resolve => setTimeout(resolve, 700));
         
         const mockAuthData: AuthResponse = {
             user: {
-                id: Math.floor(Math.random() * 1000),
-                username: userData.username,
+                id: response.id,
+                username: response.username,
                 avatarUrl: userData.avatarUrl || '/images/default-avatar.png',
                 onlineStatus: OnlineStatus.ONLINE,
                 role: UserRole.USER,

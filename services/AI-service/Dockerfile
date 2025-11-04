@@ -14,7 +14,7 @@ RUN mvn clean package
 
 
 
-FROM openjdk:26-jdk-bookworm
+FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 
