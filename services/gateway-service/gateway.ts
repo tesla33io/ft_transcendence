@@ -18,15 +18,69 @@ server.register(require('@fastify/cors'),{
 // Initialize JWT Helper
 let jwtHelper: JWTHelper;
 
+//counter for guest ID (starts -1 decrements ) -> we see if id is -1 its guest 
+let guestIdCounter = -1;
+
 // ===== WAIT FOR PLUGINS TO LOAD =====
 server.after(async () => {
     jwtHelper = new JWTHelper(server)
-    console.log('✅ jwt helper init')
+    console.log('jwt helper init')
 })
 
 server.get("/test/status", async (req, reply) => {
     return reply.status(200).send({test: 'OK\n'})
 })
+
+//guest login 
+// ===== GUEST JWT ENDPOINT =====
+server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
+    try {
+        console.log('[GATEWAY] Guest login request');
+
+        // Generate unique guest ID (negative integer)
+        const guestId = guestIdCounter;
+        guestIdCounter--; // Decrement for next guest
+        
+        const guestUsername = 'guest';
+
+        // Create JWT tokens for guest
+        const { accessToken, refreshToken } = jwtHelper.createTokens(
+            guestId,    // id: "-1", "-2", etc.
+            guestUsername,         // username: "guest"
+            'guest'                // role: "guest"
+        );
+
+        console.log(`[GATEWAY] Guest tokens created: ID=${guestId}, Username=${guestUsername}`);
+
+        // Set refresh token in httpOnly cookie
+        reply.setCookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60,  // 24 hours
+            path: '/'
+        });
+
+        console.log('[GATEWAY] Guest refresh token set in httpOnly cookie');
+
+        // Return tokens to frontend
+        return reply.status(200).send({
+            id: guestId,
+            username: guestUsername,
+            role: 'guest',
+            message: 'Guest session created',
+            accessToken: accessToken,
+            refreshToken: refreshToken
+        });
+
+    } catch (error) {
+        console.error('[GATEWAY] Error creating guest session:', error);
+        return reply.status(500).send({
+            error: 'Failed to create guest session',
+            code: 'GUEST_SESSION_FAILED'
+        });
+    }
+});
 
 // ===== GLOBAL HOOK: PROTECT ALL GAME ROUTES =====
 server.addHook('onRequest', async (request: AuthRequest, reply) => {
@@ -35,25 +89,48 @@ server.addHook('onRequest', async (request: AuthRequest, reply) => {
         return; // Skip - not a game route
     }
 
-    console.log(`🔐 [GATEWAY] Game route request: ${request.method} ${request.url}`);
+    console.log(`[GATEWAY] Game route request: ${request.method} ${request.url}`);
 
     // Determine which middleware to apply based on endpoint
     if (request.url.includes('/bot-classic') || 
         request.url.includes('/join-classic')) {
         // Bot and Classic require 'user' role (not guest)
-        console.log(`🔐 [GATEWAY] Enforcing ROLE check for: ${request.url}`);
+        console.log(`[GATEWAY] Enforcing ROLE check for: ${request.url}`);
         await jwtHelper.requireRole(['user'])(request, reply);
         
     } else if (request.url.includes('/join-tournament')) {
         // Tournament just needs valid JWT (any role: user or guest)
-        console.log(`🔐 [GATEWAY] Enforcing JWT check for tournament: ${request.url}`);
+        console.log(`[GATEWAY] Enforcing JWT check for tournament: ${request.url}`);
         await jwtHelper.requireJWT()(request, reply);
         
     } else {
         // All other /api/v1/game/* routes need JWT
-        console.log(`🔐 [GATEWAY] Enforcing JWT check for: ${request.url}`);
+        console.log(`[GATEWAY] Enforcing JWT check for: ${request.url}`);
         await jwtHelper.requireJWT()(request, reply);
     }
+});
+
+// for user routes 
+server.addHook('onRequest', async (request: AuthRequest, reply) => {
+    if (!request.url.startsWith('/users')) {
+        return; // Skip non-user routes
+    }
+
+    // Allow public auth endpoints
+    const publicAuthRoutes = [
+        '/users/auth/login',
+        '/users/auth/register',
+        '/users/auth/refresh'
+    ];
+
+    if (publicAuthRoutes.some(route => request.url.includes(route))) {
+        return; // No JWT needed for these
+    }
+
+    // All other /users/* routes require JWT
+    await jwtHelper.requireJWT()(request, reply);
+
+	//add here later for the post jwt with id check for uploading new avater name etc.
 });
 
 // ===== GAME SERVICE PROXY =====
@@ -94,7 +171,7 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
             (request.url.includes('/users/auth/register') || 
              request.url.includes('/users/auth/login'))) {
             
-            console.log('🔐 [GATEWAY] Intercepting auth response with onSend hook');
+            console.log('[GATEWAY] Intercepting auth response with onSend hook');
             
             let bodyString = payload;
             
@@ -118,14 +195,14 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
                 body = JSON.parse(bodyString);
             }
 
-            console.log('📦 [GATEWAY] Response from user-service:', body);
+            console.log('[GATEWAY] Response from user-service:', body);
 
             const userId = body.id;
             const username = body.username;
             const role = body.role || 'user';
 
             if (!userId || !username) {
-                console.warn('⚠️ [GATEWAY] Missing user info in response:', body);
+                console.warn('[GATEWAY] Missing user info in response:', body);
                 return JSON.stringify(body);
             }
 
@@ -136,7 +213,7 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
                 role
             );
 
-            console.log(`✅ [GATEWAY] JWT tokens created for user: ${username}`);
+            console.log(`[GATEWAY] JWT tokens created for user: ${username}`);
 
             // Set refresh token in httpOnly cookie
             reply.setCookie('refreshToken', refreshToken, {
@@ -147,18 +224,18 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
                 path: '/'
             });
 
-            console.log('🍪 [GATEWAY] Refresh token set in httpOnly cookie');
+            console.log('[GATEWAY] Refresh token set in httpOnly cookie');
 
             // Add tokens to response
             body.accessToken = accessToken;
             body.refreshToken = refreshToken;
 
-            console.log('📨 [GATEWAY] Sending response with JWT tokens to frontend');
+            console.log('[GATEWAY] Sending response with JWT tokens to frontend');
 
             return JSON.stringify(body);
         }
     } catch (error) {
-        console.error('❌ [GATEWAY] Error in onSend hook:', error);
+        console.error('[GATEWAY] Error in onSend hook:', error);
     }
 
     return payload;

@@ -93,39 +93,41 @@ export class UserService {
     // ===== AUTHENTICATION (SENDERS) ====
     // Send login request
     static async login(credentials: LoginRequest): Promise<AuthResponse> {
-        const response = await ApiService.post<{
-            id: number;
-            username: string;
-            role: string;
-            message: string;
-            accessToken: string;
-            refreshToken: string;
-        }>('/users/auth/login', credentials);
-        
-        console.log('Login successful!');
-        console.log('User ID:', response.id);
-        console.log('Username:', response.username);
-        console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
-        
-        const mockAuthData: AuthResponse = {
-            user: {
-                id: response.id,
-                username: response.username,
-                avatarUrl: '/images/default-avatar.png',
-                onlineStatus: OnlineStatus.ONLINE,
-                activityType: 'browsing',
-                role: response.role || UserRole.USER,
-                lastLogin: new Date().toISOString()
-            },
-            token: response.accessToken, // ← Use real accessToken from gateway
-        };
-        
-        // Save token and user info after successful login
-        localStorage.setItem('authToken', response.accessToken); // ← Store accessToken
-        localStorage.setItem('user', JSON.stringify(mockAuthData.user));
-        
-        return mockAuthData;
-    }
+    const response = await ApiService.post<{
+        id: number;
+        username: string;
+        role: string;
+        message: string;
+        accessToken: string;
+        refreshToken: string;
+    }>('/users/auth/login', credentials);
+    
+    console.log('Login successful!');
+    console.log('User ID:', response.id);
+    console.log('Username:', response.username);
+    console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
+    
+    // Store tokens and user data
+    localStorage.setItem('authToken', response.accessToken);
+    localStorage.setItem('userId', response.id.toString());
+    localStorage.setItem('username', response.username);
+    
+    // Create AuthResponse with real data from gateway
+    const authData: AuthResponse = {
+        user: {
+            id: response.id,
+            username: response.username,
+            avatarUrl: '/images/default-avatar.png',
+            onlineStatus: OnlineStatus.ONLINE,
+            activityType: 'browsing',
+            role: response.role || UserRole.USER,
+            lastLogin: new Date().toISOString()
+        },
+        token: response.accessToken,
+    };
+    
+    return authData;
+}
 
     // Send registration request
     static async register(userData: RegisterRequest): Promise<AuthResponse> {
@@ -233,7 +235,7 @@ export class UserService {
 	// Get current user's friends list
 	static async getFriends(): Promise<Friend[]> {
 		// TODO: Uncomment when backend is ready
-		// return await ApiService.get<Friend[]>('/users/me/friends');
+		// return await ??????
 		
 		// Mock response
 		await new Promise(resolve => setTimeout(resolve, 300));
