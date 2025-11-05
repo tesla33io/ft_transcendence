@@ -72,6 +72,7 @@ export class JWTHelper {
             try {
                 const token = this.extractToken(request.headers.authorization);
                 if (!token) {
+				console.log('NO TOKEN\n')
                     return reply.status(401).send({ 
                         error: 'Missing authorization token',
                         code: 'NO_TOKEN'

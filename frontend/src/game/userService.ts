@@ -96,8 +96,16 @@ export class UserService {
         const response = await ApiService.post<{
             id: number;
             username: string;
+            role: string;
             message: string;
+            accessToken: string;
+            refreshToken: string;
         }>('/users/auth/login', credentials);
+        
+        console.log('Login successful!');
+        console.log('User ID:', response.id);
+        console.log('Username:', response.username);
+        console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
         
         const mockAuthData: AuthResponse = {
             user: {
@@ -106,15 +114,14 @@ export class UserService {
                 avatarUrl: '/images/default-avatar.png',
                 onlineStatus: OnlineStatus.ONLINE,
                 activityType: 'browsing',
-                role: UserRole.USER,
+                role: response.role || UserRole.USER,
                 lastLogin: new Date().toISOString()
             },
-            token: 'mock_jwt_token_' + Math.random().toString(36).substr(2, 9),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24h from now
+            token: response.accessToken, // ← Use real accessToken from gateway
         };
         
         // Save token and user info after successful login
-        localStorage.setItem('authToken', mockAuthData.token);
+        localStorage.setItem('authToken', response.accessToken); // ← Store accessToken
         localStorage.setItem('user', JSON.stringify(mockAuthData.user));
         
         return mockAuthData;
@@ -125,14 +132,17 @@ export class UserService {
          const response = await ApiService.post<{
             id: number;
             username: string;
+            role: string;
             message: string;
+            accessToken: string;
+            refreshToken: string;
         }>('/users/auth/register', {
             username: userData.username,
             password: userData.password
         });
-		console.log("Response for register:", response);
-        // Mock response for now
-        await new Promise(resolve => setTimeout(resolve, 700));
+        
+        console.log('Registration successful!');
+        console.log('Response:', response);
         
         const mockAuthData: AuthResponse = {
             user: {
@@ -140,31 +150,32 @@ export class UserService {
                 username: response.username,
                 avatarUrl: userData.avatarUrl || '/images/default-avatar.png',
                 onlineStatus: OnlineStatus.ONLINE,
-                role: UserRole.USER,
+                role: response.role || UserRole.USER,
                 lastLogin: new Date().toISOString()
             },
-            token: 'mock_jwt_token_' + Math.random().toString(36).substr(2, 9),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+            token: response.accessToken, //JWT acces tokenb
+            expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString() // 15 minutes
         };
         
-        localStorage.setItem('authToken', mockAuthData.token);
+        localStorage.setItem('authToken', response.accessToken); // Store accessToken
         localStorage.setItem('user', JSON.stringify(mockAuthData.user));
-        
+       
         return mockAuthData;
     }
 
     // Send logout request & clear local data
     static async logout(): Promise<void> {
         try {
-            // TODO: Uncomment when backend is ready
-            // await ApiService.post<void>('/auth/logout', {});
-            
-            // Mock delay
-            await new Promise(resolve => setTimeout(resolve, 200));
-            
+            // Call logout endpoint to invalidate tokens
+            await ApiService.post<void>('/users/auth/logout', {});
+            console.log('✅ Logged out successfully');
+        } catch (error) {
+            console.error('⚠️ Logout error (clearing local data anyway):', error);
         } finally {
+            // Clear local storage
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');
+            // refreshToken cookie is cleared by server
         }
     }
 
@@ -425,7 +436,7 @@ export class UserService {
         return userData ? JSON.parse(userData) : null;
     }
 
-    // Get auth token
+    // Get auth token (accessToken)
     static getAuthToken(): string | null {
         return localStorage.getItem('authToken');
     }
@@ -434,6 +445,7 @@ export class UserService {
     static clearUserData(): void {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
+        // refreshToken cookie is cleared by server
     }
 
     // ===== PROFILE & STATISTICS API METHODS =====

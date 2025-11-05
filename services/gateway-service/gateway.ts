@@ -1,6 +1,5 @@
 import fastify from 'fastify'
 import { AuthRequest, JWTHelper } from './JWT_helper'
-import { request } from 'http'
 
 const server = fastify({logger: true})
 const PORT = 3000
@@ -19,32 +18,52 @@ server.register(require('@fastify/cors'),{
 // Initialize JWT Helper
 let jwtHelper: JWTHelper;
 
-server.ready(() => {
+// ===== WAIT FOR PLUGINS TO LOAD =====
+server.after(async () => {
     jwtHelper = new JWTHelper(server)
-    console.log('jwt helper init')
+    console.log('✅ jwt helper init')
 })
 
 server.get("/test/status", async (req, reply) => {
     return reply.status(200).send({test: 'OK\n'})
 })
 
-//set Bot only accesible for logged in users with Role user
-server.post('/api/v1/game/bot-classic',
-	{onRequest: [jwtHelper.requireRole(['user'])] },
-	async (request: AuthRequest,reply) =>{
-	console.log('[gateway] User $(request.user?.username} play against bot');
-	return reply.proxy('http://game-service:5000');
-}
-);
+// ===== GLOBAL HOOK: PROTECT ALL GAME ROUTES =====
+server.addHook('onRequest', async (request: AuthRequest, reply) => {
+    // Only protect /api/v1/game/* routes
+    if (!request.url.startsWith('/api/v1/game/')) {
+        return; // Skip - not a game route
+    }
 
+    console.log(`🔐 [GATEWAY] Game route request: ${request.method} ${request.url}`);
 
-// ===== GAME SERVICE PROXIES =====
+    // Determine which middleware to apply based on endpoint
+    if (request.url.includes('/bot-classic') || 
+        request.url.includes('/join-classic')) {
+        // Bot and Classic require 'user' role (not guest)
+        console.log(`🔐 [GATEWAY] Enforcing ROLE check for: ${request.url}`);
+        await jwtHelper.requireRole(['user'])(request, reply);
+        
+    } else if (request.url.includes('/join-tournament')) {
+        // Tournament just needs valid JWT (any role: user or guest)
+        console.log(`🔐 [GATEWAY] Enforcing JWT check for tournament: ${request.url}`);
+        await jwtHelper.requireJWT()(request, reply);
+        
+    } else {
+        // All other /api/v1/game/* routes need JWT
+        console.log(`🔐 [GATEWAY] Enforcing JWT check for: ${request.url}`);
+        await jwtHelper.requireJWT()(request, reply);
+    }
+});
+
+// ===== GAME SERVICE PROXY =====
 server.register(require('@fastify/http-proxy'), {
     upstream: 'http://game-service:5000',
     prefix: '/api/v1/game',
     http2: false
 })
 
+// ===== WEBSOCKET PROXIES =====
 server.register(require('@fastify/http-proxy'), {
     upstream: 'http://game-service:5005',
     prefix: '/ws/classic',
@@ -77,12 +96,10 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
             
             console.log('🔐 [GATEWAY] Intercepting auth response with onSend hook');
             
-            // Handle both string and stream payloads
             let bodyString = payload;
             
             // If payload is a stream (BodyReadable), convert to string
             if (payload && typeof payload === 'object' && !Buffer.isBuffer(payload)) {
-                // It's a stream - need to read it
                 bodyString = await new Promise((resolve, reject) => {
                     let data = '';
                     payload.on('data', (chunk: any) => {
@@ -103,7 +120,6 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
 
             console.log('📦 [GATEWAY] Response from user-service:', body);
 
-            // Extract user info
             const userId = body.id;
             const username = body.username;
             const role = body.role || 'user';
@@ -139,7 +155,6 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
 
             console.log('📨 [GATEWAY] Sending response with JWT tokens to frontend');
 
-            // Return modified payload as string
             return JSON.stringify(body);
         }
     } catch (error) {
