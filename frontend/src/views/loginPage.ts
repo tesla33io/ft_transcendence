@@ -169,6 +169,19 @@ export function loginView(router: Router) {
                 expiresAt: authResponse.expiresAt
             });
 
+			//test me endpoint
+			try {
+                console.log('📍 Calling /me endpoint to verify user...');
+                const meData = await UserService.getMe();
+                console.log('✅ /me endpoint verified:', {
+                    id: meData.id,
+                    username: meData.username,
+                    role: meData.role
+                });
+            } catch (meError) {
+                console.error('⚠️ /me endpoint failed:', meError);
+            }
+
             router.navigate("/desktop");
 
         } catch (error) {

@@ -31,6 +31,8 @@ server.get("/test/status", async (req, reply) => {
     return reply.status(200).send({test: 'OK\n'})
 })
 
+
+
 //guest login 
 // ===== GUEST JWT ENDPOINT =====
 server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
@@ -81,6 +83,40 @@ server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
         });
     }
 });
+
+//me end point 
+server.get('/api/v1/auth/me', async (request: AuthRequest, reply: any) => {
+    try {
+        console.log('[GATEWAY] /me endpoint called');
+
+        // Verify JWT
+        await jwtHelper.requireJWT()(request, reply);
+
+        if (!request.user) {
+            return reply.status(401).send({
+                error: 'Unauthorized',
+                code: 'NO_USER'
+            });
+        }
+
+        console.log(`[GATEWAY] /me: Returning user info for ${request.user.username}`);
+
+        return reply.status(200).send({
+            id: request.user.id,
+            username: request.user.username,
+            role: request.user.role
+        });
+
+    } catch (error) {
+        console.error('[GATEWAY] Error in /me endpoint:', error);
+        return reply.status(401).send({
+            error: 'Unauthorized',
+            code: 'AUTH_FAILED'
+        });
+    }
+});
+
+
 
 // ===== GLOBAL HOOK: PROTECT ALL GAME ROUTES =====
 server.addHook('onRequest', async (request: AuthRequest, reply) => {
