@@ -587,7 +587,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 return reply.send({ message: 'Profile updated successfully', user: { id: user.id, username: user.username } });
             });
 
-            //PATCH /users/me/password - Update user password
+            // PATCH /users/me/password - Update user password
             app.patch('/me/password', {
                 schema: {
                   tags: ['profile'],
