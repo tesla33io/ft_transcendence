@@ -6,7 +6,7 @@ export default defineConfig({
     entitiesTs: ['./src/entities/**/*.ts'],
     debug: process.env.NODE_ENV !== 'production',
     logger: (message) => console.log(message),
-    migrations: {
+	migrations: {
         path: './src/migrations',
         pathTs: './src/migrations',
     },

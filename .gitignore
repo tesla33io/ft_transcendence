@@ -1,4 +1,4 @@
-**/**/migrations/*
+**/**/migrations/*.js
 *.db
 services/user-service/public/*
 

@@ -105,7 +105,7 @@ export async function setupSessionMiddleware(app: any, sessionManager: SessionMa
         } else if (req.sessionId && Object.keys(req.session).length === 0) {
             // Destroy session if empty
             await sessionManager.destroy(req.sessionId);
-        reply.clearCookie('sessionId');
+        	reply.clearCookie('sessionId');
         }
     });
 }

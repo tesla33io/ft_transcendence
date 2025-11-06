@@ -14,27 +14,31 @@ import matchHistoryRoutes from './routes/matchHistory';
 import { SessionManager, setupSessionMiddleware } from './utils/SessionManager';
 import { setupGlobalErrorHandling } from './utils/ErrorHandling';
 
+import cors from '@fastify/cors';
+
 async function buildServer() {
     const app = Fastify({ logger: true });
 
+	//only for dev 
+	await app.register(cors,{
+		origin: true,
+		credentials: true
+	})
+
+
     /////////// DEBUG ////////
     if (process.env.NODE_ENV !== 'production') {
-
-        import('@fastify/swagger').then((swagger) => {app.register(swagger, {
-            openapi: {
-                info: {
-                    title: 'ft_transcendence',
-                    description: 'Fastify API docs',
-                    version: '1.0.0'
-                }
-            }
-        })});
-
-        import('@fastify/swagger-ui').then((swaggerUI) => {
-            app.register(swaggerUI, {
-                routePrefix: '/docs'
-            })});
-    }
+        const swagger = await import('@fastify/swagger');
+        const swaggerUi = await import('@fastify/swagger-ui');
+      
+        await app.register(swagger.default, {
+          openapi: {
+            info: { title: 'ft_transcendence', description: 'Fastify API docs', version: '1.0.0' }
+          }
+        });
+      
+        await app.register(swaggerUi.default, { routePrefix: '/docs' });
+      }
 
     const orm = await MikroORM.init(mikroConfig as any);
     const em = orm.em.fork();
