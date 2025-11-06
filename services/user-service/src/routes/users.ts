@@ -443,7 +443,7 @@ export default async function userRoutes(app: FastifyInstance) {
                     const user = await app.em.findOne(User, { id: userId });
                     if (!user) {
                         return reply.code(401).send({ 
-                            error: 'User not foundd',
+                            error: 'User not found',
                             message: 'User not found',
                             uri: ''
                         });
