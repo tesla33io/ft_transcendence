@@ -3,7 +3,8 @@ import { FastifyInstance } from 'fastify';
 import argon2 from 'argon2';
 import { User } from '../entities/User';
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { mkdir } from 'fs/promises';
+import { mkdir, unlink } from 'fs/promises'; // adjust import line at top of users.ts
+
 import { join } from 'path';
 import { randomBytes } from 'crypto';
 import { createWriteStream } from 'fs';
@@ -331,7 +332,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
             });
 
-            // GET /api/v1/users/me
+            // GET users/me
             app.get<{Reply: UserResponse}>('/me', {
                 schema: {
                     response: {
@@ -347,7 +348,7 @@ export default async function userRoutes(app: FastifyInstance) {
                             required: ['error'],
                         },
                     },
-                    tags: ['user'],
+                    tags: ['profile'],
                     summary: 'Get current authenticated user info',
                     description: 'Returns the current user’s profile, stats, and settings.',
                 }
@@ -398,7 +399,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
             });
 
-            app.post<{Reply: UploadResponse}>('/profile/picture', {
+            app.post<{Reply: UploadResponse}>('/me/picture', {
                 schema: {
                     consumes: ['multipart/form-data'],
                     response: {
@@ -423,12 +424,13 @@ export default async function userRoutes(app: FastifyInstance) {
                         },
                     },
                     tags: ['profile'],
-                    summary: 'Upload a new profile picture',
+                    summary: 'Upload or replace profile picture',
                     description:
-                        'Uploads and saves a new profile picture for the authenticated user.',
+                        'Uploads and saves a new profile picture for the authenticated user. If an avatar already exists, it is deleted adn replaced with the new upload.',
                 }
             }, async (req: FastifyRequest, reply) => {
-                if (!req.cookies.sessionId || !req.session.userId) {
+                const userId = req.session?.userId;
+                if (!userId) {
                     return reply.status(401).send({
                         error: 'Not authenticated',
                         message: 'Not authenticated',
@@ -438,17 +440,25 @@ export default async function userRoutes(app: FastifyInstance) {
 
                 try {
                     // authentication
-                    const userId = 1;
-                    if (!userId) {
+                    const user = await app.em.findOne(User, { id: userId });
+                    if (!user) {
                         return reply.code(401).send({ 
-                            error: 'User ID required',
-                            uri: "",
-                            message: 'Please provide userId in request'
+                            error: 'User not foundd',
+                            message: 'User not found',
+                            uri: ''
                         });
                     }
 
-                    const data = await req.file();
+                    // const existingUser = await app.em.findOne(User, { id: userId });
+                    // if (!existingUser) {
+                    // return reply.code(404).send({
+                    //     error: 'User not found',
+                    //     message: 'User not found',
+                    //     uri: ''
+                    // });
+                    // }
 
+                    const data = await req.file();
                     if (!data) {
                         return reply.code(400).send({ 
                             error: 'No file provided',
@@ -492,28 +502,23 @@ export default async function userRoutes(app: FastifyInstance) {
                         createWriteStream(filepath)
                     );
 
-                    const uri = `/uploads/profiles/${filename}`;
-
-                    const user = await app.em.findOne(User, { id: userId });
-
-                    if (!user) {
-                        return reply.code(404).send({ 
-                            error: 'User not found',
-                            uri: "",
-                            message: 'User not found'
-                        });
+                     // remove old avatar if it existed
+                    if (user.avatarUrl) {
+                        const oldPath = join(process.cwd(), 'public', user.avatarUrl.replace(/^\//, ''));
+                        try {
+                        await unlink(oldPath);
+                        } catch (err: any) {
+                        if (err.code !== 'ENOENT') app.log.warn({ err }, 'Failed to remove old avatar');
+                        }
                     }
 
-                    // TODO: Delete old profile picture if exists
-
-                    user.avatarUrl = uri;
-                    await app.em.persistAndFlush(user);
+                    user.avatarUrl = `/uploads/profiles/${filename}`;
+                    await app.em.flush();
 
                     return { 
                         message: 'Profile picture uploaded successfully',
-                        uri: uri
+                        uri: user.avatarUrl
                     };
-
                 } catch (error) {
                     app.log.error('Profile picture upload error: ' + String(error));
                     return reply.code(500).send({ 
@@ -524,11 +529,120 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
             });
 
-            // GET /api/v1/users/friends - Get user's friends list
+            // PATCH users/me - Update user profile
+            app.patch('/me', {
+                schema: {
+                    tags: ['profile'],
+                    body: {
+                        type: 'object',
+                        properties: {
+                          username: { type: 'string', minLength: 3, maxLength: 32 },
+                        },
+                        additionalProperties: false,
+                      },
+                    response: {
+                        200: {
+                          type: 'object',
+                          properties: {
+                            message: { type: 'string' },
+                            user: {
+                              type: 'object',
+                              properties: {
+                                id: { type: 'number' },
+                                username: { type: 'string' },
+                              },
+                              required: ['id', 'username'],
+                            },
+                          },
+                          required: ['message', 'user'],
+                        },
+                        400: ErrorSchema,
+                        401: ErrorSchema,
+                        404: ErrorSchema,
+                        409: ErrorSchema,
+                      },
+                      summary: 'Update user profile',
+                      description: 'Updates the user\'s profile information.',
+                  },
+            }, async (req, reply) => {
+                const userId = req.session?.userId;
+                if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
+              
+                const user = await app.em.findOne(User, { id: userId });
+                if (!user) return reply.code(404).send({ error: 'User not found' });
+              
+                const { username, profile } = req.body as any;
+              
+                if (username && username !== user.username) {
+                  const validation = validateUsername(username);
+                  if (!validation.isValid) return reply.code(400).send({ error: 'Invalid username', details: validation.errors });
+              
+                  const existing = await app.em.findOne(User, { username });
+                  if (existing) return reply.code(409).send({ error: 'Username already exists' });
+              
+                  user.username = sanitizeInput(username);
+                }
+                
+                await app.em.flush();
+                return reply.send({ message: 'Profile updated successfully', user: { id: user.id, username: user.username } });
+            });
+
+            //PATCH /users/me/password - Update user password
+            app.patch('/me/password', {
+                schema: {
+                  tags: ['profile'],
+                  body: {
+                    type: 'object',
+                    required: ['currentPassword', 'newPassword'],
+                    properties: {
+                      currentPassword: { type: 'string', minLength: 8, maxLength: 128 },
+                      newPassword: { type: 'string', minLength: 8, maxLength: 128 },
+                    },
+                    additionalProperties: false,
+                  },
+                  response: {
+                    200: {
+                      type: 'object',
+                      properties: {
+                        message: { type: 'string' },
+                      },
+                      required: ['message'],
+                    },
+                    400: ErrorSchema,
+                    401: ErrorSchema,
+                    404: ErrorSchema,
+                  },
+                  summary: 'Update user password',
+                  description: 'Updates the user\'s password.',
+                },
+              }, async (req, reply) => {
+                const userId = req.session?.userId;
+                if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
+              
+                const { currentPassword, newPassword } = req.body as any;
+                if (!currentPassword || !newPassword) return reply.code(400).send({ error: 'Missing required fields' });
+              
+                const user = await app.em.findOne(User, { id: userId });
+                if (!user) return reply.code(404).send({ error: 'User not found' });
+              
+                const valid = await argon2.verify(user.passwordHash, currentPassword);
+                if (!valid) return reply.code(400).send({ error: 'Current password is incorrect' });
+              
+                const passwordValidation = validatePassword(newPassword);
+                if (!passwordValidation.isValid) return reply.code(400).send({ error: 'Invalid password', details: passwordValidation.errors });
+              
+                user.passwordHash = await argon2.hash(newPassword);
+                await app.em.flush();
+              
+                return reply.send({ message: 'Password updated successfully' });
+            });
+
+            // GET /users/friends - Get user's friends list
             app.get<{Reply: FriendResponse}>('/friends', {
                 schema: {
-                    tags: ['Friends'],
+                    tags: ['friends'],
                     summary: 'Get user friends list',
+                    description: 'Returns the current user’s friends, including status and last login.',
                     response: {
                         200: {
                             type: 'object',
@@ -578,8 +692,45 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
             });
 
-            // POST /api/v1/users/friends - Add a friend
-            app.post('/friends', async (req: FastifyRequest, reply: FastifyReply) => {
+            // POST users/friends - Add a friend
+            app.post('/friends', {
+                schema: {
+                  tags: ['friends'],
+                  summary: 'Add friend',
+                  description: 'Adds another user to the current user’s friends list.',
+                  body: {
+                    type: 'object',
+                    required: ['username'],
+                    properties: {
+                      username: { type: 'string' },
+                    },
+                    additionalProperties: false,
+                  },
+                  response: {
+                    200: {
+                      type: 'object',
+                      properties: {
+                        message: { type: 'string' },
+                        friend: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'number' },
+                            username: { type: 'string' },
+                            onlineStatus: { type: ['string', 'null'] },
+                          },
+                          required: ['id', 'username'],
+                        },
+                      },
+                      required: ['message', 'friend'],
+                    },
+                    400: ErrorSchema,
+                    401: ErrorSchema,
+                    404: ErrorSchema,
+                    409: ErrorSchema,
+                    500: ErrorSchema,
+                  },
+                },
+            }, async (req: FastifyRequest, reply: FastifyReply) => {
                 if (!req.cookies.sessionId || !req.session.userId) {
                     return reply.status(401).send({ error: 'Not authenticated' });
                 }
@@ -594,7 +745,7 @@ export default async function userRoutes(app: FastifyInstance) {
                         });
                     }
 
-                    const currentUser = await app.em.findOne(User, { id: req.user!.id }, {
+                    const currentUser = await app.em.findOne(User, { id: req.session.userId }, {
                         populate: ['friends']
                     });
 
@@ -639,8 +790,31 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
             });
 
-            // DELETE /api/v1/users/friends/:username - Remove a friend
-            app.delete('/friends/:username', async (req: FastifyRequest, reply: FastifyReply) => {
+            // DELETE /users/friends/:username - Remove a friend
+            app.delete('/friends/:username', {
+                schema: {
+                  tags: ['friends'],
+                  summary: 'Remove friend',
+                  description: 'Removes a user from the current user’s friends list.',
+                  params: {
+                    type: 'object',
+                    required: ['username'],
+                    properties: {
+                      username: { type: 'string' },
+                    },
+                  },
+                  response: {
+                    200: {
+                      type: 'object',
+                      properties: { message: { type: 'string' } },
+                      required: ['message'],
+                    },
+                    401: ErrorSchema,
+                    404: ErrorSchema,
+                    500: ErrorSchema,
+                  },
+                },
+              }, async (req: FastifyRequest, reply: FastifyReply) => {
                 if (!req.cookies.sessionId || !req.session.userId) {
                     return reply.status(401).send({ error: 'Not authenticated' });
                 }
@@ -648,7 +822,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 try {
                     const { username } = req.params as any;
 
-                    const currentUser = await app.em.findOne(User, { id: req.user!.id }, {
+                    const currentUser = await app.em.findOne(User, { id: req.session.userId }, {
                         populate: ['friends']
                     });
 
@@ -680,8 +854,44 @@ export default async function userRoutes(app: FastifyInstance) {
                 }
             });
 
-            // GET /api/v1/users/search/:username - Search for users by username
-            app.get('/search/:username', async (req: FastifyRequest, reply: FastifyReply) => {
+            // GET users/search/:username - Search for users by username
+            app.get('/search/:username', {
+                schema: {
+                  tags: ['friends'],
+                  summary: 'Search users by username',
+                  description: 'Find other users whose usernames match the query so they can be added as friends.',
+                  params: {
+                    type: 'object',
+                    required: ['username'],
+                    properties: {
+                      username: { type: 'string' },
+                    },
+                  },
+                  response: {
+                    200: {
+                      type: 'object',
+                      properties: {
+                        users: {
+                          type: 'array',
+                          items: {
+                            type: 'object',
+                            properties: {
+                              id: { type: 'number' },
+                              username: { type: 'string' },
+                              avatarUrl: { type: ['string', 'null'] },
+                              onlineStatus: { type: ['string', 'null'] },
+                              activityType: { type: ['string', 'null'] },
+                            },
+                            required: ['id', 'username'],
+                          },
+                        },
+                      },
+                      required: ['users'],
+                    },
+                    401: ErrorSchema,
+                  },
+                },
+              }, async (req: FastifyRequest, reply: FastifyReply) => {
                 if (!req.cookies.sessionId || !req.session.userId) {
                     return reply.status(401).send({ error: 'Not authenticated' });
                 }
@@ -691,7 +901,7 @@ export default async function userRoutes(app: FastifyInstance) {
 
                 const users: User[] = await app.em.find(
                     User,
-                    { username: { $like: `%${username}%` }, id: { $ne: req.user!.id } },
+                    { username: { $like: `%${username}%` }, id: { $ne: req.session.userId  } },
                     { limit: Number(limit), offset: Number(offset) }
                 );
 
