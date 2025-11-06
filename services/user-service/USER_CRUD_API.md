@@ -1,411 +1,368 @@
-# User CRUD API Documentation
+# User Service API Guide
 
-## Overview
-This API provides comprehensive user management functionality with authentication, profile management, password changes, 2FA support, and account deletion.
+Comprehensive reference for exercising the current `user-service` endpoints with Postman or cURL. This version reflects the TypeScript code in `src/routes/users.ts` as of the latest update and removes all legacy JWT / 2FA content.
 
-## Base URL
-```
-http://localhost:3000/api/v1
-```
+---
 
-## Authentication
-All protected endpoints require a JWT token in the Authorization header:
-```
-Authorization: Bearer <your-jwt-token>
-```
+## Base URL & Authentication
 
-## Endpoints
+- **Base URL** (Docker default): `http://localhost:8000/users`
+- Authentication uses an `httpOnly` session cookie named `sessionId`.
+  - `POST /auth/register` and `POST /auth/login` both set it.
+  - Include the cookie on every subsequent request (Postman: Enable “Automatically follow redirects” and “Retain cookies”).
+  - No `Authorization` header is required after login.
 
-### 1. Authentication Endpoints
+### Quick Postman Setup
+1. Create a collection and add the base URL as a collection variable, e.g. `{{user_base_url}} = http://localhost:8000/users`.
+2. Use the “Cookies” tab to confirm the `sessionId` cookie is stored after calling login/register.
+3. For multipart upload (`POST /me/picture`), switch the request body to `form-data` and add a single file field named `file`.
 
-#### POST /auth/register
-Register a new user account.
+---
 
-**Request Body:**
-```json
-{
-  "username": "string (required)",
-  "password": "string (required)",
-  "displayName": "string (optional)"
-}
-```
+## Endpoint Index
 
-**Response:**
-```json
-{
-  "message": "User created successfully",
-  "token": "jwt-token",
-  "user": {
+| Category  | Method & Path                       | Purpose                                   |
+|-----------|-------------------------------------|--------------------------------------------|
+| Auth      | `POST /auth/register`               | Create a user and start a session          |
+| Auth      | `POST /auth/login`                  | Authenticate existing user                 |
+| Profile   | `GET /me`                           | Fetch current user profile & stats         |
+| Profile   | `POST /me/picture`                  | Upload or replace the user avatar          |
+| Profile   | `PATCH /me`                         | Change username                            |
+| Profile   | `PATCH /me/password`                | Change password                            |
+| Friends   | `GET /friends`                      | List friends                               |
+| Friends   | `POST /friends`                     | Add a friend                               |
+| Friends   | `DELETE /friends/:username`         | Remove a friend                            |
+| Friends   | `GET /search/:username`             | Search for users to add as friends         |
+
+---
+
+## 1. Authentication
+
+### `POST /auth/register`
+Registers a new account and responds with the created user info and session cookie.
+
+- **Body (JSON)**
+  ```json
+  {
+    "username": "string (3-32 chars, letters/digits/_-)",
+    "password": "string (8-128 chars, must include upper, lower, digit, special)"
+  }
+  ```
+
+- **Success (200)**
+  ```json
+  {
     "id": 1,
     "username": "newuser",
-    "role": "user"
+    "message": "User registered successfully"
   }
-}
-```
+  ```
 
-#### POST /auth/login
-Login with username and password.
+- **Errors**
+  - `400` Invalid username/password schema
+  - `409` Username already exists
+  - `500` Server error
 
-**Request Body:**
-```json
-{
-  "username": "string (required)",
-  "password": "string (required)"
-}
-```
+### `POST /auth/login`
+Authenticates an existing account. Returns the same payload structure and sets/refreshes `sessionId`.
 
-**Response:**
-```json
-{
-  "message": "Login successful",
-  "token": "jwt-token",
-  "user": {
+- **Body (JSON)**
+  ```json
+  {
+    "username": "existinguser",
+    "password": "SecretPassw0rd!"
+  }
+  ```
+
+- **Success (200)**
+  ```json
+  {
     "id": 1,
-    "username": "newuser",
-    "role": "user"
+    "username": "existinguser",
+    "lastLogin": "2025-11-05T17:21:34.123Z",
+    "message": "Login successful"
   }
-}
-```
+  ```
 
-### 2. User Profile Endpoints
+- **Errors**
+  - `400` Missing or malformed body
+  - `401` Invalid credentials
+  - `500` Server error
 
-#### GET /users/me
-Get current user's profile information.
+---
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+## 2. Profile
 
-**Response:**
-```json
-{
-  "id": 1,
-  "username": "newuser",
-  "role": "user",
-  "profile": {
-    "displayName": "New User",
-    "firstName": null,
-    "lastName": null,
-    "avatarUrl": null,
-    "hasCustomAvatar": false
-  },
-  "settings": {
-    "theme": "light",
-    "language": "en",
-    "timezone": "UTC",
-    "profileVisibility": "public",
-    "statusVisibility": "friends",
-    "matchHistoryVisibility": "friends"
-  },
-  "stats": {
-    "totalGames": 0,
-    "wins": 0,
-    "losses": 0,
-    "winPercentage": 0,
-    "currentRating": 1000,
-    "highestRating": 1000
-  },
-  "twofa_enabled": false,
-  "created_at": "2025-09-28T11:24:26.791Z",
-  "last_login": null
-}
-```
+### `GET /me`
+Returns the authenticated user profile, statistics, and status flags.
 
-#### PATCH /users/me
-Update user profile information.
+- **Headers**
+  - `Cookie: sessionId=<value>` (handled automatically once logged in)
 
-**Headers:**
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "username": "string (optional)",
-  "profile": {
-    "displayName": "string (optional)",
-    "firstName": "string (optional)",
-    "lastName": "string (optional)",
-    "avatarUrl": "string (optional)",
-    "hasCustomAvatar": "boolean (optional)"
-  },
-  "settings": {
-    "profileVisibility": "string (optional)",
-    "statusVisibility": "string (optional)",
-    "matchHistoryVisibility": "string (optional)"
-  }
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Profile updated successfully",
-  "user": {
+- **Success (200)**
+  ```json
+  {
     "id": 1,
-    "username": "newuser"
+    "username": "existinguser",
+    "role": "user",
+    "profile": {
+      "avatarUrl": "/uploads/profiles/7af0f6c6e3e34703b6c0.png",
+      "onlineStatus": "online",
+      "activityType": null
+    },
+    "stats": {
+      "totalGames": 42,
+      "wins": 20,
+      "losses": 18,
+      "draws": 4,
+      "averageGameDuration": 550,
+      "longestGame": 900,
+      "bestWinStreak": 5,
+      "currentRating": 1040,
+      "highestRating": 1085,
+      "ratingChange": 12
+    },
+    "twofa_enabled": false,
+    "last_login": "2025-11-05T17:21:34.123Z"
   }
-}
-```
+  ```
 
-**Error Responses:**
-- `409` - Username already taken
-- `400` - Invalid input data
+- **Errors**
+  - `401` Not authenticated
+  - `404` User missing
+  - `500` Server error
 
-### 3. Password Management
+### `POST /me/picture`
+Uploads or replaces the avatar. Saves under `/public/uploads/profiles` and deletes previous avatar if present.
 
-#### PATCH /users/me/password
-Change user password.
+- **Headers**
+  - `Content-Type: multipart/form-data`
+- **Body**
+  - Single field `file` (type file). Allowed mime types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`. Max size 5 MB.
 
-**Headers:**
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-```
+- **Success (200)**
+  ```json
+  {
+    "message": "Profile picture uploaded successfully",
+    "uri": "/uploads/profiles/7af0f6c6e3e34703b6c0.png"
+  }
+  ```
 
-**Request Body:**
-```json
-{
-  "currentPassword": "string (required)",
-  "newPassword": "string (required)"
-}
-```
+- **Errors**
+  - `400` No file, unsupported type, or file too large
+  - `401` Not authenticated
+  - `404` User not found
+  - `500` Upload failure
 
-**Response:**
-```json
-{
-  "message": "Password updated successfully"
-}
-```
+### `PATCH /me`
+Allows updating the username. Future profile fields are rejected at the schema level.
 
-**Error Responses:**
-- `400` - Current password is incorrect
-- `400` - Missing required fields
+- **Body (JSON)**
+  ```json
+  {
+    "username": "new-name"
+  }
+  ```
 
-### 4. Two-Factor Authentication (2FA)
+- **Success (200)**
+  ```json
+  {
+    "message": "Profile updated successfully",
+    "user": {
+      "id": 1,
+      "username": "new-name"
+    }
+  }
+  ```
 
-#### POST /users/me/2fa/setup
-Initialize 2FA setup process.
+- **Errors**
+  - `400` Invalid username format
+  - `401` Not authenticated
+  - `404` User not found
+  - `409` Username already taken
 
-**Headers:**
-```
-Authorization: Bearer <token>
-```
+### `PATCH /me/password`
+Changes the current user password after verifying the existing one and validating the new one.
 
-**Response:**
-```json
-{
-  "otpauth_url": "otpauth://totp/ft_transcendence:username?secret=SECRET&issuer=ft_transcendence",
-  "qr_data": "data:image/png;base64,<base64-encoded-qr-code>",
-  "backup_codes": ["ABC123", "DEF456", "..."]
-}
-```
+- **Body (JSON)**
+  ```json
+  {
+    "currentPassword": "OldPassw0rd!",
+    "newPassword": "Sup3rSecure!"
+  }
+  ```
 
-**Error Responses:**
-- `400` - 2FA is already enabled
+- **Success (200)**
+  ```json
+  {
+    "message": "Password updated successfully"
+  }
+  ```
 
-#### POST /users/me/2fa/confirm
-Confirm and enable 2FA.
+- **Errors**
+  - `400` Missing fields, invalid format, or wrong current password
+  - `401` Not authenticated
+  - `404` User not found
 
-**Headers:**
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-```
+---
 
-**Request Body:**
-```json
-{
-  "otp": "string (required)",
-  "tempSecretToken": "string (required)"
-}
-```
+## 3. Friends & Discovery
 
-**Response:**
-```json
-{
-  "message": "2FA enabled successfully"
-}
-```
+### `GET /friends`
+Returns the current user’s friends with presence data.
 
-**Error Responses:**
-- `400` - Invalid OTP
-- `400` - Missing required fields
+- **Success (200)**
+  ```json
+  {
+    "friends": [
+      {
+        "id": 2,
+        "username": "ally",
+        "avatarUrl": "/uploads/profiles/a1.png",
+        "onlineStatus": "offline",
+        "activityType": null,
+        "lastLogin": "2025-11-05T10:32:11.000Z"
+      }
+    ]
+  }
+  ```
 
-#### POST /users/me/2fa/disable
-Disable 2FA.
+- **Errors**
+  - `401` Not authenticated
+  - `404` User missing
+  - `500` Server error
 
-**Headers:**
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-```
+### `POST /friends`
+Adds another user as a mutual friend.
 
-**Request Body:**
-```json
-{
-  "otp": "string (optional)",
-  "recovery_code": "string (optional)"
-}
-```
+- **Body (JSON)**
+  ```json
+  {
+    "username": "ally"
+  }
+  ```
 
-**Response:**
-```json
-{
-  "message": "2FA disabled successfully"
-}
-```
+- **Success (200)**
+  ```json
+  {
+    "message": "Friend added successfully",
+    "friend": {
+      "id": 2,
+      "username": "ally",
+      "onlineStatus": "offline"
+    }
+  }
+  ```
 
-**Error Responses:**
-- `400` - Invalid OTP or recovery code
-- `400` - 2FA is not enabled
+- **Errors**
+  - `400` Missing username or trying to add yourself
+  - `401` Not authenticated
+  - `404` User not found
+  - `409` Already friends
+  - `500` Server error
 
-### 5. Account Management
+### `DELETE /friends/:username`
+Removes the friendship both ways.
 
-#### DELETE /users/me
-Delete user account (soft delete).
+- **Success (200)**
+  ```json
+  {
+    "message": "Friend removed successfully"
+  }
+  ```
 
-**Headers:**
-```
-Authorization: Bearer <token>
-Content-Type: application/json
-```
+- **Errors**
+  - `401` Not authenticated
+  - `404` User not found or not a friend
+  - `500` Server error
 
-**Request Body:**
-```json
-{
-  "password": "string (optional)",
-  "otp": "string (optional)"
-}
-```
+### `GET /search/:username`
+Performs a case-insensitive LIKE search to find other users (excludes the requester).
 
-**Response:**
-```
-204 No Content
-```
+- **Query Params** (optional)
+  - `limit` (default 20)
+  - `offset` (default 0)
 
-**Error Responses:**
-- `400` - Invalid password or OTP
-- `400` - Missing required fields
+- **Success (200)**
+  ```json
+  {
+    "users": [
+      {
+        "id": 3,
+        "username": "ally-cat",
+        "avatarUrl": null,
+        "onlineStatus": "online",
+        "activityType": null
+      }
+    ]
+  }
+  ```
 
-## Error Handling
+- **Errors**
+  - `401` Not authenticated
 
-All endpoints return consistent error responses:
+---
 
-```json
-{
-  "error": "Error message description"
-}
-```
+## 4. Testing With cURL
 
-### Common HTTP Status Codes:
-- `200` - Success
-- `201` - Created
-- `204` - No Content
-- `400` - Bad Request
-- `401` - Unauthorized
-- `403` - Forbidden
-- `404` - Not Found
-- `409` - Conflict
-- `500` - Internal Server Error
-
-## Security Features
-
-1. **JWT Authentication** - All protected endpoints require valid JWT tokens
-2. **Password Hashing** - Passwords are hashed using bcrypt with salt rounds
-3. **2FA Support** - Optional two-factor authentication with TOTP
-4. **Backup Codes** - Recovery codes for 2FA access
-5. **Soft Delete** - Account deletion preserves data integrity
-6. **Input Validation** - All inputs are validated before processing
-
-## Testing
-
-### Manual Testing with curl
-
-1. **Register a new user:**
 ```bash
-curl -X POST http://localhost:3000/api/v1/auth/register \
+# 1) Register (stores cookie.jar with sessionId)
+curl -i -c cookie.jar -X POST "http://localhost:8000/users/auth/register" \
   -H "Content-Type: application/json" \
-  -d '{"username": "testuser", "password": "password123", "displayName": "Test User"}'
-```
+  -d '{"username":"demo","password":"Sup3rSecure!"}'
 
-2. **Login:**
-```bash
-curl -X POST http://localhost:3000/api/v1/auth/login \
+# 2) Login (optional refresh of session)
+curl -i -b cookie.jar -c cookie.jar -X POST "http://localhost:8000/users/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username": "testuser", "password": "password123"}'
-```
+  -d '{"username":"demo","password":"Sup3rSecure!"}'
 
-3. **Get profile (replace TOKEN with actual token):**
-```bash
-curl -X GET http://localhost:3000/api/v1/users/me \
-  -H "Authorization: Bearer TOKEN"
-```
+# 3) Fetch profile
+curl -b cookie.jar "http://localhost:8000/users/me"
 
-4. **Update profile:**
-```bash
-curl -X PATCH http://localhost:3000/api/v1/users/me \
-  -H "Authorization: Bearer TOKEN" \
+# 4) Update username
+curl -b cookie.jar -X PATCH "http://localhost:8000/users/me" \
   -H "Content-Type: application/json" \
-  -d '{"profile": {"displayName": "Updated Name", "bio": "My bio"}}'
+  -d '{"username":"demo-updated"}'
+
+# 5) Change password
+curl -b cookie.jar -X PATCH "http://localhost:8000/users/me/password" \
+  -H "Content-Type: application/json" \
+  -d '{"currentPassword":"Sup3rSecure!","newPassword":"EvenB3tter!"}'
+
+# 6) Add friend
+curl -b cookie.jar -X POST "http://localhost:8000/users/friends" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"ally"}'
+
+# 7) Search for users
+curl -b cookie.jar "http://localhost:8000/users/search/al"
+
+# 8) Delete friend
+curl -b cookie.jar -X DELETE "http://localhost:8000/users/friends/ally"
 ```
 
-### Automated Testing
+To upload an avatar with cURL (example using PNG):
 
-Run the test suite:
 ```bash
-node test-api.js
+curl -b cookie.jar -X POST "http://localhost:8000/users/me/picture" \
+  -F "file=@/absolute/path/to/avatar.png"
 ```
 
-## Implementation Notes
+---
 
-### Database Integration
-- The current implementation uses in-memory storage for demonstration
-- For production, integrate with the MikroORM entities:
-  - `User` entity for user data
-  - `UserStatistics` entity for game stats
-  - `UserPreferences` entity for user settings
-  - `UserSessions` entity for session management
+## 5. Troubleshooting Checklist
 
-### 2FA Implementation
-- Current implementation uses simplified OTP verification
-- For production, integrate with libraries like `speakeasy` or `otplib`
-- Generate proper QR codes using `qrcode` library
-- Store encrypted secrets in database
+- **401 Unauthorized**: ensure `sessionId` cookie is stored and sent; sessions expire after 24 hours.
+- **409 Conflicts**: username exists or user already in friends list.
+- **Avatar upload fails**: confirm file type/size, and that the `public/uploads/profiles` directory is writable (Docker entrypoint creates it automatically).
+- **Better-SQLite3 binary mismatch**: rebuild dependencies inside the container using `docker compose run --rm user-service npm install --build-from-source`.
 
-### Security Considerations
-- Use environment variables for JWT secrets
-- Implement rate limiting for authentication endpoints
-- Add request logging and monitoring
-- Use HTTPS in production
-- Implement proper session management
+---
 
-## File Structure
+## 6. Related Resources
 
-```
-backend/
-├── src/
-│   ├── entities/           # MikroORM entities
-│   ├── routes/            # API route handlers
-│   │   ├── auth.ts        # Authentication routes
-│   │   └── users.ts       # User management routes
-│   ├── services/          # Business logic services
-│   │   └── auth.ts        # Authentication service
-│   └── server.ts          # Main server file
-├── simple-server.js       # Standalone server for testing
-├── test-api.js           # API test suite
-└── USER_CRUD_API.md      # This documentation
-```
+- Swagger UI (development only): `http://localhost:8000/docs`
+- Database migrations run automatically on container start via `docker-entrypoint.sh`.
+- Session implementation: `src/utils/SessionManager.ts`
 
-## Next Steps
-
-1. **Database Integration** - Connect to actual database using MikroORM
-2. **Real 2FA** - Implement proper TOTP with speakeasy
-3. **Validation** - Add comprehensive input validation
-4. **Rate Limiting** - Implement rate limiting middleware
-5. **Logging** - Add structured logging
-6. **Testing** - Expand test coverage
-7. **Documentation** - Add OpenAPI/Swagger documentation
+This document should now be in sync with the actual handlers and schemas. Update it alongside `users.ts` whenever endpoints or payload contracts change.

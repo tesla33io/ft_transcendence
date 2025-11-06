@@ -1,5 +1,6 @@
 FROM maven:sapmachine AS jar_builder
 
+
 WORKDIR /app
 
 COPY /aibot/pom.xml .
