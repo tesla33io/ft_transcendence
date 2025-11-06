@@ -571,7 +571,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 const user = await app.em.findOne(User, { id: userId });
                 if (!user) return reply.code(404).send({ error: 'User not found' });
               
-                const { username, profile } = req.body as any;
+                const { username } = req.body as any;
               
                 if (username && username !== user.username) {
                   const validation = validateUsername(username);
