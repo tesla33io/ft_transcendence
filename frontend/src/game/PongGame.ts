@@ -129,7 +129,7 @@ export class PongGame {
             console.log(`PlayerID: ${this.playerId} - ${this.gameMode}`);
             let apiEndpoint: string;
             if (this.gameMode === 'tournament') {
-                apiEndpoint = '/api/v1/game/join-tournament';
+                apiEndpoint = '/api/v1/game/join-tournament/';
             } else if (this.gameMode === 'ai') {
                 apiEndpoint = '/api/v1/game/bot-classic';
                 this.gameMode = 'classic';

@@ -116,7 +116,71 @@ server.get('/api/v1/auth/me', async (request: AuthRequest, reply: any) => {
     }
 });
 
+// Add this after the /me endpoint
 
+// ===== REFRESH TOKEN ENDPOINT =====
+server.post('/api/v1/auth/refresh', async (request: AuthRequest, reply: any) => {
+    try {
+        console.log('[GATEWAY] /refresh endpoint called');
+
+        // Get refresh token from cookie (cast to any because AuthRequest doesn't include cookies)
+        const refreshToken = (request as any).cookies?.refreshToken;
+
+        if (!refreshToken) {
+            console.error('[GATEWAY] No refresh token in cookies');
+            return reply.status(401).send({
+                error: 'Unauthorized',
+                code: 'NO_REFRESH_TOKEN',
+                message: 'Refresh token not found'
+            });
+        }
+
+        // Verify refresh token
+        try {
+            const decoded = jwtHelper.verifyRefreshToken(refreshToken);
+            console.log(` [GATEWAY] Refresh token valid for user: ${decoded.username}`);
+
+            // Create new tokens
+            const { accessToken, refreshToken: newRefreshToken } = jwtHelper.createTokens(
+                decoded.id,
+                decoded.username,
+                decoded.role || 'user'
+            );
+
+            // Update refresh token cookie
+            (reply as any).setCookie('refreshToken', newRefreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 7 * 24 * 60 * 60,
+                path: '/'
+            });
+
+            console.log(`[GATEWAY] New tokens created for user: ${decoded.username}`);
+
+            return reply.status(200).send({
+                accessToken: accessToken,
+                refreshToken: newRefreshToken,
+                message: 'Token refreshed successfully'
+            });
+
+        } catch (error) {
+            console.error('[GATEWAY] Refresh token verification failed:', error);
+            return reply.status(401).send({
+                error: 'Unauthorized',
+                code: 'INVALID_REFRESH_TOKEN',
+                message: 'Refresh token is invalid or expired'
+            });
+        }
+
+    } catch (error) {
+        console.error('[GATEWAY] Error in /refresh endpoint:', error);
+        return reply.status(500).send({
+            error: 'Server error',
+            code: 'REFRESH_FAILED'
+        });
+    }
+});
 
 // ===== GLOBAL HOOK: PROTECT ALL GAME ROUTES =====
 server.addHook('onRequest', async (request: AuthRequest, reply) => {

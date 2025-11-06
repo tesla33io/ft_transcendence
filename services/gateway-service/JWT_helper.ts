@@ -50,6 +50,20 @@ export class JWTHelper {
             return null;
         }
     }
+	//verify refresh token 
+	verifyRefreshToken(token: string){
+		try{
+			const server = this.app as any;
+			const decoded = server.jwt.verify(token)
+			if(decoded.type !== 'refresh'){
+				throw new Error('Not a Refresh Token');
+			}
+			return decoded;
+		}
+		catch (error){
+			throw new Error('invalid refresh token');
+		}
+	}
 
     /**
      * Extract token from Authorization header
@@ -179,5 +193,5 @@ export class JWTHelper {
         };
     }
 
-	
+
 }

@@ -2,102 +2,93 @@ export class ApiService {
     static readonly BASE_URL = 'http://localhost:3000'
 
     private static getAuthHeaders(): Record<string, string> {
-        const token = localStorage.getItem('authToken');  // ← Get the accessToken
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json'
+        const token = localStorage.getItem('authToken');
+        return {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` })
         };
-        
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;  // ← Add Bearer token
-            console.log('📨 [API] Sending Authorization header:', headers['Authorization'].substring(0, 30) + '...');
-        } else {
-            console.warn('⚠️ [API] No auth token found in localStorage');
-        }
-        
-        return headers;
     }
 
-    // Generic GET request with auto-auth
+    // Generic GET request with auto-auth & 401 handling
     static async get<T>(endpoint: string): Promise<T> {
-        const response = await fetch(`${this.BASE_URL}${endpoint}`, {
-            method: 'GET',
-            headers: this.getAuthHeaders(),
-            credentials: 'include'  // ← Send cookies (refreshToken)
-        });
-        
-        if (response.status === 401) {
-            // Token expired, try refresh
-            await this.refreshAccessToken();
-            // Retry request
-            return this.get(endpoint);
-        }
-        
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
-        }
-        
-        return response.json();
-    }
-
-    // Generic POST request with auto-auth
-    static async post<T>(endpoint: string, data: any): Promise<T> {
-        const fullUrl = `${this.BASE_URL}${endpoint}`;
-        console.log("POST request to:", fullUrl)
-        
         try {
-            const response = await fetch(fullUrl, {
-                method: 'POST',
+            const response = await fetch(`${this.BASE_URL}${endpoint}`, {
+                method: 'GET',
                 headers: this.getAuthHeaders(),
-                credentials: 'include',  // ← Send cookies (refreshToken)
-                body: JSON.stringify(data)
+                credentials: 'include'
             });
 
-            console.log("Response status:", response.status);
-            
+            console.log(`[API] GET ${endpoint} - Status: ${response.status}`);
+
             if (response.status === 401) {
-                // Token expired, try refresh
-                console.warn('⚠️ [API] Got 401, attempting token refresh...');
-                await this.refreshAccessToken();
-                // Retry request
-                return this.post(endpoint, data);
+                // Token expired, trigger refresh
+                const { UserService } = await import('./userService');
+                console.log('[API] 401 Unauthorized - Attempting refresh...');
+                
+                try {
+                    await UserService.refreshToken();
+                    // Retry with new token
+                    return this.get<T>(endpoint);
+                } catch (refreshError) {
+                    console.error('[API] Refresh failed, logging out');
+                    localStorage.clear();
+                    window.location.href = '/login';
+                    throw refreshError;
+                }
             }
-            
+
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ [API] Error response:', errorText);
-                throw new Error(`API Error: ${response.status} - ${errorText}`);
+                const error: any = new Error(`API Error: ${response.status}`);
+                error.status = response.status;
+                throw error;
             }
-            
+
             return response.json();
         } catch (error) {
-            console.error("❌ [API] Fetch error:", error);
+            console.error('[API] GET error:', error);
             throw error;
         }
     }
 
-    // Refresh access token using httpOnly cookie
-    private static async refreshAccessToken(): Promise<void> {
+    // Generic POST request with auto-auth & 401 handling
+    static async post<T>(endpoint: string, data: any): Promise<T> {
         try {
-            console.log('🔄 [API] Refreshing access token...');
-            const response = await fetch(`${this.BASE_URL}/users/auth/refresh`, {
+            const response = await fetch(`${this.BASE_URL}${endpoint}`, {
                 method: 'POST',
-                credentials: 'include'  // ← Send refreshToken cookie
+                headers: this.getAuthHeaders(),
+                credentials: 'include',
+                body: JSON.stringify(data)
             });
 
-            if (response.ok) {
-                const { accessToken } = await response.json();
-                localStorage.setItem('authToken', accessToken);
-                console.log('✅ [API] Access token refreshed successfully');
-            } else {
-                // Refresh failed, user must login again
-                console.error('❌ [API] Token refresh failed');
-                localStorage.removeItem('authToken');
-                window.location.href = '/login';
+            console.log(`📨 [API] POST ${endpoint} - Status: ${response.status}`);
+
+            if (response.status === 401) {
+                // Token expired, trigger refresh
+                const { UserService } = await import('./userService');
+                console.log('[API] 401 Unauthorized - Attempting refresh...');
+                
+                try {
+                    await UserService.refreshToken();
+                    // Retry with new token
+                    return this.post<T>(endpoint, data);
+                } catch (refreshError) {
+                    console.error('[API] Refresh failed, logging out');
+                    localStorage.clear();
+                    window.location.href = '/login';
+                    throw refreshError;
+                }
             }
+
+            if (!response.ok) {
+                const error: any = new Error(`API Error: ${response.status}`);
+                error.status = response.status;
+                throw error;
+            }
+
+            return response.json();
         } catch (error) {
-            console.error('❌ [API] Token refresh error:', error);
-            localStorage.removeItem('authToken');
-            window.location.href = '/login';
+            console.error('[API] POST error:', error);
+            throw error;
         }
     }
 }

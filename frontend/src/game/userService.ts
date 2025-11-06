@@ -170,6 +170,51 @@ export class UserService {
     return authData;
 }
 
+	    // ===== REFRESH TOKEN (SINGLE SOURCE OF TRUTH) =====
+    static async refreshToken(): Promise<{
+        accessToken: string;
+        refreshToken: string;
+    }> {
+        try {
+            console.log('[UserService] Refreshing token...');
+
+            const response = await fetch('http://localhost:3000/api/v1/auth/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({}),
+                credentials: 'include'  // ← Sends refreshToken cookie
+            });
+
+            if (!response.ok) {
+                throw new Error(`Token refresh failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            console.log('[UserService] Token refreshed successfully');
+
+            // Update localStorage with new access token
+            localStorage.setItem('authToken', data.accessToken);
+
+            return {
+                accessToken: data.accessToken,
+                refreshToken: data.refreshToken
+            };
+
+        } catch (error) {
+            console.error('[UserService] Token refresh failed:', error);
+            
+            // If refresh fails, user is logged out
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            
+            throw error;
+        }
+    }
+
     // Send logout request & clear local data
     static async logout(): Promise<void> {
         try {

@@ -147,14 +147,14 @@ export class GameService{
 	private sendDataToUMS(game: Game, winnerId: string){
 
 		const data1 = {
-			userId: game.player1.id,
-			opponentId: game.player2.id,
+			userId: parseInt(game.player1.id),
+			opponentId:  parseInt(game.player2.id),
 			result: game.player1.id == winnerId ? "win" : "lose",
 			userScore: game.player1.score,
 			opponentScore: game.player2.score,
-			playedAt: new Date().toLocaleString()
+			playedAt: new Date().toISOString()
 		}
-
+		console.log("data1",data1)
 		const response1 = this.postToUMS(data1)
 		console.log(response1)
 
