@@ -269,42 +269,75 @@ export class UserService {
 			throw error;
 		}
 	}
-    // Get current user's profile
+    // Get current user's profile FROM THE BACKEND
     static async getCurrentUser(): Promise<PublicUser> {
-        // TODO: Uncomment when backend is ready
-        // return await ApiService.get<PublicUser>('/users/me');
-        
-        // Mock response
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        const storedUser = this.getCurrentUserFromStorage();
-        if (!storedUser) throw new Error('Not logged in');
-        
-        return storedUser;
+        try {
+            console.log('👤 [UserService] Fetching current user from backend...');
+            
+            // Call real API endpoint
+            const response = await ApiService.get<any>('/users/me');
+            
+            console.log('✅ Current user fetched:', response);
+            
+            // Map response to PublicUser
+            const user: PublicUser = {
+                id: response.id,
+                username: response.username,
+                avatarUrl: response.profile?.avatarUrl || '/images/default-avatar.png',
+                activityType: response.profile?.activityType || 'browsing',
+                onlineStatus: response.profile?.onlineStatus || OnlineStatus.ONLINE,
+                role: response.role || UserRole.USER,
+                lastLogin: response.last_login
+            };
+            
+            // Update localStorage
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            return user;
+            
+        } catch (error) {
+            console.error('❌ Failed to fetch current user:', error);
+            
+            // Fallback to localStorage
+            const stored = this.getCurrentUserFromStorage();
+            if (!stored) throw new Error('Not logged in');
+            
+            return stored;
+        }
     }
 
     // ===== USER UPDATES (SENDERS) =====
     
-    // Update current user's profile
+    // Update current user's profile ON THE BACKEND
     static async updateProfile(updates: ProfileUpdateRequest): Promise<PublicUser> {
-        // TODO: Uncomment when backend is ready
-        // return await ApiService.post<PublicUser>('/users/me/profile', updates);
-        
-        // Mock response
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const currentUser = this.getCurrentUserFromStorage();
-        if (!currentUser) throw new Error('Not logged in');
-        
-        const updatedUser: PublicUser = {
-            ...currentUser,
-            ...updates
-        };
-        
-        // Update localStorage
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        
-        return updatedUser;
+        try {
+            console.log('✏️ [UserService] Updating profile on backend...', updates);
+            
+            // Call PATCH endpoint
+            const response = await ApiService.patch<any>('/users/me', updates);
+            
+            console.log('✅ Profile updated successfully:', response);
+            
+            // Map response to PublicUser
+            const user: PublicUser = {
+                id: response.id,
+                username: response.username,
+                avatarUrl: response.profile?.avatarUrl || '/images/default-avatar.png',
+                activityType: response.profile?.activityType || updates.activityType,
+                onlineStatus: response.profile?.onlineStatus || OnlineStatus.ONLINE,
+                role: response.role || UserRole.USER,
+                lastLogin: response.last_login
+            };
+            
+            // Update localStorage
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            return user;
+            
+        } catch (error) {
+            console.error('❌ Failed to update profile:', error);
+            throw error;
+        }
     }
 
     // Update avatar
@@ -324,7 +357,7 @@ export class UserService {
 			console.log('👥 [UserService] Fetching friends...');
 			
 			// Call the real endpoint
-			const friends = await ApiService.get<Friend[]>('/api/v1/user/friend');
+			const friends = await ApiService.get<Friend[]>('/user/friend');
 			
 			console.log('✅ Friends fetched successfully:', friends);
 			console.log(`📊 Total friends: ${friends.length}`);
@@ -486,25 +519,52 @@ export class UserService {
 
     // Get user profile
     static async getUserProfile(userId?: number): Promise<UserProfile> {
-        // TODO: Uncomment when backend is ready
-        // const endpoint = userId ? `/users/${userId}` : '/users/me';
-        // return await ApiService.get<UserProfile>(endpoint);
-        
-        // Mock response
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        const mockProfile: UserProfile = {
-            userId: userId || 1,
-            userName: userId ? `User_${userId}` : "CurrentUser",
-            avatarUrl: '/images/default-avatar.png',
-            bioText: userId ? "This is a friend's profile!" : "This is my awesome bio! I love playing pong and competing in tournaments.",
-            isOnline: userId ? Math.random() > 0.5 : true,
-            lastOnline: new Date().toISOString(),
-            accountCreationDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-            currentElo: Math.floor(1000 + Math.random() * 1000)
-        };
-        
-        return mockProfile;
+        try {
+            console.log('👤 [UserService] Fetching user profile...');
+            
+            // Determine endpoint
+            const endpoint = '/users/me'//= userId ? `/users/${userId}` : '/users/me';
+            
+            // Call the real endpoint through gateway
+            const response = await ApiService.get<any>(endpoint);
+            
+            console.log('Profile fetched successfully:', response);
+            
+            // Map backend response to UserProfile interface
+            const profile: UserProfile = {
+                userId: response.id,
+                userName: response.username,
+                avatarUrl: response.avatarUrl || '/images/default-avatar.png',
+                bioText: response.bioText || "No bio yet",
+                isOnline: response.isOnline || true,
+                lastOnline: response.lastOnline || new Date().toISOString(),
+                accountCreationDate: response.accountCreationDate || new Date().toISOString(),
+                currentElo: response.currentElo || 1000
+            };
+            
+            return profile;
+            
+        } catch (error) {
+            console.error('❌ Failed to fetch profile:', error);
+            //mock data
+            console.log('⚠️ Falling back to mock profile data');
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            const mockProfile: UserProfile = {
+                userId: userId || 1,
+                userName: userId ? `User_${userId}` : "CurrentUser",
+                avatarUrl: '/images/default-avatar.png',
+                bioText: userId ? "This is a friend's profile!" : "This is my awesome bio! I love playing pong and competing in tournaments.",
+                isOnline: userId ? Math.random() > 0.5 : true,
+                lastOnline: new Date().toISOString(),
+                accountCreationDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+                currentElo: Math.floor(1000 + Math.random() * 1000)
+            };
+            
+            return mockProfile;
+			
+        }
     }
 
     // Get 1v1 statistics

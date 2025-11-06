@@ -11,8 +11,11 @@ server.register(require('@fastify/jwt'),{
 })
 
 server.register(require('@fastify/cors'),{
-    origin:true,
-    credentials: true
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false
 })
 
 // Initialize JWT Helper
