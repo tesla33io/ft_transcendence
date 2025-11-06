@@ -320,121 +320,67 @@ export class UserService {
 
 	// Get current user's friends list
 	static async getFriends(): Promise<Friend[]> {
-		// TODO: Uncomment when backend is ready
-		// return await ??????
-		
+		try {
+			console.log('👥 [UserService] Fetching friends...');
+			
+			// Call the real endpoint
+			const friends = await ApiService.get<Friend[]>('/api/v1/user/friend');
+			
+			console.log('✅ Friends fetched successfully:', friends);
+			console.log(`📊 Total friends: ${friends.length}`);
+			
+			return friends;
+			
+		} catch (error) {
+			console.error('❌ Failed to fetch friends:', error);
+			
+			// Fallback to mock data if API fails
+			console.log('⚠️ Falling back to mock friends data');
+			
+			await new Promise(resolve => setTimeout(resolve, 300));
+			
+			const mockFriends: Friend[] = [
+				{
+					userId: 101,
+					userName: "Alice_Gamer",
+					isOnline: true,
+					lastOnlineAt: new Date().toISOString(),
+					avatarUrl: '/images/default-avatar.png'
+				},
+				{
+					userId: 102,
+					userName: "Bob_Pro",
+					isOnline: true,
+					lastOnlineAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+					avatarUrl: '/images/default-avatar.png'
+				},
+				{
+					userId: 103,
+					userName: "Charlie_Win",
+					isOnline: false,
+					lastOnlineAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+					avatarUrl: '/images/default-avatar.png'
+				},
+				{
+					userId: 104,
+					userName: "Diana_Fast",
+					isOnline: false,
+					lastOnlineAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+					avatarUrl: '/images/default-avatar.png'
+				},
+				{
+					userId: 105,
+					userName: "Eve_Champion",
+					isOnline: true,
+					lastOnlineAt: new Date().toISOString(),
+					avatarUrl: '/images/default-avatar.png'
+				}
+			];
+			
+			return mockFriends;
+		}
 		// Mock response
-		await new Promise(resolve => setTimeout(resolve, 300));
-		
-		const mockFriends: Friend[] = [
-			{
-				userId: 101,
-				userName: "Alice_Gamer",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '../views/images/rabit.png'//dosent work yet need to implement a place to put all pictures 
-			},
-			{
-				userId: 102,
-				userName: "Bob_Pro",
-				isOnline: true,
-				lastOnlineAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 103,
-				userName: "Charlie_Win",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 104,
-				userName: "Diana_Fast",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 105,
-				userName: "Eve_Champion69",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1062,
-				userName: "Frank_Master420",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1052,
-				userName: "Eve_Champion",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1069,
-				userName: "Frank_Master1",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: './views/images/rabit.png'
-			},
-				{
-				userId: 1054,
-				userName: "Eve_Champion4",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1066,
-				userName: "Frank_Master288",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1052,
-				userName: "Eve_Champion99",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1069,
-				userName: "Frank_Master187",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: './views/images/rabit.png'
-			},
-				{
-				userId: 1054,
-				userName: "Eve_Champion44",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1066,
-				userName: "Frank_Master2200",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 107,
-				userName: "Grace_Elite",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
-				avatarUrl: '/images/default-avatar.png'
-			}
-		];
-		
-		return mockFriends;
+	
 	}
 
 	// Get friend requests
