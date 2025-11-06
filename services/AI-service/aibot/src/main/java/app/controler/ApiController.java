@@ -17,7 +17,7 @@ import app.AIbot.model.BotRequest;
 public class ApiController {
 	private AIbotManager aIbotManager = new AIbotManager();
 
-	@GetMapping("/test")
+	@GetMapping("/test/status")
 	public String test(){
 		return "Connection reached\n";
 	}

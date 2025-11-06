@@ -1,5 +1,5 @@
 import { Router } from "../router";
-import { createTaskbar, createWindow } from "./_components"; 
+import { createTaskbar, createWindow } from "../components/_components"; 
 import joystickIcon from './images/joystick.png';
 import padlock from './images/padlock.png';
 import remote from './images/remote.png'

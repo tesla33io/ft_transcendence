@@ -81,6 +81,18 @@ export class TournamentPong extends ClassicPong{
 		return this.activeTournament.get(tournamentId)
 	}
 
+	public findPlayerInTournamnet(playerId: string): string | undefined{
+		for ( let [ key, tournamnet] of this.activeTournament){
+			for (let player of tournamnet.players){
+				if (player.id === playerId && tournamnet.status !== 'finished'){
+					player.ready = true
+					return tournamnet.id
+				}
+			}
+		}
+		return undefined
+	}
+
 	public bracketWinner(gameId: string, winnerId: string){
 		const tournamentId = this.findTournamentId(gameId)
 		if (tournamentId != undefined){

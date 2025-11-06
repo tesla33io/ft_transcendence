@@ -1,5 +1,6 @@
 FROM maven:sapmachine AS jar_builder
 
+
 WORKDIR /app
 
 COPY /aibot/pom.xml .
@@ -14,7 +15,7 @@ RUN mvn clean package
 
 
 
-FROM openjdk:26-jdk-bookworm
+FROM eclipse-temurin:21-jdk
 
 WORKDIR /app
 

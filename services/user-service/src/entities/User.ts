@@ -5,6 +5,7 @@ import { MatchHistory } from './MatchHistory.js';
 // Enums for type safety and data validation
 export const UserRole ={
     USER: 'user',
+	GUEST: 'guest',
     ADMIN: 'admin',
 } as const;
 
@@ -69,19 +70,19 @@ export class User {
     @OneToMany(() => UserStatistics, (stats) => stats.user)
     statistics = new Collection<UserStatistics>(this);
 
-  @OneToMany(() => MatchHistory, (match) => match.user)
-  matchHistory = new Collection<MatchHistory>(this);
+    @OneToMany(() => MatchHistory, (match) => match.user)
+    matchHistory = new Collection<MatchHistory>(this);
 
-  // Friend relationships
-  @ManyToMany(() => User)
-  friends = new Collection<User>(this);
+    // Friend relationships
+    @ManyToMany(() => User)
+    friends = new Collection<User>(this);
 
     // Helper methods for business logic
-    //isOnline(): boolean {
-    //    return this.onlineStatus === OnlineStatus.ONLINE;
-    //}
+    isOnline(): boolean {
+        return this.onlineStatus === OnlineStatus.ONLINE;
+    }
 
-    //isInGame(): boolean {
-    //    return this.onlineStatus === OnlineStatus.IN_GAME;
-    //}
+    isInGame(): boolean {
+        return this.onlineStatus === OnlineStatus.IN_GAME;
+    }
 }

@@ -5,7 +5,6 @@ import { Game, Player, Tournament  } from "../types/interfaces";
 import { GameModeEngineProvider } from "../engine/GameEngineProvider";
 import { GameMatchmaker } from "./GameMatchmaker";
 import { TournamentPong } from "../engine/TournamentPong";
-import { ClassicPong } from "../engine/ClassicPong";
 
 export class GameService{
 	private gameEngine: GameEngine
@@ -28,6 +27,8 @@ export class GameService{
 		}
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnounce(game, playerId)
+			//place holder for sending match result to user management
+			this.sendDataToUMS(game, playerId)
 			if (this.gameMode === 'tournament'){
 				this.tournamentHandling(game, playerId)
 			}
@@ -36,8 +37,7 @@ export class GameService{
 		this.webSocketServer.onPaddleMove = (gameId: string, playerId: string, deltaY: number) =>{
 			this.gameEngine.updatePlayerPaddle(gameId, playerId, deltaY)
 		}
-		this.webSocketServer.clientReady = (gameId: string, playerId: string, tournamentId?: string) => {
-
+		this.webSocketServer.clientReady = (gameId: string | undefined, playerId: string, tournamentId?: string) => {
 			if (tournamentId && !gameId){
 					if (this.gameEngine instanceof TournamentPong &&
 						this.gameEngine.tournamentAllPlayersReady(tournamentId, playerId)){
@@ -48,7 +48,7 @@ export class GameService{
 							return
 					}
 				}
-			if (this.gameEngine.allPlayerReady(gameId, playerId)){
+			if (gameId && this.gameEngine.allPlayerReady(gameId, playerId)){
 				console.log(`Classic players are ready: true`)
 				this.gameEngine.startGame(gameId)
 				return
@@ -66,6 +66,14 @@ export class GameService{
 						this.gameEngine.declareWinner(game, winnerId)
 				}
 			}
+			else if (this.gameEngine instanceof TournamentPong && game === undefined &&
+					this.gameEngine.findPlayerInTournamnet(playerId)){
+					const tournamentId = this.gameEngine.findPlayerInTournamnet(playerId)
+					if (this.webSocketServer.clientReady){
+						let unde: string | undefined
+						this.webSocketServer.clientReady(unde, playerId, tournamentId)
+					}
+				}
 			else{
 				if (this.matchmaker)
 					this.matchmaker.removePlayerFromQueue(playerId, this.gameMode)
@@ -135,5 +143,51 @@ export class GameService{
 			}
 		}
 	}
+
+	private sendDataToUMS(game: Game, winnerId: string){
+
+		const data1 = {
+			userId: parseInt(game.player1.id),
+			opponentId:  parseInt(game.player2.id),
+			result: game.player1.id == winnerId ? "win" : "lose",
+			userScore: game.player1.score,
+			opponentScore: game.player2.score,
+			playedAt: new Date().toISOString()
+		}
+		console.log("data1",data1)
+		const response1 = this.postToUMS(data1)
+		console.log(response1)
+
+		const data2 = {
+			userId: game.player2.id,
+			opponentId: game.player1.id,
+			result: game.player2.id == winnerId ? "win" : "lose",
+			userScore: game.player2.score,
+			opponentScore: game.player1.score,
+			playedAt: new Date().toLocaleString()
+		}
+
+		const response2 = this.postToUMS(data2)
+		console.log(response2)
+	}
+
+
+	private async postToUMS(data: any){
+		try {
+			const response1 = await fetch("http://user-service:8000/match-history", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: "Bearer 1",
+				},
+				body: JSON.stringify(data)
+			})
+			console.log("Match history sent:", response1);
+		}
+		catch (error) {
+			console.log("Error sending match history:", error)
+		}
+	}
+
 }
 

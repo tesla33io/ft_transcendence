@@ -1,6 +1,6 @@
 import { Router } from "../router";
-import { createWindow } from "./_components";
-import { createTaskbar } from "./_components";
+import { createWindow } from "../components/_components";
+import { createTaskbar } from "../components/_components";
 import { UserService } from "../game/userService";
 import type { RegisterRequest } from "../types";
 import agent from "./images/msagent.png"

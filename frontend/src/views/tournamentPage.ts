@@ -1,8 +1,8 @@
 import { Router } from '../router';
-import { createWindow } from './_components';
+import { createWindow } from '../components/_components';
 import { PongGame } from '../game/PongGame';
-import { createTaskbar, createStaticDesktopBackground } from "./_components";
-import {createTournamentStatsComponent} from "./_userComponents";
+import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
+import {createTournamentStatsComponent} from "../components/_userComponents";
 
 let currentPongGame: PongGame | undefined = undefined;
 
@@ -109,8 +109,11 @@ export function tournamentView(router: Router) {
 			currentPongGame = undefined;
 		}
 
-		const playerId = Math.random().toString().substring(2, 7);
-
+		const playerId = localStorage.getItem('userId'); 
+		if(!playerId) {
+			console.log('no userid found please login again');
+			return;
+		}
 		try {
 			const game = new PongGame(
 				alias,

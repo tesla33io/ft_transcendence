@@ -27,6 +27,16 @@ export const GAME_CONFIG = {
 };
 
 
+
+//localgame 
+export const GAME_MODES = {
+    CLASSIC: 'classic',
+    SPEED: 'speed',
+    PELLET: 'pellet',
+    MULTIBALL: 'multiball',
+    TWOD: '2d'
+};
+
 export enum MessageType {
     GAME_STATE = 'game_state',    // Initial game state message
     GAME_UPDATE = 'game_update',  // Regular game updates

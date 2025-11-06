@@ -16,4 +16,7 @@ if [ ! -d node_modules ] || [ ! -f node_modules/sqlite3/package.json ]; then
   npm install
 fi
 
+echo "[user-service] Running database migrations..."
+npm run migration:up || { echo "[user-service] Migration failed"; exit 1; }
+
 exec "$@"

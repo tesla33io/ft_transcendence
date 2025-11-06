@@ -1,4 +1,5 @@
 import {Player, Ball, Game} from "./interfaces"
+import { randomBytes } from 'crypto';
 
 export const GAME_HEIGHT = Number(process.env.GAME_HEIGHT || "550")
 export const GAME_WIDTH = Number(process.env.GAME_WIDTH || "900")
@@ -10,11 +11,11 @@ export const PLAYER_OFFSET = Number(process.env.PLAYER_OFFSET || "20")
 export type GameMode = 'classic' | 'tournament' | 'bot-classic'
 
 export const generateGameId = (): string => {
-	return Math.random().toString(36).substring(2, 15);
+	return randomBytes(16).toString('hex');
 }
 
 export const generatePlayerId = (): string =>{
-	return Math.random().toString().substring(2,6);
+	return randomBytes(8).toString('hex');
 }
 
 export enum GAME_STATE {
@@ -74,6 +75,29 @@ export const generateBot = async (nameSuffix: string, gameId: string, difficulty
 	const data = await response.json()
 	const botId: string = data.botId
 	return botId
+}
+
+export const validateSessionId = async (cookie: string, playerId: string): Promise<boolean> => {
+
+	const response = await fetch ('http://user-service:8000/users/me',{
+		method: 'GET',
+		headers: {
+			'Content-Type': 'application/json',
+			'Cookie': `${cookie}`
+		},
+	})
+
+	console.log("status: ", response.ok)
+
+	if (response.ok){
+		const data = await response.json()
+		console.log(data)
+		return data.id == Number(playerId)
+	}
+	else {
+		console.log(`Request failed with status ${response.status}: ${response.statusText}`)
+		return false
+	}
 }
 
 export type WaitingResponse = {

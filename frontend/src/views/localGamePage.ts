@@ -1,6 +1,13 @@
 import { LocalPongGame } from '../game/LocalPongGame';
 import { GAME_CONFIG } from '../types';
 import { Router } from '../router';
+import { GAME_MODES } from '../types';
+import { 
+    createStaticDesktopBackground,
+    createGameHeader,
+    createWindow,
+    createTaskbar
+} from '../components';
 
 export function localGameView(router: Router) {
     const app = document.getElementById('app');
@@ -9,63 +16,120 @@ export function localGameView(router: Router) {
         return { dispose: () => {} };
     }
 
-    // Create the main container for the local game
-    const gameContainer = document.createElement('div');
-    gameContainer.className = 'relative flex flex-col items-center justify-center h-screen bg-gray-900 text-white';
-
-    // Back to Desktop link
-    const backLink = document.createElement('a');
-    backLink.href = '/desktop';
-    backLink.textContent = 'Back to Desktop';
-    backLink.className = 'absolute top-4 right-4 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-md transition-colors';
-    backLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        router.navigate('/desktop');
-    });
-
-
-    // Title
-    const title = document.createElement('h1');
-    title.className = 'text-4xl font-bold mb-4';
-    title.textContent = 'Local Pong';
-
-    // Scoreboard
-    const scoreBoard = document.createElement('div');
-    scoreBoard.className = 'text-2xl mb-4';
-    scoreBoard.innerHTML = `
-        <span id="player1-score">0</span> - <span id="player2-score">0</span>
-    `;
-
-    // Canvas for the game
-    const canvas = document.createElement('canvas');
-    canvas.id = 'local-pong-canvas';
-    canvas.width = GAME_CONFIG.CANVAS.WIDTH;
-    canvas.height = GAME_CONFIG.CANVAS.HEIGHT;
-    canvas.style.backgroundColor = 'black';
-    canvas.style.border = '2px solid white';
-
-    // Instructions
-    const instructions = document.createElement('div');
-    instructions.className = 'mt-4 text-sm text-gray-400';
-    instructions.innerHTML = `
-        <p>Player 1: W (Up) / S (Down) | Player 2: ArrowUp / ArrowDown</p>
-    `;
-
-    gameContainer.append(backLink, title, scoreBoard, canvas, instructions);
-    app.innerHTML = ''; // Clear previous content
-    app.appendChild(gameContainer);
+    app.innerHTML = '';
+    
+    const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(app);
 
     const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode') || GAME_MODES.CLASSIC;
     const winningScore = parseInt(urlParams.get('score') || '5', 10);
 
-    // Initialize and start the game
-    const game = new LocalPongGame(canvas, winningScore);
-    game.start();
+    const content = document.createElement("div");
 
-    // Return a dispose function to clean up when navigating away
+    const header = createGameHeader({
+        player1Name: 'Player 1',
+        player2Name: 'Player 2',
+        player1Score: 0,
+        player2Score: 0,
+        showVS: true
+    });
+
+    content.appendChild(header);
+
+    // ✅ CHANGED: Create game container with proper layout
+    const gameContainer = document.createElement("div");
+    gameContainer.className = "game-container";
+    gameContainer.style.display = "flex";
+    gameContainer.style.flexDirection = "column";
+    gameContainer.style.alignItems = "center";
+
+    const canvas = document.createElement("canvas");
+    canvas.id = "local-pong-canvas";
+    canvas.width = GAME_CONFIG.CANVAS.WIDTH;
+    canvas.height = GAME_CONFIG.CANVAS.HEIGHT;
+    gameContainer.appendChild(canvas);
+
+    // ✅ CHANGED: Add description text with better styling
+    const description = document.createElement("p");
+    description.style.fontSize = "16px";
+    description.style.color = "";
+    description.style.textAlign = "center";
+    description.style.marginTop = "12px";
+    description.style.marginBottom = "0";
+    description.style.marginLeft = "0";
+    description.style.marginRight = "0";
+    description.textContent = getModeControlsText(mode);
+    gameContainer.appendChild(description);
+
+    content.appendChild(gameContainer);
+
+    const modeName = getModeName(mode);
+
+    // ✅ CHANGED: Increased window height from 620px to 680px
+    const gameWindow = createWindow({
+        title: `Local Pong - ${modeName}`,
+        width: "920px",
+        height: "650px",
+        content: content,
+        titleBarControls: {
+            close: true,
+            onClose: () => {
+                router.navigate("/localgame");
+            }
+        }
+    });
+
+    app.appendChild(gameWindow);
+
+    const { taskbar } = createTaskbar({
+        startButton: {
+            label: "Start",
+            onClick: () => router.navigate("/"),
+        },
+        clock: true,
+    });
+    app.appendChild(taskbar);
+
+    const game = new LocalPongGame(canvas, winningScore, mode, router, gameWindow);
+
+    setTimeout(() => {
+        game.start();
+    }, 100);
+
     return {
+        canvas,
+        updateScore: (playerScore: number, opponentScore: number) => {
+            const playerScoreEl = document.getElementById("player-score");
+            const opponentScoreEl = document.getElementById("opponent-score");
+            if (playerScoreEl) playerScoreEl.textContent = playerScore.toString();
+            if (opponentScoreEl) opponentScoreEl.textContent = opponentScore.toString();
+        },
         dispose: () => {
             game.dispose();
         }
     };
+}
+
+function getModeName(mode: string): string {
+    const modeNames: { [key: string]: string } = {
+        'classic': 'Classic',
+        'speed': 'Speed Mode',
+        'pellet': 'Pellet Mode',
+        'multiball': 'Multi-Ball Mode',
+        '2d': '2D Mode'
+    };
+    return modeNames[mode] || 'Classic';
+}
+
+// ✅ NEW: Helper function to get mode-specific control text
+function getModeControlsText(mode: string): string {
+    const controls: { [key: string]: string } = {
+        'classic': 'P1: W/S to move | P2: ↑/↓ to move',
+        'speed': 'P1: W/S to move | P2: ↑/↓ to move',
+        'pellet': 'P1: W/S move, D shoot, A magnet | P2: ↑/↓ move, ← shoot, → magnet',
+        'multiball': 'P1: W/S move, A speedup, D grow | P2: ↑/↓ move, → speedup, ← grow',
+        '2d': 'P1: W/A/S/D to move freely | P2: ↑/←/↓/→ to move freely'
+    };
+    return controls[mode] || controls['classic'];
 }

@@ -1,8 +1,8 @@
 import { Router } from '../router';
-import { createWindow } from './_components';
-import { createTaskbar, createStaticDesktopBackground } from "./_components";
+import { createWindow } from '../components/_components';
+import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
 import { PongGame } from '../game/PongGame';
-import { createPlayerVsAIStatsComponent } from './_userComponents';
+import { createPlayerVsAIStatsComponent } from '../components/_userComponents';
 
 export function aiGameSetupView(router: Router) {
 	const root = document.getElementById("app")!;
@@ -81,10 +81,14 @@ export function aiGameSetupView(router: Router) {
 		joinClassicBtn.disabled = true;
 		joinClassicBtn.textContent = "Waiting for opponent...";
 		joinClassicBtn.className = 'px-6 py-2 bg-gray-400 rounded-md font-bold cursor-not-allowed';
-
-		const playerName = "Player";
-		const playerId = Math.random().toString().substring(2, 7);
-
+		
+		const playerName = localStorage.getItem('username') || "Player";
+		const playerId = localStorage.getItem('userId'); 
+		if(!playerId) {
+			console.log('no userid found please login again');
+			return;
+		}
+		console.log('username and id', playerName, playerId)
 		try {
 			const game = new PongGame(
 				playerName,
