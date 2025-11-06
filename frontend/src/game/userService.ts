@@ -219,7 +219,7 @@ export class UserService {
     static async logout(): Promise<void> {
         try {
             // Call logout endpoint to invalidate tokens
-            await ApiService.post<void>('/users/auth/logout', {});
+            await ApiService.post<void>('/api/v1/auth/logout', {});
             console.log('✅ Logged out successfully');
         } catch (error) {
             console.error('⚠️ Logout error (clearing local data anyway):', error);

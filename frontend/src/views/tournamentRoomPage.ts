@@ -147,12 +147,10 @@ export function tournamentRoomView(
 	root.append(bracketsWindow);
 	
 	const { taskbar } = createTaskbar({
-		startButton: {
-		label: "Start",
-		onClick: () => router.navigate("/"),
-		},
 		clock: true,
+		router: router
 	});
+	
 	root.appendChild(taskbar);
 
 }

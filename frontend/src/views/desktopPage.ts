@@ -1,5 +1,6 @@
 import { Router } from "../router";
 import { createTaskbar } from "../components/_components";
+import { UserService } from "../game/userService";
 
 import joystickIcon from './images/joystick.png';
 import padlock from './images/padlock.png';
@@ -74,13 +75,22 @@ export function desktopView(router: Router) {
 		iconDiv.appendChild(label);
 
 		//Double-click to navigate
-		iconDiv.addEventListener("dblclick", () => {
+		iconDiv.addEventListener("dblclick", async () => {
 			switch(icon.id) {
 				case "local_game":
 					router.navigate("/localgame");
 					break;
 				case "logout":
-					router.navigate("/login");
+					try{
+						console.log('try log out')
+						await UserService.logout()
+						console.log('logout sucesfull')
+						router.navigate("/login")
+					}
+					catch{
+						console.log("logout error")
+						router.navigate("/login")
+					}
 					break;
 				case "Remotepong":
 					router.navigate("/onlineGame");
@@ -108,11 +118,8 @@ export function desktopView(router: Router) {
 	});
 
 	const { taskbar } = createTaskbar({
-		startButton: {
-			label: "Start",
-			onClick: () => router.navigate("/"),
-		},
 		clock: true,
+		router: router
 	});
 
 	// Add the taskbar to the root

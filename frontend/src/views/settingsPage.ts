@@ -60,15 +60,9 @@ function createPageLayout(app: HTMLElement, window: HTMLElement, router: Router)
     app.appendChild(window);
     
     const { taskbar } = createTaskbar({
-        startButton: {
-            label: "Start",
-            onClick: () => {
-                cleanupPage();
-                router.navigate("/");
-            }
-        },
-        clock: true,
-    });
+		clock: true,
+		router: router
+	});
     
     app.appendChild(taskbar);
 }

@@ -117,14 +117,10 @@ export function localModeSelectionView(router: Router) {
 
     app.appendChild(selectionWindow);
 
-    // ✅ NEW: Add taskbar (like other pages)
     const { taskbar } = createTaskbar({
-        startButton: {
-            label: "Start",
-            onClick: () => router.navigate("/"),
-        },
-        clock: true,
-    });
+		clock: true,
+		router: router
+	});
     app.appendChild(taskbar);
 
     return {

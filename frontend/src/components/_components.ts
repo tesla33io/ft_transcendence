@@ -14,6 +14,8 @@ import network from '../views/images/network.png'
 import spider from '../views/images/spider.png'
 import phone from '../views/images/phone.png'
 import gear from '../views/images/gears.png'
+import { UserService } from '../game/userService';
+import { Router } from '../router';
 
 
 
@@ -413,6 +415,7 @@ interface TaskbarOptions {
   tasks?: { id: string; label: string; onClick: () => void }[];
   systemTrayIcons?: { id: string; icon: string; onClick: () => void }[];
   clock?: boolean; // Whether to show the clock
+  router?: Router;
 }
 
 export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; taskArea: HTMLElement } {
@@ -423,7 +426,7 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
   taskbar.style.borderColor = '#e7e9e6'
   taskbar.style.borderTop = '4px sold #e7e9e6'
   // Start Button
-  if (options.startButton) {
+  
 	const startButton = document.createElement("div");
 	startButton.className = "start-button flex items-center px-4 py-2 bg-win98-button text-win98-text cursor-pointer hover:bg-gray-600";
 	startButton.style.border = "2px solid #a5a9a6"; // Outer border
@@ -432,11 +435,30 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
 	startButton.style.margin = "4px"; // Add spacing around the button
 	startButton.innerHTML = `
 	  <img src="${start}" alt="Start" class="w-6 h-6 mr-2">
-	  <span>${options.startButton.label}</span>
+	  <span>start</span>
 	`;
-	startButton.addEventListener("click", options.startButton.onClick);
+	
+	//default logout on start button 
+	startButton.addEventListener("click",async () =>{
+		try{
+			await UserService.logout()
+			console.log("log out succesful")
+			if(options.router){
+				options.router?.navigate('/login');
+			}
+			else{
+				window.location.href = '/login';
+			}
+		}
+		catch{
+			console.log("error loging out (taskbar)")
+			window.location.href = '/login'
+		}
+	})
+	
 	taskbar.appendChild(startButton);
-  }
+  
+
 
   // Task Area (Dynamic Content)
   const taskArea = document.createElement("div");

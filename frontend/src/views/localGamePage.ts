@@ -83,12 +83,9 @@ export function localGameView(router: Router) {
     app.appendChild(gameWindow);
 
     const { taskbar } = createTaskbar({
-        startButton: {
-            label: "Start",
-            onClick: () => router.navigate("/"),
-        },
-        clock: true,
-    });
+		clock: true,
+		router: router
+	});
     app.appendChild(taskbar);
 
     const game = new LocalPongGame(canvas, winningScore, mode, router, gameWindow);
