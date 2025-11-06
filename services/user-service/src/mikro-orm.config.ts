@@ -1,4 +1,5 @@
 import { defineConfig } from '@mikro-orm/better-sqlite';
+import { TSMigrationGenerator } from '@mikro-orm/migrations';
 
 export default defineConfig({
     dbName: 'user-service.db',
@@ -7,7 +8,9 @@ export default defineConfig({
     debug: process.env.NODE_ENV !== 'production',
     logger: (message) => console.log(message),
 	migrations: {
-        path: './src/migrations',
-        pathTs: './src/migrations',
+        path: './dist/migrations',      // compiled JS for runtime
+        pathTs: './src/migrations',     // authoring location
+       emit: 'ts',                     // generate TS files only
+       generator: TSMigrationGenerator,
     },
 });
