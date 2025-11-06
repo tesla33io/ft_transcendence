@@ -42,11 +42,8 @@ export function notFoundView(router: Router) {
 
 	// Create and add taskbar
 	const { taskbar } = createTaskbar({
-		startButton: {
-			label: "Start",
-			onClick: () => router.navigate("/desktop"),
-		},
 		clock: true,
+		router: router
 	});
 
 	root.appendChild(taskbar);

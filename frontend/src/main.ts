@@ -4,7 +4,7 @@ import './styles/style.css'
 import {Router} from './router'
 import {gameView} from './views/gamePage'
 import {friendsView} from './views/friendsPage'
-import {friendsProfileView} from './views/friendsProfile'
+//import {friendsProfileView} from './views/friendsProfile'
 import {loginView} from './views/loginPage'
 import {profileView} from './views/profilePage'
 import {registerView} from './views/registerPage'
@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	router.register("/onlineGame", () => remoteGameSetupView(router));
 	router.register("/game", () => gameView(router));
 	router.register("/friends",() => friendsView(router));
-	router.register("/friendsProfile", () => friendsProfileView(router));
+	//router.register("/friendsProfile", () => friendsProfileView(router));
 	router.register("/login",() => loginView(router));
 	router.register("/profile",() => profileView(router));
 	router.register("/register",() => registerView(router));

@@ -8,6 +8,7 @@ import network from './images/network.png'
 import spider from './images/spider.png'
 import phone from './images/phone.png'
 import gear from './images/gears.png'
+import { UserService } from "../game/userService";
 
 // Define the type for icons
 type IconData = {
@@ -78,7 +79,7 @@ export function guestDesktopView(router: Router) {
         label.className = "mt-2 text-white";
         iconDiv.appendChild(label);
 
-        iconDiv.addEventListener("dblclick", () => {
+        iconDiv.addEventListener("dblclick", async () => {
             if (!icon.enabled) {
                 showErrorDialog("Login required to access this feature");
                 return; // Don't navigate
@@ -93,8 +94,15 @@ export function guestDesktopView(router: Router) {
                     router.navigate("/tournament");
                     break;
                 case "logout":
-                    router.navigate("/login"); 
-                    break;
+                    try{
+						await UserService.logout()
+						console.log("logout succesful")
+						router.navigate("/login")
+					}
+					catch{
+						console.log("error loging out")
+						router.navigate("/login")
+					}
             }
         });
 
@@ -103,12 +111,9 @@ export function guestDesktopView(router: Router) {
     });
 
     const { taskbar } = createTaskbar({
-        startButton: {
-            label: "Start",
-            onClick: () => router.navigate("/"),
-        },
-        clock: true,
-    });
+		clock: true,
+		router: router
+	});
 
     // Add the taskbar to the root
     root.appendChild(taskbar);

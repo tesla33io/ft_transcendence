@@ -12,8 +12,7 @@ export function friendsView(router: Router) {
     }
     root.innerHTML = "";
 
-    const staticBackground = createStaticDesktopBackground();
-    staticBackground.attachToPage(document.body);
+    
         
     // Create content container
     const content = document.createElement('div');
@@ -23,6 +22,9 @@ export function friendsView(router: Router) {
         gap: 15px;
         height: 100%;
     `;
+
+	const staticBackground = createStaticDesktopBackground();
+    staticBackground.attachToPage(root);
 
     // Friends list container
     const friendsContainer = document.createElement('div');
@@ -89,15 +91,9 @@ export function friendsView(router: Router) {
     root.appendChild(window);
 
     const { taskbar } = createTaskbar({
-        startButton: {
-            label: "Start",
-            onClick: () => {
-                staticBackground.remove();
-                router.navigate("/");
-            }
-        },
-        clock: true,
-    });
+		clock: true,
+		router: router
+	});
     
     root.appendChild(taskbar);
 }

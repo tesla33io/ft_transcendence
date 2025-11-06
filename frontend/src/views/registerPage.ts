@@ -272,12 +272,9 @@ export function registerView(router: Router) {
 
     // Create the taskbar
     const { taskbar } = createTaskbar({
-        startButton: {
-            label: "Start",
-            onClick: () => router.navigate("/"),
-        },
-        clock: true,
-    });
+		clock: true,
+		router: router
+	});
     root.appendChild(taskbar);
 
     // Focus on username input for better UX

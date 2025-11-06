@@ -92,11 +92,8 @@ export function gameView(router: Router, wsHandler: WebSocketHandler) {
 
 		// Create the taskbar
 		const { taskbar } = createTaskbar({
-			startButton: {
-			label: "Start",
-			onClick: () => router.navigate("/"),
-			},
 			clock: true,
+			router: router
 		});
 		// Add the taskbar to the root
 		root.appendChild(taskbar);
