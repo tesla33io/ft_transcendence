@@ -26,9 +26,15 @@ services:
       - game-service
     networks:
       - pong-network
-    # volumes: #REMOVE FOR production
-    #   - ./services/gateway-service:/gateway-service
-    #   - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
+    healthcheck:
+      test: ["CMD", "curl", "-f","http://localhost:3000/test/status"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
+    volumes: #REMOVE FOR production
+      - ./services/gateway-service:/gateway-service
+      - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
 
   game-service:
     build:
@@ -36,8 +42,8 @@ services:
       dockerfile: Dockerfile
     container_name: game-service
     ports:
-      - "5002:5000"
-      - "5001:5001"
+      - "5002"
+      - "5001"
     env_file:
       - .env
     networks:
@@ -48,9 +54,9 @@ services:
       timeout: 30s
       retries: 5
       start_period: 10s
-    # volumes: #REMOVE FOR production
-    #   - ./services/game-service:/game-service
-    #   - /app/node_modules
+    volumes: #REMOVE FOR production
+      - ./services/game-service:/game-service
+      - /app/node_modules
 
   user-service:
     build:
@@ -91,9 +97,15 @@ services:
       dockerfile: Dockerfile
     container_name: AI-service
     ports:
-      - "5100:5100"
+      - "5100"
     networks:
       - pong-network
+    healthcheck:
+      test: ["CMD", "curl", "-f","http://localhost:5100/api/v1/aibot/test/status"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 10s
 
 networks:
   pong-network:

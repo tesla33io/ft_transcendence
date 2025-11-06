@@ -1,10 +1,12 @@
 import fastify from 'fastify'
+import cookie from '@fastify/cookie'
 import { GameMatchmaker} from "./routes/GameMatchmaker"
 import { GameServiceManager } from './routes/GameServiceManager'
 import { JoinGameRequest } from './types/interfaces'
-import { get } from 'http'
+import { validateSessionId } from './types/types'
 
 const server = fastify({ logger: true })
+server.register(cookie)
 const PORT = 5000
 const WebsocketPORT = 5005
 
@@ -19,6 +21,9 @@ server.register(require('@fastify/cors'), {
 
 server.post("/join-classic", async (req, reply) => {
 	// authentication place holder
+	// need to parse the sessionId from the cookie and playerId from the req
+	const sessionId = req.cookies.sessionId
+	validateSessionId("test", "123")
 	if (0){
 		let errorMsg = "something" //will be work on
 		return reply.status(401).send(errorMsg)
@@ -29,6 +34,8 @@ server.post("/join-classic", async (req, reply) => {
 
 server.post("/join-tournament", async (req, reply) => {
 	// authentication place holder
+	// need to parse the sessionId from the cookie and playerId from the req
+	validateSessionId("test", "123")
 	if (0){
 		let errorMsg = "something" //will be work on
 		return reply.status(401).send(errorMsg)
@@ -39,6 +46,8 @@ server.post("/join-tournament", async (req, reply) => {
 
 server.post("/bot-classic", async(req, reply) => {
 	// authentication place holder
+	// need to parse the sessionId from the cookie and playerId from the req
+	validateSessionId("test", "123")
 	if (0){
 		let errorMsg = "something" //will be work on
 		return reply.status(401).send(errorMsg)

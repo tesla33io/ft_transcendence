@@ -79,9 +79,13 @@ export function remoteGameSetupView(router: Router) {
         joinClassicBtn.textContent = "Waiting for opponent...";
         joinClassicBtn.className = 'px-6 py-2 bg-gray-400 rounded-md font-bold cursor-not-allowed';
 
-        const playerName = "Player";
-        const playerId = Math.random().toString().substring(2, 7);
+        const playerName = localStorage.getItem('username') || "Player";
 
+		const playerId = localStorage.getItem('userId'); 
+		if(!playerId) {
+			console.log('no userid found please login again');
+			return;
+		}
         try {
             const game = new PongGame(
                 playerName,

@@ -5,6 +5,7 @@ import { MatchHistory } from './MatchHistory.js';
 // Enums for type safety and data validation
 export const UserRole ={
     USER: 'user',
+	GUEST: 'guest',
     ADMIN: 'admin',
 } as const;
 

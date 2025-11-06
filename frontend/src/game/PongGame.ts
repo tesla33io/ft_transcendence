@@ -4,6 +4,7 @@ import { WebSocketHandler } from "./websocketHandler";
 import { gameView} from "../views/gamePage";
 import { Router} from "../router";
 import { tournamentRoomView } from "../views/tournamentRoomPage";
+import { ApiService } from "./apiService";  // ← ADD THIS IMPORT
 
 export class PongGame {
     private playerName: string;
@@ -128,7 +129,7 @@ export class PongGame {
             console.log(`PlayerID: ${this.playerId} - ${this.gameMode}`);
             let apiEndpoint: string;
             if (this.gameMode === 'tournament') {
-                apiEndpoint = '/api/v1/game/join-tournament';
+                apiEndpoint = '/api/v1/game/join-tournament/';
             } else if (this.gameMode === 'ai') {
                 apiEndpoint = '/api/v1/game/bot-classic';
                 this.gameMode = 'classic';
@@ -136,25 +137,16 @@ export class PongGame {
                 apiEndpoint = '/api/v1/game/join-classic';
             }
 
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    playerName: this.playerName,
-                    playerId: this.playerId,
-                    gameMode: this.gameMode,
-                    timestamp: new Date().toISOString()
-                })
+            const data: GameData = await ApiService.post(apiEndpoint, {
+                playerName: this.playerName,
+                playerId: this.playerId,
+                gameMode: this.gameMode,
+                timestamp: new Date().toISOString()
             });
 
-            const data: GameData = await response.json();
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to join game');
-            }
-
+            console.log('Join game response:', data);
             this.handleJoinSuccess(data);
+
         } catch (error) {
             console.error('Join game error:', error);
         }

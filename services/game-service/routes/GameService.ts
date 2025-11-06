@@ -28,6 +28,7 @@ export class GameService{
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnounce(game, playerId)
 			//place holder for sending match result to user management
+			this.sendDataToUMS(game, playerId)
 			if (this.gameMode === 'tournament'){
 				this.tournamentHandling(game, playerId)
 			}
@@ -142,5 +143,51 @@ export class GameService{
 			}
 		}
 	}
+
+	private sendDataToUMS(game: Game, winnerId: string){
+
+		const data1 = {
+			userId: parseInt(game.player1.id),
+			opponentId:  parseInt(game.player2.id),
+			result: game.player1.id == winnerId ? "win" : "lose",
+			userScore: game.player1.score,
+			opponentScore: game.player2.score,
+			playedAt: new Date().toISOString()
+		}
+		console.log("data1",data1)
+		const response1 = this.postToUMS(data1)
+		console.log(response1)
+
+		const data2 = {
+			userId: game.player2.id,
+			opponentId: game.player1.id,
+			result: game.player2.id == winnerId ? "win" : "lose",
+			userScore: game.player2.score,
+			opponentScore: game.player1.score,
+			playedAt: new Date().toLocaleString()
+		}
+
+		const response2 = this.postToUMS(data2)
+		console.log(response2)
+	}
+
+
+	private async postToUMS(data: any){
+		try {
+			const response1 = await fetch("http://user-service:8000/match-history", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Authorization: "Bearer 1",
+				},
+				body: JSON.stringify(data)
+			})
+			console.log("Match history sent:", response1);
+		}
+		catch (error) {
+			console.log("Error sending match history:", error)
+		}
+	}
+
 }
 

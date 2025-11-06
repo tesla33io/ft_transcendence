@@ -12,8 +12,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.1.0",
     "@fastify/http-proxy": "^10.0.2",
+    "@fastify/jwt": "^10.0.0",
     "@fastify/websocket": "^11.2.0",
     "fastify": "5.5.0",
     "ts-node": "^10.9.2",
@@ -22,7 +24,7 @@
   "devDependencies": {
     "@fastify/websocket": "^11.2.0",
     "@types/http-proxy": "^1.17.16",
-    "@types/node": "^24.3.0",
+    "@types/node": "^24.10.0",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.18.1",
     "nodemon": "^3.1.10",
