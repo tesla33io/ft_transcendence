@@ -152,39 +152,44 @@ export default async function userRoutes(app: FastifyInstance) {
             summary: 'Register a new user',
             description: 'Creates a new user account and sets a session cookie.',
         }}, async (req: FastifyRequest<{Body: AuthBody}>, reply: FastifyReply) => {
-            try {
-                if (!req.body || typeof req.body !== 'object') {
-                    return reply.code(400).send({ 
-                        error: 'Invalid request body',
-                        details: 'Request body must be a valid JSON object'
-                    });
-                }
+        
+        // Add logging HERE
+        console.log('🔵 [REGISTER] Request received');
+        console.log('🔵 [REGISTER] Request body:', JSON.stringify(req.body));
+        console.log('🔵 [REGISTER] Request headers:', req.headers);
+        
+        try {
+            const { username: rawUsername, password: rawPassword } = req.body as any;
+            
+            console.log('🔵 [REGISTER] Extracted username:', rawUsername);
+            console.log('🔵 [REGISTER] Extracted password length:', rawPassword?.length);
 
-                const { username: rawUsername, password: rawPassword } = req.body as any;
+            // Validate username
+            const usernameValidation = validateUsername(rawUsername);
+            if (!usernameValidation.isValid) {
+                console.log('❌ [REGISTER] Username validation failed:', usernameValidation.errors);
+                return reply.code(400).send({ 
+                    error: 'Invalid username',
+                    details: usernameValidation.errors
+                });
+            }
 
-                // Validate username
-                const usernameValidation = validateUsername(rawUsername);
-                if (!usernameValidation.isValid) {
-                    return reply.code(400).send({ 
-                        error: 'Invalid username',
-                        details: usernameValidation.errors
-                    });
-                }
+            // Validate password
+            const passwordValidation = validatePassword(rawPassword);
+            if (!passwordValidation.isValid) {
+                console.log('❌ [REGISTER] Password validation failed:', passwordValidation.errors);
+                return reply.code(400).send({ 
+                    error: 'Invalid password',
+                    details: passwordValidation.errors
+                });
+            }
 
-                // Validate password
-                const passwordValidation = validatePassword(rawPassword);
-                if (!passwordValidation.isValid) {
-                    return reply.code(400).send({ 
-                        error: 'Invalid password',
-                        details: passwordValidation.errors
-                    });
-                }
+            console.log('✅ [REGISTER] Validations passed');
+            const username = sanitizeInput(rawUsername);
+            const password = rawPassword;
 
-                const username = sanitizeInput(rawUsername);
-                const password = rawPassword;
-
-                // Check if user already exists
-                const existing = await app.em.findOne(User, { username });
+            // Check if user already exists
+            const existing = await app.em.findOne(User, { username });
             if (existing) {
                 return reply.code(409).send({ 
                     error: 'Username already exists',
@@ -217,14 +222,15 @@ export default async function userRoutes(app: FastifyInstance) {
                 message: 'User registered successfully'
             };
 
-            } catch (error) {
-                app.log.error('Registration error: ' + String(error));
-                return reply.code(500).send({ 
-                    error: 'Internal server error',
-                    details: 'Unable to process registration at this time'
-                });
-            }
-        });
+        } catch (error) {
+            console.error('🔴 [REGISTER] Error:', error);
+            app.log.error('Registration error: ' + String(error));
+            return reply.code(500).send({ 
+                error: 'Internal server error',
+                details: 'Unable to process registration at this time'
+            });
+        }
+    });
 
         app.post<{Body: AuthBody}>('/auth/login', {
             config: { skipSession: true },
@@ -929,30 +935,11 @@ function validateUsername(username: any): ValidationResult {
     if (username.length < 3) {
         errors.push({ field: 'username', message: 'Username must be at least 3 characters long' });
     }
-    if (username.length > 30) {
-        errors.push({ field: 'username', message: 'Username must not exceed 30 characters' });
+    if (username.length > 32) {
+        errors.push({ field: 'username', message: 'Username must not exceed 32 characters' });
     }
-
-    const validUsernameRegex = /^[a-zA-Z0-9_-]+$/;
-    if (!validUsernameRegex.test(username)) {
-        errors.push({ 
-            field: 'username', 
-            message: 'Username can only contain letters, numbers, underscores, and hyphens' 
-        });
-    }
-
-    if (!/^[a-zA-Z0-9]/.test(username)) {
-        errors.push({ 
-            field: 'username', 
-            message: 'Username must start with a letter or number' 
-        });
-    }
-
-    if (/[_-]{2,}/.test(username)) {
-        errors.push({ 
-            field: 'username', 
-            message: 'Username cannot contain consecutive underscores or hyphens' 
-        });
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+        errors.push({ field: 'username', message: 'Username can only contain letters, numbers, underscores, and hyphens' });
     }
 
     return { isValid: errors.length === 0, errors };
@@ -969,66 +956,13 @@ function validatePassword(password: any): ValidationResult {
     if (password.length < 8) {
         errors.push({ field: 'password', message: 'Password must be at least 8 characters long' });
     }
-
-    if (password.length > 69) {
-        errors.push({ field: 'password', message: 'Password must not exceed 69 characters' });
-    }
-
-    // Check for at least one lowercase letter
-    if (!/[a-z]/.test(password)) {
-        errors.push({ field: 'password', message: 'Password must contain at least one lowercase letter' });
-    }
-
-    // Check for at least one uppercase letter
-    if (!/[A-Z]/.test(password)) {
-        errors.push({ field: 'password', message: 'Password must contain at least one uppercase letter' });
-    }
-
-    // Check for at least one digit
-    if (!/\d/.test(password)) {
-        errors.push({ field: 'password', message: 'Password must contain at least one number' });
-    }
-
-    // Check for at least one special character
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(password)) {
-        errors.push({ 
-            field: 'password', 
-            message: 'Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)' 
-        });
-    }
-
-    // Check for common weak patterns
-    const commonPatterns = [
-        /(.)\1{2,}/, // Three or more consecutive identical characters
-        /123456|654321|abcdef|fedcba/i, // Sequential patterns
-        /qwerty|asdfgh|zxcvbn/i, // Keyboard patterns
-    ];
-
-    for (const pattern of commonPatterns) {
-        if (pattern.test(password)) {
-            errors.push({ 
-                field: 'password', 
-                message: 'Password contains common weak patterns (avoid repeated characters, sequences, or keyboard patterns)' 
-            });
-            break;
-        }
-    }
-
-    const commonPasswords = [
-        'password', 'password123', '123456789', 'qwerty123', 
-        'admin123', 'letmein', 'welcome', 'monkey123'
-    ];
-
-    if (commonPasswords.some(common => password.toLowerCase().includes(common.toLowerCase()))) {
-        errors.push({ 
-            field: 'password', 
-            message: 'Password is too common or contains common password patterns' 
-        });
+    if (password.length > 128) {
+        errors.push({ field: 'password', message: 'Password must not exceed 128 characters' });
     }
 
     return { isValid: errors.length === 0, errors };
 }
 
 function sanitizeInput(input: string): string {
-    return input.trim().replace(/\s+/g, ' ');
+    return input.replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

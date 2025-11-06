@@ -1,4 +1,6 @@
 export class ApiService {
+    static readonly BASE_URL = 'http://localhost:3000'
+
     private static getAuthHeaders(): Record<string, string> {
         const token = localStorage.getItem('authToken');
         return {
@@ -7,31 +9,86 @@ export class ApiService {
         };
     }
 
-    // Generic GET request with auto-auth
+    // Generic GET request with auto-auth & 401 handling
     static async get<T>(endpoint: string): Promise<T> {
-        const response = await fetch(`/api${endpoint}`, {
-            headers: this.getAuthHeaders()
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
+        try {
+            const response = await fetch(`${this.BASE_URL}${endpoint}`, {
+                method: 'GET',
+                headers: this.getAuthHeaders(),
+                credentials: 'include'
+            });
+
+            console.log(`[API] GET ${endpoint} - Status: ${response.status}`);
+
+            if (response.status === 401) {
+                // Token expired, trigger refresh
+                const { UserService } = await import('./userService');
+                console.log('[API] 401 Unauthorized - Attempting refresh...');
+                
+                try {
+                    await UserService.refreshToken();
+                    // Retry with new token
+                    return this.get<T>(endpoint);
+                } catch (refreshError) {
+                    console.error('[API] Refresh failed, logging out');
+                    localStorage.clear();
+                    window.location.href = '/login';
+                    throw refreshError;
+                }
+            }
+
+            if (!response.ok) {
+                const error: any = new Error(`API Error: ${response.status}`);
+                error.status = response.status;
+                throw error;
+            }
+
+            return response.json();
+        } catch (error) {
+            console.error('[API] GET error:', error);
+            throw error;
         }
-        
-        return response.json();
     }
 
-    // Generic POST request with auto-auth
+    // Generic POST request with auto-auth & 401 handling
     static async post<T>(endpoint: string, data: any): Promise<T> {
-        const response = await fetch(`/api${endpoint}`, {
-            method: 'POST',
-            headers: this.getAuthHeaders(),
-            body: JSON.stringify(data)
-        });
-        
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.status}`);
+        try {
+            const response = await fetch(`${this.BASE_URL}${endpoint}`, {
+                method: 'POST',
+                headers: this.getAuthHeaders(),
+                credentials: 'include',
+                body: JSON.stringify(data)
+            });
+
+            console.log(`📨 [API] POST ${endpoint} - Status: ${response.status}`);
+
+            if (response.status === 401) {
+                // Token expired, trigger refresh
+                const { UserService } = await import('./userService');
+                console.log('[API] 401 Unauthorized - Attempting refresh...');
+                
+                try {
+                    await UserService.refreshToken();
+                    // Retry with new token
+                    return this.post<T>(endpoint, data);
+                } catch (refreshError) {
+                    console.error('[API] Refresh failed, logging out');
+                    localStorage.clear();
+                    window.location.href = '/login';
+                    throw refreshError;
+                }
+            }
+
+            if (!response.ok) {
+                const error: any = new Error(`API Error: ${response.status}`);
+                error.status = response.status;
+                throw error;
+            }
+
+            return response.json();
+        } catch (error) {
+            console.error('[API] POST error:', error);
+            throw error;
         }
-        
-        return response.json();
     }
 }

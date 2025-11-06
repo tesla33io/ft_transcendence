@@ -93,77 +93,182 @@ export class UserService {
     // ===== AUTHENTICATION (SENDERS) ====
     // Send login request
     static async login(credentials: LoginRequest): Promise<AuthResponse> {
-        // TODO: Uncomment when backend is ready
-        // const authData = await ApiService.post<AuthResponse>('/auth/login', credentials);
-        
-        // Mock response for now
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
-        
-        const mockAuthData: AuthResponse = {
-            user: {
-                id: 123,
-                username: credentials.username,
-                avatarUrl: '/images/default-avatar.png',
-                onlineStatus: OnlineStatus.ONLINE,
-                activityType: 'browsing',
-                role: UserRole.USER,
-                lastLogin: new Date().toISOString()
-            },
-            token: 'mock_jwt_token_' + Math.random().toString(36).substr(2, 9),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24h from now
-        };
-        
-        // Save token and user info after successful login
-        localStorage.setItem('authToken', mockAuthData.token);
-        localStorage.setItem('user', JSON.stringify(mockAuthData.user));
-        
-        return mockAuthData;
-    }
+    const response = await ApiService.post<{
+        id: number;
+        username: string;
+        role: string;
+        message: string;
+        accessToken: string;
+        refreshToken: string;
+    }>('/users/auth/login', credentials);
+    
+    console.log('Login successful!');
+    console.log('User ID:', response.id);
+    console.log('Username:', response.username);
+    console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
+    
+    // Store tokens and user data
+    localStorage.setItem('authToken', response.accessToken);
+    localStorage.setItem('userId', response.id.toString());
+    localStorage.setItem('username', response.username);
+    
+    // Create AuthResponse with real data from gateway
+    const authData: AuthResponse = {
+        user: {
+            id: response.id,
+            username: response.username,
+            avatarUrl: '/images/default-avatar.png',
+            onlineStatus: OnlineStatus.ONLINE,
+            activityType: 'browsing',
+            role: response.role || UserRole.USER,
+            lastLogin: new Date().toISOString()
+        },
+        token: response.accessToken,
+    };
+    
+    return authData;
+}
 
     // Send registration request
     static async register(userData: RegisterRequest): Promise<AuthResponse> {
-        // TODO: Uncomment when backend is ready
-        // return await ApiService.post<AuthResponse>('/auth/register', userData);
-        
-        // Mock response for now
-        await new Promise(resolve => setTimeout(resolve, 700));
-        
-        const mockAuthData: AuthResponse = {
-            user: {
-                id: Math.floor(Math.random() * 1000),
-                username: userData.username,
-                avatarUrl: userData.avatarUrl || '/images/default-avatar.png',
-                onlineStatus: OnlineStatus.ONLINE,
-                role: UserRole.USER,
-                lastLogin: new Date().toISOString()
-            },
-            token: 'mock_jwt_token_' + Math.random().toString(36).substr(2, 9),
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        };
-        
-        localStorage.setItem('authToken', mockAuthData.token);
-        localStorage.setItem('user', JSON.stringify(mockAuthData.user));
-        
-        return mockAuthData;
+    const response = await ApiService.post<{
+        id: number;
+        username: string;
+        role: string;
+        message: string;
+        accessToken: string;
+        refreshToken: string;
+    }>('/users/auth/register', {
+        username: userData.username,
+        password: userData.password
+    });
+    
+    console.log('Registration successful!');
+    console.log('User ID:', response.id);
+    console.log('Username:', response.username);
+    console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
+    
+    // Store tokens and user data
+    localStorage.setItem('authToken', response.accessToken);
+    localStorage.setItem('userId', response.id.toString());
+    localStorage.setItem('username', response.username);
+    
+    // Create AuthResponse with real data from gateway
+    const authData: AuthResponse = {
+        user: {
+            id: response.id,
+            username: response.username,
+            avatarUrl: '/images/default-avatar.png',
+            onlineStatus: OnlineStatus.ONLINE,
+            activityType: 'browsing',
+            role: response.role || UserRole.USER,
+            lastLogin: new Date().toISOString()
+        },
+        token: response.accessToken,
+    };
+    
+    return authData;
+}
+
+	    // ===== REFRESH TOKEN (SINGLE SOURCE OF TRUTH) =====
+    static async refreshToken(): Promise<{
+        accessToken: string;
+        refreshToken: string;
+    }> {
+        try {
+            console.log('[UserService] Refreshing token...');
+
+            const response = await fetch('http://localhost:3000/api/v1/auth/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({}),
+                credentials: 'include'  // ← Sends refreshToken cookie
+            });
+
+            if (!response.ok) {
+                throw new Error(`Token refresh failed: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            console.log('[UserService] Token refreshed successfully');
+
+            // Update localStorage with new access token
+            localStorage.setItem('authToken', data.accessToken);
+
+            return {
+                accessToken: data.accessToken,
+                refreshToken: data.refreshToken
+            };
+
+        } catch (error) {
+            console.error('[UserService] Token refresh failed:', error);
+            
+            // If refresh fails, user is logged out
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            
+            throw error;
+        }
     }
 
     // Send logout request & clear local data
     static async logout(): Promise<void> {
         try {
-            // TODO: Uncomment when backend is ready
-            // await ApiService.post<void>('/auth/logout', {});
-            
-            // Mock delay
-            await new Promise(resolve => setTimeout(resolve, 200));
-            
+            // Call logout endpoint to invalidate tokens
+            await ApiService.post<void>('/users/auth/logout', {});
+            console.log('✅ Logged out successfully');
+        } catch (error) {
+            console.error('⚠️ Logout error (clearing local data anyway):', error);
         } finally {
+            // Clear local storage
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');
+            // refreshToken cookie is cleared by server
         }
     }
 
     // ===== USER DATA (GETTERS) =====
-    
+    //get me 
+	static async getMe(): Promise<{id: number; username: string; role: string}> {
+		try {
+			const authToken = localStorage.getItem('authToken');
+			
+			if (!authToken) {
+				throw new Error('No authentication token found');
+			}
+
+			const response = await fetch('http://localhost:3000/api/v1/auth/me', {
+				method: 'GET',
+				headers: {
+					'Authorization': `Bearer ${authToken}`,
+					'Content-Type': 'application/json'
+				},
+				credentials: 'include'
+			});
+
+			if (!response.ok) {
+				throw new Error(`Failed to fetch user info: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			console.log('User info retrieved:', {
+				id: data.id,
+				username: data.username,
+				role: data.role
+			});
+
+			return data;
+
+		} catch (error) {
+			console.error('Error fetching user info:', error);
+			throw error;
+		}
+	}
     // Get current user's profile
     static async getCurrentUser(): Promise<PublicUser> {
         // TODO: Uncomment when backend is ready
@@ -216,7 +321,7 @@ export class UserService {
 	// Get current user's friends list
 	static async getFriends(): Promise<Friend[]> {
 		// TODO: Uncomment when backend is ready
-		// return await ApiService.get<Friend[]>('/users/me/friends');
+		// return await ??????
 		
 		// Mock response
 		await new Promise(resolve => setTimeout(resolve, 300));
@@ -419,7 +524,7 @@ export class UserService {
         return userData ? JSON.parse(userData) : null;
     }
 
-    // Get auth token
+    // Get auth token (accessToken)
     static getAuthToken(): string | null {
         return localStorage.getItem('authToken');
     }
@@ -428,6 +533,7 @@ export class UserService {
     static clearUserData(): void {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
+        // refreshToken cookie is cleared by server
     }
 
     // ===== PROFILE & STATISTICS API METHODS =====
