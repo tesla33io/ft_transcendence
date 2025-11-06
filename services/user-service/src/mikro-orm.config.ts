@@ -10,7 +10,7 @@ export default defineConfig({
 	migrations: {
         path: './dist/migrations',      // compiled JS for runtime
         pathTs: './src/migrations',     // authoring location
-       emit: 'ts',                     // generate TS files only
+        emit: 'ts',                     // generate TS files only
        generator: TSMigrationGenerator,
     },
 });
