@@ -146,6 +146,8 @@ export class GameService{
 
 	private sendDataToUMS(game: Game, winnerId: string){
 
+		console.log("Game data: ", game)
+
 		const data1 = {
 			userId: parseInt(game.player1.id),
 			opponentId:  parseInt(game.player2.id),
@@ -154,9 +156,9 @@ export class GameService{
 			opponentScore: game.player2.score,
 			playedAt: new Date().toISOString()
 		}
-		console.log("data1",data1)
-		const response1 = this.postToUMS(data1)
-		console.log(response1)
+		// console.log("data1",data1)
+		const response1 = this.postToUMS(data1, game.player1.sessionId)
+		console.log("Player 1: ", response1)
 
 		const data2 = {
 			userId: game.player2.id,
@@ -167,18 +169,19 @@ export class GameService{
 			playedAt: new Date().toLocaleString()
 		}
 
-		const response2 = this.postToUMS(data2)
-		console.log(response2)
+		const response2 = this.postToUMS(data2, game.player2.sessionId)
+		console.log("Player 2: ", response2)
 	}
 
 
-	private async postToUMS(data: any){
+	private async postToUMS(data: any, sessionId: string){
 		try {
 			const response1 = await fetch("http://user-service:8000/match-history", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: "Bearer 1",
+					"Authorization": "Bearer 1",
+					"Cookie": `sessionId=${sessionId}`
 				},
 				body: JSON.stringify(data)
 			})

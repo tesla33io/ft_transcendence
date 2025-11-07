@@ -1,8 +1,8 @@
 import { GameService } from "../routes/GameService";
 import { GameServiceManager } from "../routes/GameServiceManager";
 import { PlayerQueueManager } from "../routes/PlayerQueueManager";
-import { JoinGameRequest, Player , Game} from "../types/interfaces";
-import { GameMode, generateBallPos, generateBot, generateDefaultGame, generateDefaultPlayer, generateGameId } from "../types/types";
+import { JoinGameRequest, Player , Game, User} from "../types/interfaces";
+import { createUser, GameMode, generateBallPos, generateBot, generateDefaultGame, generateDefaultPlayer, generateGameId } from "../types/types";
 
 
 export class GameModeTestCases {
@@ -20,10 +20,12 @@ export class GameModeTestCases {
 		const gameId: string = generateGameId()
 
 		const botId_1: string = await generateBot("_1", gameId, "easy")
-		const bot_1: Player = generateDefaultPlayer("bot", botId_1)
+		const botUser1: User = createUser(botId_1, "bot", "")
+		const bot_1: Player = generateDefaultPlayer(botUser1)
 
 		const botId_2: string = await generateBot("_2",gameId, "easy")
-		const bot_2: Player = generateDefaultPlayer("bot", botId_2)
+		const botUser2: User = createUser(botId_2, "bot", "")
+		const bot_2: Player = generateDefaultPlayer(botUser2)
 
 		const game: Game = {
 			id: gameId,

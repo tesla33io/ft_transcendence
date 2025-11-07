@@ -1,6 +1,6 @@
-import {  GameMode } from '../../types/types'
+import {  createUser, GameMode } from '../../types/types'
 import { GameServiceManager } from '../GameServiceManager'
-import { Game, Player, JoinGameRequest } from '../../types/interfaces'
+import { Game, Player, JoinGameRequest, User } from '../../types/interfaces'
 import { generateDefaultPlayer, generateGameId, generateBallPos, generateBot } from '../../types/types'
 
 export class BotClassicGameJoiner {
@@ -8,14 +8,16 @@ export class BotClassicGameJoiner {
 		private gameServiceManager: GameServiceManager ){}
 
 	public async join(playerData: JoinGameRequest) {
-			const { playerName, playerId} = playerData as {playerName: string, playerId: string}
+			const { playerName, playerId, sessionId} = playerData as {playerName: string, playerId: string, sessionId: string}
 			const gameMode: GameMode = 'classic'
 			const gameService = this.gameServiceManager.getGameService(gameMode)
-			const player: Player = generateDefaultPlayer(playerName, playerId)
+			const user: User = createUser(playerId, playerName, sessionId)
+			const player: Player = generateDefaultPlayer(user)
 			const gameId: string = generateGameId();
 
 			const botId: string = await generateBot("", gameId, "easy")
-			const bot: Player = generateDefaultPlayer("bot", botId)
+			const botUser: User = createUser(botId, "bot", "")
+			const bot: Player = generateDefaultPlayer(botUser)
 
 			const game: Game ={
 					id: gameId,

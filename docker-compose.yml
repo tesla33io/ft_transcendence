@@ -71,9 +71,9 @@ services:
       - blockchain-service
     networks:
       - pong-network
-    volumes:
-      - ./services/user-service:/user-service
-      - /user-service/node_modules
+    # volumes:
+    #   - ./services/user-service:/user-service
+    #   - /user-service/node_modules
 
   blockchain-service:
     build:

@@ -4,16 +4,21 @@ export interface JoinGameRequest {
 	playerName: string,
 	playerId: string,
 	gameMode?: GameMode,
-	aiBotMode?: boolean
+	aiBotMode?: boolean,
+	sessionId?: string
 }
 
-export interface Player {
-		id: string
-		name: string
-		Y: number
-		X: number
-		score: number
-		ready: boolean
+export interface User {
+	id: string
+	sessionId: string
+	name: string
+}
+
+export interface Player extends User {
+	Y: number
+	X: number
+	score: number
+	ready: boolean
 }
 
 export interface Ball {

@@ -1,6 +1,6 @@
-import {  GameMode } from '../../types/types'
+import {  createUser, GameMode } from '../../types/types'
 import { GameServiceManager } from '../GameServiceManager'
-import { Game, Player, JoinGameRequest } from '../../types/interfaces'
+import { Game, Player, JoinGameRequest, User } from '../../types/interfaces'
 import { PlayerQueueManager } from '../PlayerQueueManager'
 import { generateDefaultPlayer, generateDefaultGame } from '../../types/types'
 
@@ -11,9 +11,10 @@ export class ClassicGameJoiner {
 	) {}
 
 	public async join(playerData: JoinGameRequest) {
-		const { playerName, playerId, gameMode } = playerData as { playerName: string; playerId: string; gameMode: GameMode }
+		const { playerName, playerId, gameMode, sessionId } = playerData as { playerName: string; playerId: string; gameMode: GameMode; sessionId: string }
 		const gameService = this.gameServiceManager.getGameService(gameMode)
-		const player: Player = generateDefaultPlayer(playerName, playerId)
+		const user: User = createUser(playerId, playerName, sessionId)
+		const player: Player = generateDefaultPlayer(user)
 
 		const waitingPlayers = this.queueManager.getQueue(gameMode)
 

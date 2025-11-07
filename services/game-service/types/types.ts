@@ -1,4 +1,4 @@
-import {Player, Ball, Game} from "./interfaces"
+import {Player, Ball, Game, User} from "./interfaces"
 import { randomBytes } from 'crypto';
 
 export const GAME_HEIGHT = Number(process.env.GAME_HEIGHT || "550")
@@ -37,16 +37,24 @@ export const generateBallPos = (): Ball => {
 	return ball
 }
 
-export const generateDefaultPlayer = (playerName: string, playerId: string): Player => {
+export const generateDefaultPlayer = (user:User): Player => {
 	let player: Player = {
-		id: playerId,
-		name: playerName,
+		...user,
 		score: 0,
 		Y: 0,
 		X: 0,
 		ready: false
 	}
 	return player
+}
+
+export const createUser = (id: string, playerName: string, sessionId: string): User => {
+	let user: User = {
+		id: id,
+		name: playerName,
+		sessionId: sessionId
+	}
+	return user
 }
 
 export const generateDefaultGame = (opponent: Player, player: Player): Game =>{

@@ -20,44 +20,32 @@ server.register(require('@fastify/cors'), {
 })
 
 server.post("/join-classic", async (req, reply) => {
-	// authentication place holder
-	// need to parse the sessionId from the cookie and playerId from the req
-	const sessionId = req.cookies.sessionId
-	validateSessionId("test", "123")
-	if (0){
-		let errorMsg = "something" //will be work on
-		return reply.status(401).send(errorMsg)
-	}
 	const result = await gameMatchmaker.joinClassicGame(req.body as JoinGameRequest)
 	return reply.status(201).send(result)
 })
 
 server.post("/join-tournament", async (req, reply) => {
-	// authentication place holder
-	// need to parse the sessionId from the cookie and playerId from the req
-	validateSessionId("test", "123")
-	if (0){
-		let errorMsg = "something" //will be work on
-		return reply.status(401).send(errorMsg)
-	}
 	const result = await gameMatchmaker.joinTournament(req.body as JoinGameRequest)
 	return reply.status(201).send(result)
 })
 
 server.post("/bot-classic", async(req, reply) => {
-	// authentication place holder
-	// need to parse the sessionId from the cookie and playerId from the req
-	validateSessionId("test", "123")
-	if (0){
-		let errorMsg = "something" //will be work on
-		return reply.status(401).send(errorMsg)
+
+	const body = req.body as JoinGameRequest
+	const sessionId = req.cookies.sessionId
+
+	console.log("Cookie: ", req.cookies)
+
+	const joinRequest: JoinGameRequest = {
+		...body,
+		sessionId
 	}
-	//check status of ai service
-	else if (!((await fetch("http://ai-service:5100/api/v1/aibot/test/status")).ok)){
-		let errorMsg = "something" //will be work on
+
+	if (!((await fetch("http://ai-service:5100/api/v1/aibot/test/status")).ok)){
+		let errorMsg = "something" //TO DO
 		return reply.status(503).send(errorMsg)
 	}
-	const result = await gameMatchmaker.joinBotClassic(req.body as JoinGameRequest)
+	const result = await gameMatchmaker.joinBotClassic(joinRequest)
 	return reply.status(201).send(result)
 })
 

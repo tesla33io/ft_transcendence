@@ -1,8 +1,9 @@
-import {  GameMode } from '../../types/types'
+import {  createUser, GameMode } from '../../types/types'
 import { GameServiceManager } from '../GameServiceManager'
-import { Tournament, Player, JoinGameRequest } from '../../types/interfaces'
+import { Tournament, Player, JoinGameRequest, User } from '../../types/interfaces'
 import { PlayerQueueManager } from '../PlayerQueueManager'
 import { generateDefaultPlayer} from '../../types/types'
+import { createUnzip } from 'zlib'
 
 export class TournamentGameJoiner {
 	private tournamentPlayerLimit = 4
@@ -12,9 +13,10 @@ export class TournamentGameJoiner {
 		private gameServiceManager: GameServiceManager) {}
 
 	public async join(playerData: JoinGameRequest) {
-			const {playerName, playerId, gameMode} = playerData as {playerName: string, playerId: string, gameMode: GameMode}
+			const {playerName, playerId, gameMode, sessionId} = playerData as {playerName: string, playerId: string, gameMode: GameMode, sessionId: string}
 			const gameService = this.gameServiceManager.getGameService('tournament')
-			const player: Player = generateDefaultPlayer(playerName, playerId)
+			const user: User = createUser(playerId, playerName, sessionId)
+			const player: Player = generateDefaultPlayer(user)
 
 			const tournamentWaitingPlayer = this.queueManager.getQueue(gameMode)
 			tournamentWaitingPlayer.push(player)
