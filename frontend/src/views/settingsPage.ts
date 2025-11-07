@@ -706,45 +706,91 @@ function setupPasswordHandlers(section: HTMLElement) {
     });
 }
 
-function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser, avatarContainer: HTMLElement) {
+function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser, avatarSelectorContainer: HTMLElement) {
     const saveBtn = section.querySelector("#save_avatar") as HTMLButtonElement;
-    const avatarInput = section.querySelector("#new_avatar") as HTMLInputElement;
+    const fileInput = document.querySelector("#avatar-file-input") as HTMLInputElement;
     const currentAvatar = section.querySelector("img") as HTMLImageElement;
+    const avatarInput = section.querySelector("#new_avatar") as HTMLInputElement;
+
+    // ✅ Store selected file here
+    let selectedFile: File | null = null;
+
+    // ✅ Listen for file selection and store it
+    fileInput?.addEventListener("change", () => {
+        selectedFile = fileInput.files?.[0] || null;
+        console.log('📁 File selected:', selectedFile?.name);
+    });
 
     saveBtn.addEventListener("click", async () => {
-        const newAvatarUrl = avatarInput.value;
-        
-        if (!newAvatarUrl) {
-            showStatus("Please select an avatar", true);
-            return;
-        }
-
-        setButtonLoading(saveBtn, true);
-        
-        try {
-            console.log('Updating avatar to:', newAvatarUrl);
-            const updatedUser = await UserService.updateAvatar(newAvatarUrl);
+        // ✅ Check stored file, not fileInput.files
+        if (selectedFile) {
+            // ✅ FILE UPLOAD MODE
+            setButtonLoading(saveBtn, true);
             
-            console.log('Avatar updated successfully');
-            showStatus("Avatar updated successfully!");
+            try {
+                console.log('🖼️ Uploading avatar file:', selectedFile.name);
+                
+                // ✅ Use stored file
+                const updatedUser = await UserService.updateAvatar(selectedFile);
+                
+                console.log('✅ Avatar uploaded successfully');
+                showStatus("Avatar uploaded successfully!");
+                
+                currentAvatar.src = updatedUser.avatarUrl || agent;
+                
+                // Clear stored file and input
+                selectedFile = null;
+                if (fileInput) fileInput.value = '';
+                
+            } catch (error) {
+                console.error('❌ Failed to upload avatar:', error);
+                showStatus(
+                    error instanceof Error ? error.message : "Failed to upload avatar",
+                    true
+                );
+            } finally {
+                setButtonLoading(saveBtn, false);
+            }
             
-            currentAvatar.src = updatedUser.avatarUrl || agent;
-            avatarInput.value = "";
+        } else if (avatarInput?.value && !avatarInput.value.startsWith('data:')) {
+            // ✅ PRESET AVATAR MODE
+            const newAvatarUrl = avatarInput.value;
             
-            // Clear selections
-            avatarContainer.querySelectorAll(".avatar-option").forEach(a => {
-                (a as HTMLElement).style.border = "2px solid transparent";
-                a.classList.remove("selected");
-            });
+            setButtonLoading(saveBtn, true);
             
-        } catch (error) {
-            console.error(' Failed to update avatar:', error);
-            showStatus("Failed to update avatar. Please try again.", true);
-        } finally {
-            setButtonLoading(saveBtn, false);
+            try {
+                console.log('Updating avatar to preset:', newAvatarUrl);
+                const updates: ProfileUpdateRequest = { avatarUrl: newAvatarUrl };
+                const updatedUser = await UserService.updateProfile(updates);
+                
+                console.log('Avatar updated successfully');
+                showStatus("Avatar updated successfully!");
+                
+                currentAvatar.src = updatedUser.avatarUrl || agent;
+                avatarInput.value = "";
+                
+                // Clear preset selections
+                const avatarOptions = avatarSelectorContainer.querySelector('div');
+                if (avatarOptions) {
+                    avatarOptions.querySelectorAll(".avatar-option").forEach(a => {
+                        (a as HTMLElement).style.border = "2px solid transparent";
+                        a.classList.remove("selected");
+                    });
+                }
+                
+            } catch (error) {
+                console.error('Failed to update avatar:', error);
+                showStatus("Failed to update avatar. Please try again.", true);
+            } finally {
+                setButtonLoading(saveBtn, false);
+            }
+            
+        } else {
+            showStatus("Please select a preset avatar or upload a file", true);
         }
     });
 }
+
 
 function showStatus(message: string, isError: boolean = false) {
     const statusDiv = document.getElementById("status_message")!;

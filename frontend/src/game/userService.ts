@@ -1,4 +1,6 @@
 import { ApiService } from './apiService';
+import { FileUploadHelper } from './fileUpload';
+
 
 import type { 
     LoginRequest,
@@ -269,6 +271,8 @@ export class UserService {
 			throw error;
 		}
 	}
+
+
     // Get current user's profile FROM THE BACKEND
     static async getCurrentUser(): Promise<PublicUser> {
         try {
@@ -341,12 +345,50 @@ export class UserService {
     }
 
     // Update avatar
-    static async updateAvatar(avatarUrl: string): Promise<PublicUser> {
-        // TODO: Uncomment when backend is ready
-        // return await ApiService.post<PublicUser>('/users/me/avatar', { avatarUrl });
-        
-        return await this.updateProfile({ avatarUrl });
-    }
+	static async updateAvatar(file: File): Promise<PublicUser> {
+		try {
+			console.log('🖼️ [UserService] Validating PNG file...');
+			
+			// ✅ Validate file (size + PNG only)
+			const validation = FileUploadHelper.validateImageFile(file);
+			
+			if (!validation.isValid) {
+				throw new Error(validation.error);
+			}
+			
+			console.log('✅ File validation passed');
+			console.log(`📤 Uploading avatar: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+			
+			// ✅ Create FormData
+			const formData = new FormData();
+			formData.append('picture', file);
+			
+			// ✅ Upload via POST
+			const response = await ApiService.postFile<any>('/users/me/picture', formData);
+			
+			console.log('✅ Avatar uploaded successfully:', response);
+			
+			// Map response to PublicUser
+			const user: PublicUser = {
+				id: response.id,
+				username: response.username,
+				avatarUrl: response.profile?.avatarUrl || response.avatarUrl,
+				activityType: response.profile?.activityType || 'browsing',
+				onlineStatus: response.profile?.onlineStatus || OnlineStatus.ONLINE,
+				role: response.role || UserRole.USER,
+				lastLogin: response.last_login
+			};
+			
+			// Update localStorage
+			localStorage.setItem('user', JSON.stringify(user));
+			
+			return user;
+			
+		} catch (error) {
+			console.error('❌ Failed to upload avatar:', error);
+			throw error;
+		}
+	}
 
 
 	// ===== FRIENDS API METHODS =====
@@ -547,53 +589,50 @@ export class UserService {
         } catch (error) {
             console.error('❌ Failed to fetch profile:', error);
             //mock data
-            console.log('⚠️ Falling back to mock profile data');
-            
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            const mockProfile: UserProfile = {
-                userId: userId || 1,
-                userName: userId ? `User_${userId}` : "CurrentUser",
-                avatarUrl: '/images/default-avatar.png',
-                bioText: userId ? "This is a friend's profile!" : "This is my awesome bio! I love playing pong and competing in tournaments.",
-                isOnline: userId ? Math.random() > 0.5 : true,
-                lastOnline: new Date().toISOString(),
-                accountCreationDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-                currentElo: Math.floor(1000 + Math.random() * 1000)
-            };
-            
-            return mockProfile;
+            throw new Error("Failed to get user Profile")
 			
         }
     }
 
     // Get 1v1 statistics
-    static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
-        // TODO: Uncomment when backend is ready
-        // const endpoint = userId ? `/users/${userId}/stats/1v1` : '/users/me/stats/1v1';
-        // return await ApiService.get<OneVOneStatistics>(endpoint);
+   // Get 1v1 statistics
+static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
+    try {
+        console.log('📊 [UserService] Fetching 1v1 statistics...');
         
-        // Mock response
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Determine endpoint
+        const endpoint = userId ? `/users/${userId}` : '/users/me';
         
-        const gamesWon = Math.floor(Math.random() * 50) + 10;
-        const gamesLost = Math.floor(Math.random() * 40) + 5;
-        const totalGames = gamesWon + gamesLost;
+        // Call the real endpoint
+        const response = await ApiService.get<any>(endpoint);
         
-        const mockStats: OneVOneStatistics = {
-            userId: userId || 1,
-            userName: userId ? `User_${userId}` : "CurrentUser",
-            gamesWon,
-            gamesLost,
-            winPercentage: Math.round((gamesWon / totalGames) * 100),
-            currentWinStreak: Math.floor(Math.random() * 8),
-            longestWinStreak: Math.floor(Math.random() * 15) + 3,
-            currentRating: Math.floor(1000 + Math.random() * 1000),
-            peakRating: Math.floor(1200 + Math.random() * 800)
+        console.log('✅ 1v1 Statistics fetched:', response.stats);
+        
+        // Map backend response to OneVOneStatistics interface
+        const totalGames = response.stats?.totalGames || 0;
+        const wins = response.stats?.wins || 0;
+        
+        const stats: OneVOneStatistics = {
+            userId: response.id,
+            userName: response.username,
+            gamesWon: wins,
+            gamesLost: response.stats?.losses || 0,
+            winPercentage: totalGames > 0 
+                ? Math.round((wins / totalGames) * 100) 
+                : 0,
+            currentWinStreak: response.stats?.currentWinStreak || 0,
+            longestWinStreak: response.stats?.bestWinStreak || 0,
+            currentRating: response.stats?.currentRating || 1000,
+            peakRating: response.stats?.highestRating || 1000
         };
         
-        return mockStats;
+        return stats;
+        
+    } catch (error) {
+        console.error('❌ Failed to fetch 1v1 statistics:', error);
+        throw new Error(`Failed to load 1v1 statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+}
 
     // Get Player vs AI statistics
     static async getPlayerVsAIStatistics(userId?: number): Promise<PlayerVsAIStatistics> {

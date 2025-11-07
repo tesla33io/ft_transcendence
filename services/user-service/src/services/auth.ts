@@ -1,4 +1,4 @@
-import jwt, { SignOptions, Secret } from 'jsonwebtoken';
+/*import jwt, { SignOptions, Secret } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { User } from '../entities/User.js';
 
@@ -35,3 +35,4 @@ export class AuthService {
     }
   }
 }
+*/
