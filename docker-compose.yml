@@ -72,8 +72,7 @@ services:
     networks:
       - pong-network
     volumes:
-      - ./services/user-service:/user-service
-      - /user-service/node_modules
+      - /user-service/node_modules # anonymous volume keeps Linux-built binaries
 
   blockchain-service:
     build:
