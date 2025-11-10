@@ -424,7 +424,7 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
   taskbar.className = "taskbar fixed bottom-0 left-0 w-full h-12 flex items-center bg-silver border-t-2 border-color#e7e9e6";
   taskbar.style.backgroundColor = '#b6bbb7'; // Windows 98 silver color
   taskbar.style.borderColor = '#e7e9e6'
-  taskbar.style.borderTop = '4px sold #e7e9e6'
+  taskbar.style.borderTop = '2px solid #e7e9e6'
   // Start Button
   
 	const startButton = document.createElement("div");
