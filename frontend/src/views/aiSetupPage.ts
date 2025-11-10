@@ -4,6 +4,8 @@ import { createTaskbar, createStaticDesktopBackground } from "../components/_com
 import { PongGame } from '../game/PongGame';
 import { createPlayerVsAIStatsComponent } from '../components/_userComponents';
 
+let currentPongGame: PongGame | undefined = undefined;
+
 export function aiGameSetupView(router: Router) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
@@ -20,7 +22,7 @@ export function aiGameSetupView(router: Router) {
 
 	 const playerVsAIComponent = createPlayerVsAIStatsComponent({
         container: playerVsAIContainer,
-        
+
         width: '100%',
         height: '140px',
         showTitle: true
@@ -35,7 +37,7 @@ export function aiGameSetupView(router: Router) {
 	joinClassicBtn.type = "submit";
 	joinClassicBtn.id = "joinBtn";
 	joinClassicBtn.textContent = "Join Game against AI";
-	
+
 	joinClassicBtn.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-bold';
 
 	buttonContainer.appendChild(joinClassicBtn);
@@ -58,7 +60,12 @@ export function aiGameSetupView(router: Router) {
 			help: true,
 			close: true,
 			onClose: () => {
+				if (currentPongGame) {
+					currentPongGame.dispose();
+					currentPongGame = undefined;
+				}
 				router.navigate("/desktop");
+
 			}
 		}
 	});
@@ -77,13 +84,13 @@ export function aiGameSetupView(router: Router) {
 
 	joinClassicBtn.addEventListener("click", async (e: Event) => {
 		e.preventDefault();
-		
+
 		joinClassicBtn.disabled = true;
 		joinClassicBtn.textContent = "Waiting for opponent...";
 		joinClassicBtn.className = 'px-6 py-2 bg-gray-400 rounded-md font-bold cursor-not-allowed';
-		
+
 		const playerName = localStorage.getItem('username') || "Player";
-		const playerId = localStorage.getItem('userId'); 
+		const playerId = localStorage.getItem('userId');
 		if(!playerId) {
 			console.log('no userid found please login again');
 			return;
@@ -96,6 +103,7 @@ export function aiGameSetupView(router: Router) {
 				'ai',
 				router,
 			);
+			currentPongGame = game;
 			await game.joinGame();
 		} catch (error) {
 			console.error("Failed to join game:", error);

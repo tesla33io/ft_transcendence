@@ -28,7 +28,7 @@ export class GameService{
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnounce(game, playerId)
 			//place holder for sending match result to user management
-			this.sendDataToUMS(game, playerId)
+			// this.sendDataToUMS(game, playerId)
 			if (this.gameMode === 'tournament'){
 				this.tournamentHandling(game, playerId)
 			}
