@@ -21,7 +21,7 @@ export function tournamentView(router: Router) {
         flex-shrink: 0;
         height: 140px;
     `;
-	
+
 	const tournamentStatsComponent = createTournamentStatsComponent({
         container: statsContainer,
         userId: undefined, // Will use current user's stats
@@ -41,7 +41,7 @@ export function tournamentView(router: Router) {
 	const label = document.createElement("label");
 	label.htmlFor = "alias";
 	label.textContent = "Enter your alias:";
-	
+
 	const input = document.createElement("input");
 	input.type = "text";
 	input.id = "alias";
@@ -68,8 +68,8 @@ export function tournamentView(router: Router) {
 	canvas.style.display = "none";
 	content.appendChild(canvas);
 
-	
-	
+
+
 	const setupWindow = createWindow({
 		title: "Tournament Setup",
 		width: "400px",
@@ -79,6 +79,7 @@ export function tournamentView(router: Router) {
 			close: true,
 			onClose: () => {
 				window.history.back();
+				currentPongGame?.dispose();
 			}
 		}
 	});
@@ -92,7 +93,7 @@ export function tournamentView(router: Router) {
 			},
 			clock: true,
 		});
-	
+
 		root.appendChild(taskbar);
 
 	form.addEventListener("submit", async (e: Event) => {
@@ -109,7 +110,7 @@ export function tournamentView(router: Router) {
 			currentPongGame = undefined;
 		}
 
-		const playerId = localStorage.getItem('userId'); 
+		const playerId = localStorage.getItem('userId');
 		if(!playerId) {
 			console.log('no userid found please login again');
 			return;
