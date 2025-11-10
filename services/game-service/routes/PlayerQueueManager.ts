@@ -9,13 +9,13 @@ export class PlayerQueueManager {
 
 	getQueue(gameMode: GameMode): Player[] {
 		if (!this.waitingPlayers.has(gameMode)) {
-			this.waitingPlayers.set(gameMode, []);
+			this.waitingPlayers.set(gameMode, [])
 		}
-		return this.waitingPlayers.get(gameMode)!;
+		return this.waitingPlayers.get(gameMode)!
 	}
 
 	addPlayer(player: Player, gameMode: GameMode) {
-		this.getQueue(gameMode).push(player);
+		this.getQueue(gameMode).push(player)
 	}
 
 	checkIfPlayerInQ(playerId: string, gameMode: GameMode): boolean{
@@ -37,9 +37,9 @@ export class PlayerQueueManager {
 
 		const idx = queue.findIndex(p => p.id === playerId);
 		if (idx !== -1) {
-			queue.splice(idx, 1);
-			return true;
+			queue.splice(idx, 1)
+			return true
 		}
-			return false;
+			return false
 	}
 }
