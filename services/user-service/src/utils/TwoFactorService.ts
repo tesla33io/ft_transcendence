@@ -4,19 +4,22 @@ import crypto from 'crypto';
 
 export class TwoFactorService {
     // Generate TOTP secret for authenticator apps
-    static generateTOTPSecret(username: string, issuer: string = 'Pong Game'): {
+    static async generateTOTPSecret(username: string, issuer: string = 'Pong Game'): Promise<{
         secret: string;
         qrCodeUrl: string;
-    } {
+    }> {
         const secret = speakeasy.generateSecret({
             name: `${issuer} (${username})`,
             issuer: issuer,
             length: 32
         });
 
+        // Generate QR code image as data URL
+        const qrCodeDataUrl = await QRCode.toDataURL(secret.otpauth_url!);
+
         return {
             secret: secret.base32,
-            qrCodeUrl: secret.otpauth_url!
+            qrCodeUrl: qrCodeDataUrl  // This is now a data URL like "data:image/png;base64,..."
         };
     }
 

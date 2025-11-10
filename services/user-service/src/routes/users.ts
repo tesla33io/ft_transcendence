@@ -48,6 +48,7 @@ const authBodySchema = {
     properties: {
         username: { type: 'string', minLength: 3, maxLength: 32 },
         password: { type: 'string', minLength: 8, maxLength: 128 },
+        twoFactorCode: { type: 'string', minLength: 6, maxLength: 8 }, // Optional 2FA code
     },
     additionalProperties: false,
 } as const;
@@ -335,26 +336,39 @@ export default async function userRoutes(app: FastifyInstance) {
                     let twoFactorValid = false;
                     
                     if (user.twoFactorMethod === 'totp') {
+                        // Try TOTP verification first
                         twoFactorValid = TwoFactorService.verifyTOTP(twoFactorCode, user.twoFactorSecret!);
                     } else if (user.twoFactorMethod === 'email') {
                         twoFactorValid = codeStore.verifyCode(twoFactorCode, user.id);
+
+                        // If TOTP fails, try backup codes as fallback
+                        if (!twoFactorValid) {
+                            twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                        }
+                    } else if (user.twoFactorMethod === 'email') {
+                        // Try email code verification first
+                        twoFactorValid = codeStore.verifyCode(twoFactorCode, user.id);
+                        
+                        // If email code fails, try backup codes as fallback
+                        if (!twoFactorValid) {
+                            twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                        }
                     } else {
-                        // Check backup codes
+                        // No specific method, only check backup codes
                         twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
-                        if (twoFactorValid) {
-                            // Remove used backup code
+                    }
+                    
+                    // If backup code was used, remove it
+                    if (twoFactorValid && twoFactorCode.length === 8) {
+                        // This looks like a backup code (8 digits), remove it
+                        try {
                             const codes = JSON.parse(user.backupCodes || '[]');
                             const updatedCodes = codes.filter((c: string) => c !== twoFactorCode);
                             user.backupCodes = TwoFactorService.hashBackupCodes(updatedCodes);
                             await app.em.flush();
+                        } catch (error) {
+                            app.log.warn('Error removing backup code: ' + String(error));
                         }
-                    }
-
-                    if (!twoFactorValid) {
-                        return reply.code(401).send({
-                            error: 'Invalid 2FA code',
-                            details: 'The verification code is incorrect or expired'
-                        });
                     }
                 }
 
@@ -493,7 +507,7 @@ export default async function userRoutes(app: FastifyInstance) {
             const { method, email } = req.body as { method: 'totp' | 'email'; email?: string };;
 
             if (method === 'totp') {
-                const { secret, qrCodeUrl } = TwoFactorService.generateTOTPSecret(user.username);
+                const { secret, qrCodeUrl } = await TwoFactorService.generateTOTPSecret(user.username);
                 
                 // Store temporarily (don't enable yet)
                 user.twoFactorSecret = secret;
