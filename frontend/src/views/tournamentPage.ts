@@ -78,8 +78,8 @@ export function tournamentView(router: Router) {
 			help: true,
 			close: true,
 			onClose: () => {
-				window.history.back();
 				currentPongGame?.dispose();
+				router.navigateToDesktop();
 			}
 		}
 	});

@@ -86,7 +86,7 @@ export function localGameSetupView(router: Router) {
         titleBarControls: {
             close: true,
             onClose: () => {
-                router.navigate('/Desktop');
+                router.navigateToDesktop();
             }
         }
     });

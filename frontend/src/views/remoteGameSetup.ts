@@ -55,7 +55,7 @@ export function remoteGameSetupView(router: Router) {
             help: true,
             close: true,
             onClose: () => {
-                router.navigate("/desktop");
+                router.navigateToDesktop();
             }
         }
     });

@@ -140,7 +140,7 @@ export function tournamentRoomView(
 		content: content,
 		titleBarControls: {
 		close: true,
-		onClose: () => router.navigate("/desktop"),
+		onClose: () => router.navigateToDesktop()
 		},
 	});
 

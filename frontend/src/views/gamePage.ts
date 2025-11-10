@@ -80,10 +80,9 @@ export function gameView(router: Router, wsHandler: WebSocketHandler) {
 		titleBarControls: {
 			close: true,
 			onClose: () => {
-				//router.navigate("/desktop");
-				window.history.back();
 				if (wsHandler)
 					wsHandler.disconnect();
+				router.navigateToDesktop();
 			}
 		}
 	});

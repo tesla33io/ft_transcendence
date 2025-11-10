@@ -64,8 +64,7 @@ export function aiGameSetupView(router: Router) {
 					currentPongGame.dispose();
 					currentPongGame = undefined;
 				}
-				router.navigate("/desktop");
-
+				router.navigateToDesktop();
 			}
 		}
 	});

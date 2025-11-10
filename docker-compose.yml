@@ -41,6 +41,9 @@ services:
       context: ./services/game-service
       dockerfile: Dockerfile
     container_name: game-service
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}  
+      - JWT_SECRET=${JWT_SECRET:-} 
     ports:
       - "5002"
       - "5001"

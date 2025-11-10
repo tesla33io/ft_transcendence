@@ -92,6 +92,10 @@ export interface UserProfile {
 }
 
 export class UserService {
+    // In-memory role cache (not localStorage for security)
+    private static roleCache: { role: string; timestamp: number } | null = null;
+    private static CACHE_DURATION = 60000; // 1 minute
+
     // ===== AUTHENTICATION (SENDERS) ====
     // Send login request
     static async login(credentials: LoginRequest): Promise<AuthResponse> {
@@ -234,80 +238,71 @@ export class UserService {
     }
 
     // ===== USER DATA (GETTERS) =====
-    //get me 
-	static async getMe(): Promise<{id: number; username: string; role: string}> {
-		try {
-			const authToken = localStorage.getItem('authToken');
-			
-			if (!authToken) {
-				throw new Error('No authentication token found');
-			}
-
-			const response = await fetch('http://localhost:3000/api/v1/auth/me', {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${authToken}`,
-					'Content-Type': 'application/json'
-				},
-				credentials: 'include'
-			});
-
-			if (!response.ok) {
-				throw new Error(`Failed to fetch user info: ${response.status}`);
-			}
-
-			const data = await response.json();
-			
-			console.log('User info retrieved:', {
-				id: data.id,
-				username: data.username,
-				role: data.role
-			});
-
-			return data;
-
-		} catch (error) {
-			console.error('Error fetching user info:', error);
-			throw error;
-		}
-	}
-
-
-    // Get current user's profile FROM THE BACKEND
-    static async getCurrentUser(): Promise<PublicUser> {
+    
+    /**
+     * Get current user info from gateway (includes role)
+     * Now uses ApiService for consistency and auto token refresh
+     */
+    static async getMe(): Promise<{id: number; username: string; role: string}> {
         try {
-            console.log('👤 [UserService] Fetching current user from backend...');
+            console.log('👤 [UserService] Fetching current user info...');
             
-            // Call real API endpoint
-            const response = await ApiService.get<any>('/users/me');
+            // ✅ Use ApiService instead of raw fetch
+            const userInfo = await ApiService.get<{id: number; username: string; role: string}>('/api/v1/auth/me');
             
-            console.log('✅ Current user fetched:', response);
+            console.log('✅ User info fetched:', userInfo);
             
-            // Map response to PublicUser
-            const user: PublicUser = {
-                id: response.id,
-                username: response.username,
-                avatarUrl: response.profile?.avatarUrl || '/images/default-avatar.png',
-                activityType: response.profile?.activityType || 'browsing',
-                onlineStatus: response.profile?.onlineStatus || OnlineStatus.ONLINE,
-                role: response.role || UserRole.USER,
-                lastLogin: response.last_login
+            // Cache role IN MEMORY with timestamp (not localStorage)
+            this.roleCache = {
+                role: userInfo.role,
+                timestamp: Date.now()
             };
             
-            // Update localStorage
-            localStorage.setItem('user', JSON.stringify(user));
-            
-            return user;
+            return userInfo;
             
         } catch (error) {
-            console.error('❌ Failed to fetch current user:', error);
-            
-            // Fallback to localStorage
-            const stored = this.getCurrentUserFromStorage();
-            if (!stored) throw new Error('Not logged in');
-            
-            return stored;
+            console.error('❌ Failed to fetch user info:', error);
+            throw new Error(`Failed to get user info: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
+    }
+
+    /**
+     * Get user role securely with short-lived cache
+     * Always verifies with gateway - NEVER trusts localStorage
+     */
+    static async getUserRoleSecure(): Promise<string | null> {
+        try {
+            // Check if cache is valid (less than 1 minute old)
+            if (this.roleCache && (Date.now() - this.roleCache.timestamp) < this.CACHE_DURATION) {
+                console.log('📋 [UserService] Using cached role (fresh)');
+                return this.roleCache.role;
+            }
+
+            // Cache expired or doesn't exist - fetch fresh
+            console.log('🔍 [UserService] Cache expired, fetching fresh role...');
+            const userInfo = await this.getMe();
+            return userInfo.role;
+            
+        } catch (error) {
+            console.error('❌ Failed to get role:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Check if user is guest
+     */
+    static async isGuest(): Promise<boolean> {
+        const role = await this.getUserRoleSecure();
+        return role === 'guest';
+    }
+
+    /**
+     * Check if user is registered user (not guest)
+     */
+    static async isRegisteredUser(): Promise<boolean> {
+        const role = await this.getUserRoleSecure();
+        return role === 'user' || role === 'admin';
     }
 
     // ===== USER UPDATES (SENDERS) =====
@@ -396,65 +391,20 @@ export class UserService {
 	// Get current user's friends list
 	static async getFriends(): Promise<Friend[]> {
 		try {
-			console.log('👥 [UserService] Fetching friends...');
+			console.log('Get friends...');
+
+			const friends = await ApiService.get<Friend[]>('/users/friends');
 			
-			// Call the real endpoint
-			const friends = await ApiService.get<Friend[]>('/user/friend');
-			
-			console.log('✅ Friends fetched successfully:', friends);
-			console.log(`📊 Total friends: ${friends.length}`);
+			console.log('Friends fetched successfully:', friends);
+			console.log(`Total friends: ${friends.length}`);
 			
 			return friends;
 			
 		} catch (error) {
 			console.error('❌ Failed to fetch friends:', error);
 			
-			// Fallback to mock data if API fails
-			console.log('⚠️ Falling back to mock friends data');
-			
-			await new Promise(resolve => setTimeout(resolve, 300));
-			
-			const mockFriends: Friend[] = [
-				{
-					userId: 101,
-					userName: "Alice_Gamer",
-					isOnline: true,
-					lastOnlineAt: new Date().toISOString(),
-					avatarUrl: '/images/default-avatar.png'
-				},
-				{
-					userId: 102,
-					userName: "Bob_Pro",
-					isOnline: true,
-					lastOnlineAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-					avatarUrl: '/images/default-avatar.png'
-				},
-				{
-					userId: 103,
-					userName: "Charlie_Win",
-					isOnline: false,
-					lastOnlineAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-					avatarUrl: '/images/default-avatar.png'
-				},
-				{
-					userId: 104,
-					userName: "Diana_Fast",
-					isOnline: false,
-					lastOnlineAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-					avatarUrl: '/images/default-avatar.png'
-				},
-				{
-					userId: 105,
-					userName: "Eve_Champion",
-					isOnline: true,
-					lastOnlineAt: new Date().toISOString(),
-					avatarUrl: '/images/default-avatar.png'
-				}
-			];
-			
-			return mockFriends;
+			throw new Error('Failed to load Friends')
 		}
-		// Mock response
 	
 	}
 
@@ -553,8 +503,15 @@ export class UserService {
     // Clear all user data (for logout)
     static clearUserData(): void {
         localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userName');
         localStorage.removeItem('user');
-        // refreshToken cookie is cleared by server
+        
+        // Clear in-memory cache
+        this.roleCache = null;
+        
+        console.log('✅ User data and role cache cleared');
     }
 
     // ===== PROFILE & STATISTICS API METHODS =====

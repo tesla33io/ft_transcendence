@@ -90,7 +90,7 @@ export function localModeSelectionView(router: Router) {
         buttonContainer.append(buttonLabel, buttonDesc);
         
         buttonContainer.addEventListener('click', () => {
-            router.navigate(`/localgame/setup?mode=${gameMode.mode}`);
+            router.navigate(`/localgame/play`);
         });
 
         modesContainer.appendChild(buttonContainer);
@@ -101,16 +101,16 @@ export function localModeSelectionView(router: Router) {
 
     content.append(title, modesContainer);
 
-    // ✅ CHANGED: Bigger window
+
     const selectionWindow = createWindow({
         title: 'Local Pong - Mode Selection',
-        width: '500px',  // ✅ CHANGED: Increased from 400px
-        height: '570px',  // ✅ CHANGED: Increased from 380px
+        width: '500px',
+        height: '570px',
         content: content,
         titleBarControls: {
             close: true,
             onClose: () => {
-                router.navigate('/Desktop');
+                router.navigateToDesktop();
             }
         }
     });

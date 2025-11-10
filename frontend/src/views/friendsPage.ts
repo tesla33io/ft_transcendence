@@ -83,7 +83,7 @@ export function friendsView(router: Router) {
             close: true,
             onClose: () => {
                 staticBackground.remove();
-                router.navigate('/desktop');
+                router.navigateToDesktop();
             }
         }
     });
