@@ -1,6 +1,4 @@
 import { ApiService } from './apiService';
-import { FileUploadHelper } from './fileUpload';
-
 
 import type { 
     LoginRequest,
@@ -497,17 +495,15 @@ export class UserService {
             
         } catch (error) {
             console.error('❌ Failed to fetch profile:', error);
-            //mock data
             throw new Error("Failed to get user Profile")
 			
         }
     }
 
-    // Get 1v1 statistics
    // Get 1v1 statistics
 static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
     try {
-        console.log('📊 [UserService] Fetching 1v1 statistics...');
+        console.log('[UserService] Fetching 1v1 statistics...');
         
         // Determine endpoint
         const endpoint = userId ? `/users/${userId}` : '/users/me';
@@ -515,7 +511,7 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
         // Call the real endpoint
         const response = await ApiService.get<any>(endpoint);
         
-        console.log('✅ 1v1 Statistics fetched:', response.stats);
+        console.log(' 1v1 Statistics fetched:', response.stats);
         
         // Map backend response to OneVOneStatistics interface
         const totalGames = response.stats?.totalGames || 0;
@@ -538,7 +534,7 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
         return stats;
         
     } catch (error) {
-        console.error('❌ Failed to fetch 1v1 statistics:', error);
+        console.error('Failed to fetch 1v1 statistics:', error);
         throw new Error(`Failed to load 1v1 statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }

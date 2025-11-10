@@ -88,7 +88,7 @@ export function desktopView(router: Router) {
 						router.navigate("/login")
 					}
 					catch{
-						console.log("logout error")
+						console.log("logout error", Error);
 						router.navigate("/login")
 					}
 					break;

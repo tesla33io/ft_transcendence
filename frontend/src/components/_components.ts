@@ -451,7 +451,7 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
 			}
 		}
 		catch{
-			console.log("error loging out (taskbar)")
+			console.log("error logging out (taskbar)")
 			window.location.href = '/login'
 		}
 	})

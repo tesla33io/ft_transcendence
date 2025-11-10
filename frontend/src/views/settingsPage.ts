@@ -705,7 +705,7 @@ function setupPasswordHandlers(section: HTMLElement) {
         }
     });
 }
-
+/* ---PROBABLY NOT GONING TO BE IMPLEMENTED
 function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser, avatarSelectorContainer: HTMLElement) {
     const saveBtn = section.querySelector("#save_avatar") as HTMLButtonElement;
     const fileInput = document.querySelector("#avatar-file-input") as HTMLInputElement;
@@ -730,13 +730,11 @@ function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser, avat
             try {
                 console.log('🖼️ Uploading avatar file:', selectedFile.name);
                 
-                // ✅ Use stored file
-                const updatedUser = await UserService.updateAvatar(selectedFile);
-                
+
                 console.log('✅ Avatar uploaded successfully');
                 showStatus("Avatar uploaded successfully!");
                 
-                currentAvatar.src = updatedUser.avatarUrl || agent;
+                
                 
                 // Clear stored file and input
                 selectedFile = null;
@@ -790,7 +788,7 @@ function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser, avat
         }
     });
 }
-
+*/
 
 function showStatus(message: string, isError: boolean = false) {
     const statusDiv = document.getElementById("status_message")!;
