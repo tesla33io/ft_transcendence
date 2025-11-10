@@ -9,7 +9,7 @@ export class PlayerQueueManager {
 
 	getQueue(gameMode: GameMode): Player[] {
 		if (!this.waitingPlayers.has(gameMode)) {
-		this.waitingPlayers.set(gameMode, []);
+			this.waitingPlayers.set(gameMode, []);
 		}
 		return this.waitingPlayers.get(gameMode)!;
 	}
@@ -18,15 +18,28 @@ export class PlayerQueueManager {
 		this.getQueue(gameMode).push(player);
 	}
 
+	checkIfPlayerInQ(playerId: string, gameMode: GameMode): boolean{
+		const playerList = this.getQueue(gameMode)
+		if (!playerId)
+			return false
+
+		for (const player of playerList){
+			if (playerId == player.id)
+				return true
+		}
+		return false
+	}
+
 	removePlayer(playerId: string, gameMode: GameMode): boolean {
 		const queue = this.waitingPlayers.get(gameMode);
-		if (!queue) return false;
+		if (!queue)
+			return false;
 
 		const idx = queue.findIndex(p => p.id === playerId);
 		if (idx !== -1) {
-		queue.splice(idx, 1);
-		return true;
+			queue.splice(idx, 1);
+			return true;
 		}
-		return false;
+			return false;
 	}
 }
