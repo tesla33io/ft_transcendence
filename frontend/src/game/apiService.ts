@@ -66,8 +66,8 @@ export class ApiService {
                 // Token expired, trigger refresh
                 if (endpoint === '/users/auth/login'){
                     const error: any = new Error('Unauthorized: Invalid credentials');
-                    error.status = 401
-                    throw error
+                    error.status = 401;
+                    throw error;
                 }
                 const { UserService } = await import('./userService');
                 console.log('[API] 401 Unauthorized - Attempting refresh...');
