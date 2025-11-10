@@ -4,10 +4,17 @@ import { AuthRequest, JWTHelper } from './JWT_helper'
 const server = fastify({logger: true})
 const PORT = 3000
 
+const JWT_SECRET = process.env.JWT_SECRET
+if(!JWT_SECRET){
+    console.error('FATAL: JWT_SECRET environment variable is not set!');
+    console.error('Run: make setup');
+    process.exit(1);
+}
+
 server.register(require('@fastify/cookie'))
 
 server.register(require('@fastify/jwt'),{
-    secret: process.env.JWT_SECRET || 'dev-secret-key'
+    secret: process.env.JWT_SECRET
 })
 
 server.register(require('@fastify/cors'),{
