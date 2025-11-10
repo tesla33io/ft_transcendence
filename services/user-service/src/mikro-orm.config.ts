@@ -2,7 +2,7 @@ import { defineConfig } from '@mikro-orm/better-sqlite';
 import { TSMigrationGenerator } from '@mikro-orm/migrations';
 
 export default defineConfig({
-    dbName: 'user-service.db',
+    dbName: '/user-service/data/user-service.db',
     entities: ['./dist/entities/**/*.js'],
     entitiesTs: ['./src/entities/**/*.ts'],
     debug: process.env.NODE_ENV !== 'production',

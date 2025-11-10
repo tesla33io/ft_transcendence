@@ -22,6 +22,10 @@ COPY --from=build /user-service/src ./src
 COPY --from=build /user-service/src/mikro-orm.config.ts ./mikro-orm.config.ts
 COPY tsconfig.json ./
 
+RUN apt-get update \
+       && apt-get install -y --no-install-recommends sqlite3 \
+       && rm -rf /var/lib/apt/lists/*
+
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 

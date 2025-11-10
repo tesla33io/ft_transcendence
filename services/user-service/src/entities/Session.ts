@@ -9,6 +9,9 @@ export class Session {
     @Property({ type: 'json' })
     data: Record<string, any> = {};
 
+    @Property({ type: 'number', nullable: true })
+    userId!: number;
+
     @Property({ type: 'datetime', nullable: false })
     expiresAt: Date = new Date();
 
