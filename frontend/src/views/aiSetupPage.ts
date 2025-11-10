@@ -64,8 +64,7 @@ export function aiGameSetupView(router: Router) {
 					currentPongGame.dispose();
 					currentPongGame = undefined;
 				}
-				router.navigate("/desktop");
-
+				router.navigateToDesktop();
 			}
 		}
 	});
@@ -73,11 +72,8 @@ export function aiGameSetupView(router: Router) {
 	root.appendChild(setupWindow);
 
 	const { taskbar } = createTaskbar({
-		startButton: {
-			label: "Start",
-			onClick: () => router.navigate("/"),
-		},
 		clock: true,
+		router: router
 	});
 
 	root.appendChild(taskbar);

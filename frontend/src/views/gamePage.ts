@@ -80,10 +80,9 @@ export function gameView(router: Router, wsHandler: WebSocketHandler) {
 		titleBarControls: {
 			close: true,
 			onClose: () => {
-				//router.navigate("/desktop");
-				window.history.back();
 				if (wsHandler)
 					wsHandler.disconnect();
+				router.navigateToDesktop();
 			}
 		}
 	});
@@ -92,11 +91,8 @@ export function gameView(router: Router, wsHandler: WebSocketHandler) {
 
 		// Create the taskbar
 		const { taskbar } = createTaskbar({
-			startButton: {
-			label: "Start",
-			onClick: () => router.navigate("/"),
-			},
 			clock: true,
+			router: router
 		});
 		// Add the taskbar to the root
 		root.appendChild(taskbar);
