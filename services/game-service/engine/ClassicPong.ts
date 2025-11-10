@@ -45,12 +45,12 @@ export class ClassicPong extends GameEngine {
 		if (game.ball.x < PLAYER_OFFSET - 10 && game.ball.vx < 0){
 			game.player2.score++
 			this.ballReset(game)
-			console.log(`Player 2 (${game.player2.name}|${game.player2.id} | ${game.ball.x} | ${game.ball.vx}) score!`)
+			console.log(`Player 2 (${game.player2.name}) score!`)
 		}
 		else if (game.ball.x > GAME_WIDTH - PLAYER_OFFSET + 10 && game.ball.vx > 0){
 			game.player1.score++
 			this.ballReset(game)
-			console.log(`Player 1 (${game.player1.name}|${game.player1.id}) score!| ${game.ball.x} | ${game.ball.vx}`)
+			console.log(`Player 1 (${game.player1.name}) score!`)
 		}
 	}
 
