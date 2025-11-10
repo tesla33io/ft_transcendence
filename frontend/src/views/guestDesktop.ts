@@ -1,5 +1,6 @@
 import { Router } from "../router";
-import { createTaskbar, createWindow } from "../components/_components"; 
+import { createTaskbar, createWindow } from "../components/_components";
+import { UserService } from '../game/userService'; 
 import joystickIcon from './images/joystick.png';
 import padlock from './images/padlock.png';
 import remote from './images/remote.png'
@@ -93,7 +94,15 @@ export function guestDesktopView(router: Router) {
                     router.navigate("/tournament");
                     break;
                 case "logout":
-                    router.navigate("/login"); 
+                    void (async () => {
+                        try {
+                          await UserService.logout();      // destroys the session server-side
+                        } catch (err) {
+                          console.error('Logout failed', err);
+                        } finally {
+                          router.navigate('/login');       // now safe—session is gone
+                        }
+                    })(); 
                     break;
             }
         });

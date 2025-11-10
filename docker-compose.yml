@@ -46,6 +46,8 @@ services:
       - "5001"
     env_file:
       - .env
+    environment:
+      - MATCH_HISTORY_SERVICE_TOKEN=${MATCH_HISTORY_SERVICE_TOKEN}
     networks:
       - pong-network
     healthcheck:
@@ -67,12 +69,16 @@ services:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      - NODE_ENV=development
+      - MATCH_HISTORY_SERVICE_TOKEN=${MATCH_HISTORY_SERVICE_TOKEN}
     depends_on:
       - blockchain-service
     networks:
       - pong-network
     volumes:
-      - /user-service/node_modules # anonymous volume keeps Linux-built binaries
+      #- /user-service/node_modules # anonymous volume keeps Linux-built binaries
+      - user-service-db:/user-service/data
 
   blockchain-service:
     build:
@@ -105,6 +111,9 @@ services:
       timeout: 30s
       retries: 5
       start_period: 10s
+
+volumes:
+     user-service-db:
 
 networks:
   pong-network:

@@ -38,9 +38,14 @@ export class ApiService {
             }
 
             if (!response.ok) {
-                const error: any = new Error(`API Error: ${response.status}`);
-                error.status = response.status;
-                throw error;
+                const text = await response.text();
+            let details: any;
+            try { details = text ? JSON.parse(text) : null; } catch (_) {}
+            const message = details?.error ?? details?.message ?? text ?? response.statusText;
+            const error: any = new Error(`API Error ${response.status}: ${message}`);
+            error.status = response.status;
+            error.details = details;
+            throw error;
             }
 
             return response.json();
@@ -85,8 +90,13 @@ export class ApiService {
             }
 
             if (!response.ok) {
-                const error: any = new Error(`API Error: ${response.status}`);
+                const text = await response.text();
+                let details: any;
+                try { details = text ? JSON.parse(text) : null; } catch (_) {}
+                const message = details?.error ?? details?.message ?? text ?? response.statusText;
+                const error: any = new Error(`API Error ${response.status}: ${message}`);
                 error.status = response.status;
+                error.details = details;
                 throw error;
             }
 
