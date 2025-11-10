@@ -66,7 +66,7 @@ export function localGameView(router: Router) {
 
     const modeName = getModeName(mode);
 
-    // ✅ CHANGED: Increased window height from 620px to 680px
+
     const gameWindow = createWindow({
         title: `Local Pong - ${modeName}`,
         width: "920px",
@@ -75,7 +75,7 @@ export function localGameView(router: Router) {
         titleBarControls: {
             close: true,
             onClose: () => {
-                router.navigate("/localgame");
+                router.navigateToDesktop();
             }
         }
     });
@@ -83,12 +83,9 @@ export function localGameView(router: Router) {
     app.appendChild(gameWindow);
 
     const { taskbar } = createTaskbar({
-        startButton: {
-            label: "Start",
-            onClick: () => router.navigate("/"),
-        },
-        clock: true,
-    });
+		clock: true,
+		router: router
+	});
     app.appendChild(taskbar);
 
     const game = new LocalPongGame(canvas, winningScore, mode, router, gameWindow);

@@ -12,7 +12,7 @@ export class PongGame {
     private gameMode: string;
     private gameId: string = '';
     private router: Router;
-    
+
     private renderer?: Renderer;
     private wsHandler?: WebSocketHandler;
     private gameView?: ReturnType<typeof gameView>;
@@ -21,14 +21,14 @@ export class PongGame {
     //Store bound functions
     private boundHandleKeyPress: (event: KeyboardEvent) => void;
     private boundHandleKeyRelease: (event: KeyboardEvent) => void;
-    
+
     //Track held keys
     private keysPressed: Map<string, boolean> = new Map();
-    
+
     //Input buffer (updated once per frame)
     private pendingInputDeltaY: number = 0;
     private lastInputDeltaY: number = 0;
-    
+
     //Game loop for synchronized input
     private gameLoopId?: number;
     private lastRenderTime: number = 0;
@@ -73,7 +73,7 @@ export class PongGame {
     // Handle key down (only update key state, don't send immediately)
     private handleKeyDown = (event: KeyboardEvent): void => {
         const key = event.key.toLowerCase();
-        
+
         if (key === 'arrowup' || key === 'arrowdown') {
             event.preventDefault(); // Prevent page scroll
             this.keysPressed.set(key, true);
@@ -84,7 +84,7 @@ export class PongGame {
     // Handle key up
     private handleKeyUp = (event: KeyboardEvent): void => {
         const key = event.key.toLowerCase();
-        
+
         if (key === 'arrowup' || key === 'arrowdown') {
             event.preventDefault();
             this.keysPressed.set(key, false);
@@ -129,7 +129,7 @@ export class PongGame {
             console.log(`PlayerID: ${this.playerId} - ${this.gameMode}`);
             let apiEndpoint: string;
             if (this.gameMode === 'tournament') {
-                apiEndpoint = '/api/v1/game/join-tournament/';
+                apiEndpoint = '/api/v1/game/join-tournament';
             } else if (this.gameMode === 'ai') {
                 apiEndpoint = '/api/v1/game/bot-classic';
                 this.gameMode = 'classic';
@@ -175,7 +175,8 @@ export class PongGame {
             if (oldCanvas) {
                 oldCanvas.remove();
             }
-            this.gameView = gameView(this.router);
+
+            this.gameView = gameView(this.router, this.wsHandler!);
             if (!this.gameView?.canvas) {
                 console.error('Failed to create game view');
                 return;
@@ -202,7 +203,7 @@ export class PongGame {
             const now = Date.now();
             const deltaTime = now - this.lastRenderTime;
 
-            //Only process once per frame (~16.67ms) with a bit of tolerance 
+            //Only process once per frame (~16.67ms) with a bit of tolerance
             if (deltaTime >= this.FRAME_TIME * 0.9) {
                 this.calculateFrameInput();
                 this.sendInput();
@@ -257,10 +258,10 @@ export class PongGame {
     public dispose(): void {
         document.removeEventListener("keydown", this.boundHandleKeyPress);
         document.removeEventListener("keyup", this.boundHandleKeyRelease);
-        
+
         //- Stop game loop
         this.stopGameLoop();
-        
+
         if (this.gameMode !== "tournament") {
             this.wsHandler?.disconnect();
             this.wsHandler = undefined;

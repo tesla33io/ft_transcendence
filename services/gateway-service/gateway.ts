@@ -4,15 +4,25 @@ import { AuthRequest, JWTHelper } from './JWT_helper'
 const server = fastify({logger: true})
 const PORT = 3000
 
+const JWT_SECRET = process.env.JWT_SECRET
+if(!JWT_SECRET){
+    console.error('FATAL: JWT_SECRET environment variable is not set!');
+    console.error('Run: make setup');
+    process.exit(1);
+}
+
 server.register(require('@fastify/cookie'))
 
 server.register(require('@fastify/jwt'),{
-    secret: process.env.JWT_SECRET || 'dev-secret-key'
+    secret: process.env.JWT_SECRET
 })
 
 server.register(require('@fastify/cors'),{
-    origin:true,
-    credentials: true
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    preflightContinue: false
 })
 
 // Initialize JWT Helper
@@ -116,7 +126,46 @@ server.get('/api/v1/auth/me', async (request: AuthRequest, reply: any) => {
     }
 });
 
-// Add this after the /me endpoint
+// ===== LOGOUT ENDPOINT =====
+server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
+    try {
+        console.log('[GATEWAY] /logout endpoint called');
+
+        // Verify JWT first
+        await jwtHelper.requireJWT()(request, reply);
+
+        if (!request.user) {
+            return reply.status(401).send({
+                error: 'Unauthorized',
+                code: 'NO_USER'
+            });
+        }
+
+        console.log(`✅ [GATEWAY] User ${request.user.username} logging out`);
+
+        // Clear refresh token cookie
+        reply.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/'
+        });
+
+        console.log('[GATEWAY] Refresh token cookie cleared');
+
+        return reply.status(200).send({
+            message: 'Logged out successfully',
+            code: 'LOGOUT_SUCCESS'
+        });
+
+    } catch (error) {
+        console.error('[GATEWAY] Error in /logout endpoint:', error);
+        return reply.status(500).send({
+            error: 'Logout failed',
+            code: 'LOGOUT_FAILED'
+        });
+    }
+});
 
 // ===== REFRESH TOKEN ENDPOINT =====
 server.post('/api/v1/auth/refresh', async (request: AuthRequest, reply: any) => {

@@ -90,6 +90,10 @@ export interface UserProfile {
 }
 
 export class UserService {
+    // In-memory role cache (not localStorage for security)
+    private static roleCache: { role: string; timestamp: number } | null = null;
+    private static CACHE_DURATION = 60000; // 1 minute
+
     // ===== AUTHENTICATION (SENDERS) ====
     // Send login request
     static async login(credentials: LoginRequest): Promise<AuthResponse> {
@@ -219,222 +223,139 @@ export class UserService {
     static async logout(): Promise<void> {
         try {
             // Call logout endpoint to invalidate tokens
-            await ApiService.post<void>('/users/auth/logout', {});
-            console.log('✅ Logged out successfully');
+            await ApiService.post<void>('/api/v1/auth/logout', {});
+            console.log('Logged out successfully');
         } catch (error) {
-            console.error('⚠️ Logout error (clearing local data anyway):', error);
+            console.error('Logout error (clearing local data anyway):', error);
         } finally {
             // Clear local storage
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('user');
+            this.clearUserData()
             // refreshToken cookie is cleared by server
         }
+        this.roleCache = null;
     }
 
     // ===== USER DATA (GETTERS) =====
-    //get me 
-	static async getMe(): Promise<{id: number; username: string; role: string}> {
-		try {
-			const authToken = localStorage.getItem('authToken');
-			
-			if (!authToken) {
-				throw new Error('No authentication token found');
-			}
+    
+    /**
+     * Get current user info from gateway (includes role)
+     * Now uses ApiService for consistency and auto token refresh
+     */
+    static async getMe(): Promise<{id: number; username: string; role: string}> {
+        try {
+            console.log('[UserService] Fetching current user info...');
+            
+            const userInfo = await ApiService.get<{id: number; username: string; role: string}>('/api/v1/auth/me');
+            
+            console.log('User info fetched:', userInfo);
+            
+            // Cache role IN MEMORY with timestamp (not localStorage)
+            this.roleCache = {
+                role: userInfo.role,
+                timestamp: Date.now()
+            };
+            
+            return userInfo;
+            
+        } catch (error) {
+            console.error('❌ Failed to fetch user info:', error);
+            throw new Error(`Failed to get user info: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
 
-			const response = await fetch('http://localhost:3000/api/v1/auth/me', {
-				method: 'GET',
-				headers: {
-					'Authorization': `Bearer ${authToken}`,
-					'Content-Type': 'application/json'
-				},
-				credentials: 'include'
-			});
+    /**
+     * Get user role securely with short-lived cache
+     * Always verifies with gateway - NEVER trusts localStorage
+     */
+    static async getUserRoleSecure(): Promise<string | null> {
+        try {
+            // Check if cache is valid (less than 1 minute old)
+            if (this.roleCache && (Date.now() - this.roleCache.timestamp) < this.CACHE_DURATION) {
+                console.log('[UserService] Using cached role (fresh)');
+                return this.roleCache.role;
+            }
 
-			if (!response.ok) {
-				throw new Error(`Failed to fetch user info: ${response.status}`);
-			}
+            // Cache expired or doesn't exist - fetch fresh
+            console.log('[UserService] Cache expired, fetching fresh role...');
+            const userInfo = await this.getMe();
+            return userInfo.role;
+            
+        } catch (error) {
+            console.error('Failed to get role:', error);
+            return null;
+        }
+    }
 
-			const data = await response.json();
-			
-			console.log('User info retrieved:', {
-				id: data.id,
-				username: data.username,
-				role: data.role
-			});
+    /**
+     * Check if user is guest
+     */
+    static async isGuest(): Promise<boolean> {
+        const role = await this.getUserRoleSecure();
+        return role === 'guest';
+    }
 
-			return data;
-
-		} catch (error) {
-			console.error('Error fetching user info:', error);
-			throw error;
-		}
-	}
-    // Get current user's profile
-    static async getCurrentUser(): Promise<PublicUser> {
-        // TODO: Uncomment when backend is ready
-        // return await ApiService.get<PublicUser>('/users/me');
-        
-        // Mock response
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        const storedUser = this.getCurrentUserFromStorage();
-        if (!storedUser) throw new Error('Not logged in');
-        
-        return storedUser;
+    /**
+     * Check if user is registered user (not guest)
+     */
+    static async isRegisteredUser(): Promise<boolean> {
+        const role = await this.getUserRoleSecure();
+        return role === 'user' || role === 'admin';
     }
 
     // ===== USER UPDATES (SENDERS) =====
     
-    // Update current user's profile
+    // Update current user's profile ON THE BACKEND
     static async updateProfile(updates: ProfileUpdateRequest): Promise<PublicUser> {
-        // TODO: Uncomment when backend is ready
-        // return await ApiService.post<PublicUser>('/users/me/profile', updates);
-        
-        // Mock response
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const currentUser = this.getCurrentUserFromStorage();
-        if (!currentUser) throw new Error('Not logged in');
-        
-        const updatedUser: PublicUser = {
-            ...currentUser,
-            ...updates
-        };
-        
-        // Update localStorage
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        
-        return updatedUser;
+        try {
+            // Call PATCH endpoint
+            const response = await ApiService.patch<any>('/users/me', updates);
+            
+            console.log('Profile updated successfully:', response);
+            
+            // Map response to PublicUser
+            const user: PublicUser = {
+                id: response.id,
+                username: response.username,
+                avatarUrl: response.profile?.avatarUrl || '/images/default-avatar.png',
+                activityType: response.profile?.activityType || updates.activityType,
+                onlineStatus: response.profile?.onlineStatus || OnlineStatus.ONLINE,
+                role: response.role || UserRole.USER,
+                lastLogin: response.last_login
+            };
+            
+            // Update localStorage
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            return user;
+            
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+            throw error;
+        }
     }
 
-    // Update avatar
-    static async updateAvatar(avatarUrl: string): Promise<PublicUser> {
-        // TODO: Uncomment when backend is ready
-        // return await ApiService.post<PublicUser>('/users/me/avatar', { avatarUrl });
-        
-        return await this.updateProfile({ avatarUrl });
-    }
-
+  
 
 	// ===== FRIENDS API METHODS =====
 
 	// Get current user's friends list
 	static async getFriends(): Promise<Friend[]> {
-		// TODO: Uncomment when backend is ready
-		// return await ??????
-		
-		// Mock response
-		await new Promise(resolve => setTimeout(resolve, 300));
-		
-		const mockFriends: Friend[] = [
-			{
-				userId: 101,
-				userName: "Alice_Gamer",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '../views/images/rabit.png'//dosent work yet need to implement a place to put all pictures 
-			},
-			{
-				userId: 102,
-				userName: "Bob_Pro",
-				isOnline: true,
-				lastOnlineAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 103,
-				userName: "Charlie_Win",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 104,
-				userName: "Diana_Fast",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 105,
-				userName: "Eve_Champion69",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1062,
-				userName: "Frank_Master420",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1052,
-				userName: "Eve_Champion",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1069,
-				userName: "Frank_Master1",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: './views/images/rabit.png'
-			},
-				{
-				userId: 1054,
-				userName: "Eve_Champion4",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1066,
-				userName: "Frank_Master288",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1052,
-				userName: "Eve_Champion99",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1069,
-				userName: "Frank_Master187",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: './views/images/rabit.png'
-			},
-				{
-				userId: 1054,
-				userName: "Eve_Champion44",
-				isOnline: true,
-				lastOnlineAt: new Date().toISOString(),
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 1066,
-				userName: "Frank_Master2200",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 107,
-				userName: "Grace_Elite",
-				isOnline: false,
-				lastOnlineAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
-				avatarUrl: '/images/default-avatar.png'
-			}
-		];
-		
-		return mockFriends;
+		try {
+			console.log('Get friends...');
+
+			const friends = await ApiService.get<Friend[]>('/users/friends');
+			
+			console.log('Friends fetched successfully:', friends);
+			console.log(`Total friends: ${friends.length}`);
+			
+			return friends;
+			
+		} catch (error) {
+			console.error('Failed to fetch friends:', error);
+			
+			throw new Error('Failed to load Friends')
+		}
+	
 	}
 
 	// Get friend requests
@@ -532,62 +453,91 @@ export class UserService {
     // Clear all user data (for logout)
     static clearUserData(): void {
         localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('userName');
         localStorage.removeItem('user');
-        // refreshToken cookie is cleared by server
+        
+        // Clear in-memory cache
+        this.roleCache = null;
+        
+        console.log('✅ User data and role cache cleared');
     }
 
     // ===== PROFILE & STATISTICS API METHODS =====
 
     // Get user profile
     static async getUserProfile(userId?: number): Promise<UserProfile> {
-        // TODO: Uncomment when backend is ready
-        // const endpoint = userId ? `/users/${userId}` : '/users/me';
-        // return await ApiService.get<UserProfile>(endpoint);
-        
-        // Mock response
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        const mockProfile: UserProfile = {
-            userId: userId || 1,
-            userName: userId ? `User_${userId}` : "CurrentUser",
-            avatarUrl: '/images/default-avatar.png',
-            bioText: userId ? "This is a friend's profile!" : "This is my awesome bio! I love playing pong and competing in tournaments.",
-            isOnline: userId ? Math.random() > 0.5 : true,
-            lastOnline: new Date().toISOString(),
-            accountCreationDate: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
-            currentElo: Math.floor(1000 + Math.random() * 1000)
-        };
-        
-        return mockProfile;
+        try {
+            console.log('👤 [UserService] Fetching user profile...');
+            
+            // Determine endpoint
+            const endpoint = '/users/me'//= userId ? `/users/${userId}` : '/users/me';
+            
+            // Call the real endpoint through gateway
+            const response = await ApiService.get<any>(endpoint);
+            
+            console.log('Profile fetched successfully:', response);
+            
+            // Map backend response to UserProfile interface
+            const profile: UserProfile = {
+                userId: response.id,
+                userName: response.username,
+                avatarUrl: response.avatarUrl || '/images/default-avatar.png',
+                bioText: response.bioText || "No bio yet",
+                isOnline: response.isOnline || true,
+                lastOnline: response.lastOnline || new Date().toISOString(),
+                accountCreationDate: response.accountCreationDate || new Date().toISOString(),
+                currentElo: response.currentElo || 1000
+            };
+            
+            return profile;
+            
+        } catch (error) {
+            console.error('❌ Failed to fetch profile:', error);
+            throw new Error("Failed to get user Profile")
+			
+        }
     }
 
-    // Get 1v1 statistics
-    static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
-        // TODO: Uncomment when backend is ready
-        // const endpoint = userId ? `/users/${userId}/stats/1v1` : '/users/me/stats/1v1';
-        // return await ApiService.get<OneVOneStatistics>(endpoint);
+   // Get 1v1 statistics
+static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
+    try {
+        console.log('[UserService] Fetching 1v1 statistics...');
         
-        // Mock response
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Determine endpoint
+        const endpoint = userId ? `/users/${userId}` : '/users/me';
         
-        const gamesWon = Math.floor(Math.random() * 50) + 10;
-        const gamesLost = Math.floor(Math.random() * 40) + 5;
-        const totalGames = gamesWon + gamesLost;
+        // Call the real endpoint
+        const response = await ApiService.get<any>(endpoint);
         
-        const mockStats: OneVOneStatistics = {
-            userId: userId || 1,
-            userName: userId ? `User_${userId}` : "CurrentUser",
-            gamesWon,
-            gamesLost,
-            winPercentage: Math.round((gamesWon / totalGames) * 100),
-            currentWinStreak: Math.floor(Math.random() * 8),
-            longestWinStreak: Math.floor(Math.random() * 15) + 3,
-            currentRating: Math.floor(1000 + Math.random() * 1000),
-            peakRating: Math.floor(1200 + Math.random() * 800)
+        console.log(' 1v1 Statistics fetched:', response.stats);
+        
+        // Map backend response to OneVOneStatistics interface
+        const totalGames = response.stats?.totalGames || 0;
+        const wins = response.stats?.wins || 0;
+        
+        const stats: OneVOneStatistics = {
+            userId: response.id,
+            userName: response.username,
+            gamesWon: wins,
+            gamesLost: response.stats?.losses || 0,
+            winPercentage: totalGames > 0 
+                ? Math.round((wins / totalGames) * 100) 
+                : 0,
+            currentWinStreak: response.stats?.currentWinStreak || 0,
+            longestWinStreak: response.stats?.bestWinStreak || 0,
+            currentRating: response.stats?.currentRating || 1000,
+            peakRating: response.stats?.highestRating || 1000
         };
         
-        return mockStats;
+        return stats;
+        
+    } catch (error) {
+        console.error('Failed to fetch 1v1 statistics:', error);
+        throw new Error(`Failed to load 1v1 statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+}
 
     // Get Player vs AI statistics
     static async getPlayerVsAIStatistics(userId?: number): Promise<PlayerVsAIStatistics> {

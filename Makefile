@@ -1,20 +1,29 @@
 #detach mode
 JAVA_JAR:="aibot/target/aibot-0.0.1-SNAPSHOT.jar"
 
-all: build
+all: setup build
+# generation JWT secret/env file
+setup:
+	@echo "Checking environment setup..."
+	@if [ ! -f .env ]; then \
+		echo  "No .env file found. Running setup..."; \
+		bash generate_env.sh; \
+	else \
+		echo ".env file exists"; \
+	fi
 
-upd:
+upd: setup
 	docker compose up -d
 
-up:
+up: setup
 	docker compose up
 
 down:
 	docker compose down
 
-build:
+build: setup
 	docker compose build
 
 red: down build upd
 
-PHONY: up down build
+PHONY: up down build setup

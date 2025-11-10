@@ -1,8 +1,9 @@
 import { Router } from "../router";
 import { createWindow } from "../components/_components";
 import { createTaskbar,createStaticDesktopBackground } from "../components/_components";
+import type { WebSocketHandler } from "../game/websocketHandler";
 
-export function gameView(router: Router) {
+export function gameView(router: Router, wsHandler: WebSocketHandler) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
 
@@ -79,8 +80,9 @@ export function gameView(router: Router) {
 		titleBarControls: {
 			close: true,
 			onClose: () => {
-				//router.navigate("/desktop");
-				window.history.back();
+				if (wsHandler)
+					wsHandler.disconnect();
+				router.navigateToDesktop();
 			}
 		}
 	});
@@ -89,15 +91,12 @@ export function gameView(router: Router) {
 
 		// Create the taskbar
 		const { taskbar } = createTaskbar({
-			startButton: {
-			label: "Start",
-			onClick: () => router.navigate("/"),
-			},
 			clock: true,
+			router: router
 		});
 		// Add the taskbar to the root
 		root.appendChild(taskbar);
-	
+
 		const staticBackground = createStaticDesktopBackground();
 		staticBackground.attachToPage(root);
 
@@ -123,7 +122,7 @@ export function gameView(router: Router) {
 		// Opponent name (get it from the current displayed name)
 		const opponentNameElement = document.getElementById("opponent-name");
 		const opponentName = opponentNameElement ? opponentNameElement.textContent : "Opponent";
-		
+
 		const opponentText = document.createElement("p");
 		opponentText.textContent = `against ${opponentName}`; // Shorter "vs" instead of "against"
 		opponentText.className = "text-xs text-center mb-3 text-gray-600"; // Smaller text

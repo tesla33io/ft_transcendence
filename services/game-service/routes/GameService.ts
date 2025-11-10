@@ -28,7 +28,7 @@ export class GameService{
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnounce(game, playerId)
 			//place holder for sending match result to user management
-			this.sendDataToUMS(game, playerId)
+			//this.sendDataToUMS(game, playerId)
 			if (this.gameMode === 'tournament'){
 				this.tournamentHandling(game, playerId)
 			}
@@ -98,6 +98,7 @@ export class GameService{
 				if (tournament?.status === 'finished'){
 					console.log(`Tournament ${tournament.id} completed`)
 					this.webSocketServer.notifyTournamentComplete(tournament)
+					this.postHash(tournament)
 				}
 			}
 		}
@@ -178,7 +179,7 @@ export class GameService{
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					Authorization: "Bearer 1",
+					"Authorization": "Bearer 1",
 				},
 				body: JSON.stringify(data)
 			})
@@ -189,5 +190,35 @@ export class GameService{
 		}
 	}
 
+
+	private async postHash(tournament: Tournament){
+
+		const data = {
+			"winnerId": 1,
+			"finalScore": 0,
+			"participantIds": [
+				1
+			]
+		}
+
+		this.postToBlockChain(data, "123")
+	}
+
+	private async postToBlockChain(data: any, tournamentId: string){
+	try {
+		const response1 = await fetch(`http://user-service:8000/tournaments/${tournamentId}/finalize`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"Authorization": "Bearer 1",
+			},
+			body: JSON.stringify(data)
+		})
+		console.log("Tournamnet history sent:", response1);
+	}
+	catch (error) {
+		console.log("Error sending tournamnet history:", error)
+	}
+	}
 }
 

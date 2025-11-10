@@ -15,6 +15,13 @@ export class ClassicGameJoiner {
 		const gameService = this.gameServiceManager.getGameService(gameMode)
 		const player: Player = generateDefaultPlayer(playerName, playerId)
 
+		if (this.queueManager.checkIfPlayerInQ(playerId, gameMode)){
+			return {
+				status: 'error_already_in_queue',
+				message: 'you are already in queue'
+			}
+		}
+
 		const waitingPlayers = this.queueManager.getQueue(gameMode)
 
 		if (waitingPlayers.length > 0) {

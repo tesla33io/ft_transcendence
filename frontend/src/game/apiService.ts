@@ -24,7 +24,7 @@ export class ApiService {
                 // Token expired, trigger refresh
                 const { UserService } = await import('./userService');
                 console.log('[API] 401 Unauthorized - Attempting refresh...');
-                
+
                 try {
                     await UserService.refreshToken();
                     // Retry with new token
@@ -50,6 +50,48 @@ export class ApiService {
         }
     }
 
+	// Generic PATCH request with auto-auth & 401 handling
+	static async patch<T>(endpoint: string, data: any): Promise<T> {
+		try {
+			const response = await fetch(`${this.BASE_URL}${endpoint}`, {
+				method: 'PATCH',
+				headers: this.getAuthHeaders(),
+				credentials: 'include',
+				body: JSON.stringify(data)
+			});
+
+			console.log(`[API] PATCH ${endpoint} - Status: ${response.status}`);
+
+			if (response.status === 401) {
+				// Token expired, trigger refresh
+				const { UserService } = await import('./userService');
+				console.log('[API] 401 Unauthorized - Attempting refresh...');
+				
+				try {
+					await UserService.refreshToken();
+					// Retry with new token
+					return this.patch<T>(endpoint, data);
+				} catch (refreshError) {
+					console.error('[API] Refresh failed, logging out');
+					localStorage.clear();
+					window.location.href = '/login';
+					throw refreshError;
+				}
+			}
+
+			if (!response.ok) {
+				const error: any = new Error(`API Error: ${response.status}`);
+				error.status = response.status;
+				throw error;
+			}
+
+			return response.json();
+		} catch (error) {
+			console.error('[API] PATCH error:', error);
+			throw error;
+		}
+	}
+
     // Generic POST request with auto-auth & 401 handling
     static async post<T>(endpoint: string, data: any): Promise<T> {
         try {
@@ -64,9 +106,14 @@ export class ApiService {
 
             if (response.status === 401) {
                 // Token expired, trigger refresh
+                if (endpoint === '/users/auth/login'){
+                    const error: any = new Error('Unauthorized: Invalid credentials');
+                    error.status = 401;
+                    throw error;
+                }
                 const { UserService } = await import('./userService');
                 console.log('[API] 401 Unauthorized - Attempting refresh...');
-                
+
                 try {
                     await UserService.refreshToken();
                     // Retry with new token
