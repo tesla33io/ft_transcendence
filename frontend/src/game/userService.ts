@@ -226,15 +226,15 @@ export class UserService {
         try {
             // Call logout endpoint to invalidate tokens
             await ApiService.post<void>('/api/v1/auth/logout', {});
-            console.log('✅ Logged out successfully');
+            console.log('Logged out successfully');
         } catch (error) {
-            console.error('⚠️ Logout error (clearing local data anyway):', error);
+            console.error('Logout error (clearing local data anyway):', error);
         } finally {
             // Clear local storage
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('user');
+            this.clearUserData()
             // refreshToken cookie is cleared by server
         }
+        this.roleCache = null;
     }
 
     // ===== USER DATA (GETTERS) =====
@@ -245,12 +245,11 @@ export class UserService {
      */
     static async getMe(): Promise<{id: number; username: string; role: string}> {
         try {
-            console.log('👤 [UserService] Fetching current user info...');
+            console.log('[UserService] Fetching current user info...');
             
-            // ✅ Use ApiService instead of raw fetch
             const userInfo = await ApiService.get<{id: number; username: string; role: string}>('/api/v1/auth/me');
             
-            console.log('✅ User info fetched:', userInfo);
+            console.log('User info fetched:', userInfo);
             
             // Cache role IN MEMORY with timestamp (not localStorage)
             this.roleCache = {
@@ -274,17 +273,17 @@ export class UserService {
         try {
             // Check if cache is valid (less than 1 minute old)
             if (this.roleCache && (Date.now() - this.roleCache.timestamp) < this.CACHE_DURATION) {
-                console.log('📋 [UserService] Using cached role (fresh)');
+                console.log('[UserService] Using cached role (fresh)');
                 return this.roleCache.role;
             }
 
             // Cache expired or doesn't exist - fetch fresh
-            console.log('🔍 [UserService] Cache expired, fetching fresh role...');
+            console.log('[UserService] Cache expired, fetching fresh role...');
             const userInfo = await this.getMe();
             return userInfo.role;
             
         } catch (error) {
-            console.error('❌ Failed to get role:', error);
+            console.error('Failed to get role:', error);
             return null;
         }
     }
@@ -310,12 +309,10 @@ export class UserService {
     // Update current user's profile ON THE BACKEND
     static async updateProfile(updates: ProfileUpdateRequest): Promise<PublicUser> {
         try {
-            console.log('✏️ [UserService] Updating profile on backend...', updates);
-            
             // Call PATCH endpoint
             const response = await ApiService.patch<any>('/users/me', updates);
             
-            console.log('✅ Profile updated successfully:', response);
+            console.log('Profile updated successfully:', response);
             
             // Map response to PublicUser
             const user: PublicUser = {
@@ -334,57 +331,12 @@ export class UserService {
             return user;
             
         } catch (error) {
-            console.error('❌ Failed to update profile:', error);
+            console.error('Failed to update profile:', error);
             throw error;
         }
     }
 
-    // Update avatar
-	static async updateAvatar(file: File): Promise<PublicUser> {
-		try {
-			console.log('🖼️ [UserService] Validating PNG file...');
-			
-			// ✅ Validate file (size + PNG only)
-			const validation = FileUploadHelper.validateImageFile(file);
-			
-			if (!validation.isValid) {
-				throw new Error(validation.error);
-			}
-			
-			console.log('✅ File validation passed');
-			console.log(`📤 Uploading avatar: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
-			
-			// ✅ Create FormData
-			const formData = new FormData();
-			formData.append('picture', file);
-			
-			// ✅ Upload via POST
-			const response = await ApiService.postFile<any>('/users/me/picture', formData);
-			
-			console.log('✅ Avatar uploaded successfully:', response);
-			
-			// Map response to PublicUser
-			const user: PublicUser = {
-				id: response.id,
-				username: response.username,
-				avatarUrl: response.profile?.avatarUrl || response.avatarUrl,
-				activityType: response.profile?.activityType || 'browsing',
-				onlineStatus: response.profile?.onlineStatus || OnlineStatus.ONLINE,
-				role: response.role || UserRole.USER,
-				lastLogin: response.last_login
-			};
-			
-			// Update localStorage
-			localStorage.setItem('user', JSON.stringify(user));
-			
-			return user;
-			
-		} catch (error) {
-			console.error('❌ Failed to upload avatar:', error);
-			throw error;
-		}
-	}
-
+  
 
 	// ===== FRIENDS API METHODS =====
 
@@ -401,7 +353,7 @@ export class UserService {
 			return friends;
 			
 		} catch (error) {
-			console.error('❌ Failed to fetch friends:', error);
+			console.error('Failed to fetch friends:', error);
 			
 			throw new Error('Failed to load Friends')
 		}
