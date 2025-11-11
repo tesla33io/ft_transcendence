@@ -25,6 +25,7 @@ fi
 # Generate JWT secret (64 bytes = 128 hex characters)
 echo -e "${GREEN} Generating JWT secret...${NC}"
 JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+MATCH_HISTORY_SERVICE_TOKEN=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
 
 # Create .env file
 cat > "$ENV_FILE" << EOF
@@ -35,6 +36,9 @@ NODE_ENV=development
 # DO NOT COMMIT THIS FILE TO GIT
 # Generated on: $(date)
 JWT_SECRET=$JWT_SECRET
+
+# ===== SERVICE TOKENS (Auto-generated) =====
+MATCH_HISTORY_SERVICE_TOKEN=$MATCH_HISTORY_SERVICE_TOKEN
 
 # ===== GAME CONSTANTS =====
 GAME_HEIGHT=550
@@ -64,6 +68,7 @@ EOF
 
 echo -e "${GREEN} .env file created successfully${NC}"
 echo -e "${YELLOW}JWT_SECRET (first 32 chars): ${JWT_SECRET:0:32}...${NC}"
+echo -e "${YELLOW}MATCH_HISTORY_SERVICE_TOKEN (first 32 chars): ${MATCH_HISTORY_SERVICE_TOKEN:0:32}...${NC}"
 echo ""
 echo -e "${GREEN} Setup complete! You can now run:${NC}"
 echo -e "   make up    - Start services"
