@@ -75,7 +75,7 @@ export function desktopView(router: Router) {
 		iconDiv.appendChild(label);
 
 		//Double-click to navigate
-		iconDiv.addEventListener("dblclick", () => {
+		iconDiv.addEventListener("dblclick", async () => {
 			switch(icon.id) {
 				case "local_game":
 					router.navigate("/localgame");
@@ -117,11 +117,8 @@ export function desktopView(router: Router) {
 	});
 
 	const { taskbar } = createTaskbar({
-		startButton: {
-			label: "Start",
-			onClick: () => router.navigate("/"),
-		},
 		clock: true,
+		router: router
 	});
 
 	// Add the taskbar to the root

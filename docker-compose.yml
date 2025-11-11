@@ -20,6 +20,9 @@ services:
       context: ./services/gateway-service
       dockerfile: Dockerfile
     container_name: gateway-service
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}  
+      - JWT_SECRET=${JWT_SECRET:-} 
     ports:
       - "3000:3000"
     depends_on:
