@@ -310,7 +310,12 @@ export default async function userRoutes(app: FastifyInstance) {
                     // const deviceInfo = extractDeviceInfo(req);
 
                     // Check if user is already logged in
-                    const existingSession = await app.em.findOne(Session, { userId: user.id });
+                    const existingSession = await app.em.findOne(
+                        Session, 
+                        { userId: user.id },
+                        { refresh: true } // <-- force DB fetch, bypass cached entity
+                    );
+
                     if (existingSession) {
                         if (existingSession.expiresAt <= new Date()) {
                             await app.em.removeAndFlush(existingSession);

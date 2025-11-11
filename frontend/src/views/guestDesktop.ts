@@ -9,7 +9,6 @@ import network from './images/network.png'
 import spider from './images/spider.png'
 import phone from './images/phone.png'
 import gear from './images/gears.png'
-import { UserService } from "../game/userService";
 
 // Define the type for icons
 type IconData = {
