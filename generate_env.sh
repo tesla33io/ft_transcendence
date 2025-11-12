@@ -27,6 +27,34 @@ echo -e "${GREEN} Generating JWT secret...${NC}"
 JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
 MATCH_HISTORY_SERVICE_TOKEN=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
 
+# Prompt for SMTP configuration (optional)
+echo -e "${YELLOW} Configure email service for 2FA? (y/n)${NC}"
+read -p "" -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    read -p "SMTP Host (default: smtp.gmail.com): " SMTP_HOST
+    SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+    
+    read -p "SMTP Port (default: 587): " SMTP_PORT
+    SMTP_PORT=${SMTP_PORT:-587}
+    
+    read -p "SMTP User (your email): " SMTP_USER
+    SMTP_USER=${SMTP_USER:-your-email@gmail.com}
+    
+    read -p "SMTP Password (app password): " SMTP_PASSWORD
+    SMTP_PASSWORD=${SMTP_PASSWORD:-your-app-password}
+    
+    read -p "From Email (default: noreply@ponggame.com): " SMTP_FROM
+    SMTP_FROM=${SMTP_FROM:-noreply@ponggame.com}
+else
+    # Use placeholder values
+    SMTP_HOST="smtp.gmail.com"
+    SMTP_PORT="587"
+    SMTP_USER="your-email@gmail.com"
+    SMTP_PASSWORD="your-app-password"
+    SMTP_FROM="noreply@ponggame.com"
+fi
+
 # Create .env file
 cat > "$ENV_FILE" << EOF
 # ===== ENVIRONMENT =====
@@ -39,6 +67,13 @@ JWT_SECRET=$JWT_SECRET
 
 # ===== SERVICE TOKENS (Auto-generated) =====
 MATCH_HISTORY_SERVICE_TOKEN=$MATCH_HISTORY_SERVICE_TOKEN
+
+# ===== EMAIL / SMTP CONFIGURATION (For 2FA) =====
+SMTP_HOST=$SMTP_HOST
+SMTP_PORT=$SMTP_PORT
+SMTP_USER=$SMTP_USER
+SMTP_PASSWORD=$SMTP_PASSWORD
+SMTP_FROM=$SMTP_FROM
 
 # ===== GAME CONSTANTS =====
 GAME_HEIGHT=550
