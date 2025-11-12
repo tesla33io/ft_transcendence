@@ -81,16 +81,15 @@ export function desktopView(router: Router) {
 					router.navigate("/localgame");
 					break;
 				case "logout":
-					try{
-						console.log('try log out')
-						await UserService.logout()
-						console.log('logout sucesfull')
-						router.navigate("/login")
-					}
-					catch{
-						console.log("logout error", Error);
-						router.navigate("/login")
-					}
+					void (async () => {
+						try {
+						  await UserService.logout();      // destroys the session server-side
+						} catch (err) {
+						  console.error('Logout failed', err);
+						} finally {
+						  router.navigate('/login');       // now safe—session is gone
+						}
+					})();
 					break;
 				case "Remotepong":
 					router.navigate("/onlineGame");

@@ -13,6 +13,7 @@ export class SessionManager {
         const session = em.create(Session, {
             id: sessionId,
             data,
+            userId: data.userId,
             expiresAt: new Date(Date.now() + ttl),
             createdAt: new Date(Date.now()),
             updatedAt: new Date(Date.now())

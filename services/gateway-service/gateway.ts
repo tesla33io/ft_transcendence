@@ -143,6 +143,28 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
 
         console.log(`✅ [GATEWAY] User ${request.user.username} logging out`);
 
+        // forward logout to user-service so the session is destroyed
+        const userServiceResponse = await fetch('http://user-service:8000/users/auth/logout', {
+            method: 'POST',
+            headers: {
+            'Content-Type': 'application/json',
+            cookie: request.headers.cookie ?? ''  // forward sessionId cookie
+            },
+            body: JSON.stringify({}) // user-service route expects a JSON body
+        });
+    
+        if (!userServiceResponse.ok) {
+            console.error(
+            '[GATEWAY] user-service logout failed:',
+            userServiceResponse.status,
+            await userServiceResponse.text()
+            );
+            return reply.status(500).send({
+            error: 'Logout failed on user-service',
+            code: 'LOGOUT_FAILED'
+            });
+        }
+
         // Clear refresh token cookie
         reply.clearCookie('refreshToken', {
             httpOnly: true,

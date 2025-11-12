@@ -26,4 +26,7 @@ build: setup
 
 red: down build upd
 
+db:
+	docker compose exec user-service sqlite3 /user-service/data/user-service.db
+
 PHONY: up down build setup
