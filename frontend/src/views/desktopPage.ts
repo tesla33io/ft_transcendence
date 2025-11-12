@@ -1,7 +1,6 @@
 import { Router } from "../router";
 import { createTaskbar } from "../components/_components";
 import { UserService } from "../game/userService";
-import { UserService } from "../game/userService";
 
 import joystickIcon from './images/joystick.png';
 import padlock from './images/padlock.png';
