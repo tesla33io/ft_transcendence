@@ -104,6 +104,11 @@ EOF
 echo -e "${GREEN} .env file created successfully${NC}"
 echo -e "${YELLOW}JWT_SECRET (first 32 chars): ${JWT_SECRET:0:32}...${NC}"
 echo -e "${YELLOW}MATCH_HISTORY_SERVICE_TOKEN (first 32 chars): ${MATCH_HISTORY_SERVICE_TOKEN:0:32}...${NC}"
+if [[ "$SMTP_USER" != "your-email@gmail.com" ]]; then
+    echo -e "${YELLOW}SMTP configured with user: ${SMTP_USER}${NC}"
+else
+    echo -e "${RED}⚠️  SMTP not configured. Update .env manually to enable email-based 2FA${NC}"
+fi
 echo ""
 echo -e "${GREEN} Setup complete! You can now run:${NC}"
 echo -e "   make up    - Start services"

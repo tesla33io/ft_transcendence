@@ -16,6 +16,12 @@ set -e
 #   npm install
 # fi
 
+# Rebuild TypeScript on startup (for development with bind mounts)
+if [ "$NODE_ENV" = "development" ]; then
+  echo "[user-service] Rebuilding TypeScript..."
+  npm run build
+fi
+
 echo "[user-service] Running database migrations..."
 npm run migration:up || { echo "[user-service] Migration failed"; exit 1; }
 

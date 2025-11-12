@@ -12,6 +12,10 @@ import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 import { FromSchema } from "json-schema-to-ts";
 
+import { TwoFactorService } from '../utils/TwoFactorService';
+import { EmailService } from '../utils/EmailService';
+import { codeStore } from '../utils/TwoFactorCodeStore';
+
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'profiles');
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -233,734 +237,927 @@ export default async function userRoutes(app: FastifyInstance) {
         }
     });
 
-        app.post<{Body: AuthBody}>('/auth/login', {
-            config: { skipSession: true },
+    app.post<{Body: AuthBody}>('/auth/login', {
+        config: { skipSession: true },
+        schema: {
+            body: authBodySchema,
+            response: {
+                200: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'number' },
+                        username: { type: 'string' },
+                        message: { type: 'string' },
+                    },
+                },
+                400: {
+                    type: 'object',
+                    properties: {
+                        error: { type: 'string' },
+                        details: { type: ['string', 'array', 'object', 'null'] },
+                    },
+                },
+            },
+            tags: ['auth'],
+            summary: 'Authenticate user with given credentials',
+            description: 'Verifies user credentials and sets a session cookie.',
+        }}, async (req: FastifyRequest<{Body: AuthBody}>, reply: FastifyReply) => {
+            try {
+                if (!req.body || typeof req.body !== 'object') {
+                    return reply.code(400).send({ 
+                        error: 'Invalid request body',
+                        details: 'Request body must be a valid JSON object'
+                    });
+                }
+
+                const { username: rawUsername, password: rawPassword } = req.body as any;
+
+                if (!rawUsername || typeof rawUsername !== 'string' || rawUsername.trim().length === 0) {
+                    return reply.code(400).send({ 
+                        error: 'Invalid credentials',
+                        details: 'Username is required'
+                    });
+                }
+
+                if (!rawPassword || typeof rawPassword !== 'string' || rawPassword.length === 0) {
+                    return reply.code(400).send({ 
+                        error: 'Invalid credentials',
+                        details: 'Password is required'
+                    });
+                }
+
+                const username = sanitizeInput(rawUsername);
+                const password = rawPassword;
+
+                const user = await app.em.findOne(User, { username });
+                if (!user) {
+                    return reply.code(401).send({ 
+                        error: 'Invalid credentials',
+                        details: 'Username or password is incorrect'
+                    });
+                }
+
+                // Verify password
+                const valid = await argon2.verify(user.passwordHash, password);
+                if (!valid) {
+                    return reply.code(401).send({ 
+                        error: 'Invalid credentials',
+                        details: 'Username or password is incorrect'
+                    });
+                }
+
+                // Check if 2FA is enabled
+                if (user.twoFactorEnabled) {
+                    const { twoFactorCode } = req.body as any;
+                    
+                    if (!twoFactorCode) {
+                        // Send code if method is email/sms
+                        if (user.twoFactorMethod === 'email' && user.email) {
+                            const code = codeStore.generateCode(user.id, 'email');
+                            await EmailService.send2FACode(user.email, code);
+                            return reply.code(200).send({
+                                requires2FA: true,
+                                method: 'email',
+                                message: '2FA code sent to email'
+                            });
+                        }
+                        
+                        if (user.twoFactorMethod === 'totp') {
+                            return reply.code(200).send({
+                                requires2FA: true,
+                                method: 'totp',
+                                message: 'Enter code from authenticator app'
+                            });
+                        }
+                    }
+
+                    // Verify 2FA code
+                    let twoFactorValid = false;
+                    
+                    if (user.twoFactorMethod === 'totp') {
+                        twoFactorValid = TwoFactorService.verifyTOTP(twoFactorCode, user.twoFactorSecret!);
+                    } else if (user.twoFactorMethod === 'email') {
+                        twoFactorValid = codeStore.verifyCode(twoFactorCode, user.id);
+                    } else {
+                        // Check backup codes
+                        twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                        if (twoFactorValid) {
+                            // Remove used backup code
+                            const codes = JSON.parse(user.backupCodes || '[]');
+                            const updatedCodes = codes.filter((c: string) => c !== twoFactorCode);
+                            user.backupCodes = TwoFactorService.hashBackupCodes(updatedCodes);
+                            await app.em.flush();
+                        }
+                    }
+
+                    if (!twoFactorValid) {
+                        return reply.code(401).send({
+                            error: 'Invalid 2FA code',
+                            details: 'The verification code is incorrect or expired'
+                        });
+                    }
+                }
+
+                // Update last login
+                user.lastLogin = new Date();
+                await app.em.flush();
+
+                // Generate tokens
+                // const deviceInfo = extractDeviceInfo(req);
+
+                // Check if user is already logged in
+                const existingSession = await app.em.findOne(
+                    Session, 
+                    { userId: user.id },
+                    { refresh: true } // <-- force DB fetch, bypass cached entity
+                );
+
+                if (existingSession) {
+                    if (existingSession.expiresAt <= new Date()) {
+                        await app.em.removeAndFlush(existingSession);
+                    } else {
+                        return reply
+                            .code(409)
+                            .send({ error: 'User already logged in. Please log out first.' });
+                    }
+                }
+
+                const sessionId = await app.sm.create({ userId: user.id, username: user.username });
+                reply.setCookie('sessionId', sessionId, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'lax',
+                    maxAge: 86400,
+                    path: '/',
+                });
+                return { 
+                    id: user.id, 
+                    username: user.username,
+                    lastLogin: user.lastLogin,
+                    message: 'Login successful'
+                };
+
+            } catch (error) {
+                app.log.error('Login error: ' + String(error));
+                return reply.code(500).send({ 
+                    error: 'Internal server error',
+                    details: 'Unable to process login at this time'
+                });
+            }
+        });
+    
+    // POST /auth/2fa/disable
+    app.post('/auth/2fa/disable', {
+        schema: {
+            tags: ['auth'],
+            summary: 'Disable 2FA',
+            body: {
+                type: 'object',
+                required: ['password'],
+                properties: {
+                    password: { type: 'string' }
+                }
+            }
+        }
+    }, async (req, reply) => {
+        const userId = req.session?.userId;
+        if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
+
+        const user = await app.em.findOne(User, { id: userId });
+        if (!user) return reply.code(404).send({ error: 'User not found' });
+
+        const { password } = req.body as { password: string };
+        const valid = await argon2.verify(user.passwordHash, password);
+        if (!valid) {
+            return reply.code(401).send({ error: 'Invalid password' });
+        }
+
+        user.twoFactorEnabled = false;
+        user.twoFactorSecret = undefined;
+        user.twoFactorMethod = undefined;
+        user.backupCodes = undefined;
+        await app.em.flush();
+
+        return reply.send({ message: '2FA disabled successfully' });
+    });
+
+        // POST users/auth/logout
+        app.post('/auth/logout', {
             schema: {
-                body: authBodySchema,
+                tags: ['auth'],
+                summary: 'Logout current user',
+                description: 'Destroys the active session and clears session cookies.',
                 response: {
                     200: {
                         type: 'object',
-                        properties: {
-                            id: { type: 'number' },
-                            username: { type: 'string' },
-                            message: { type: 'string' },
-                        },
+                        properties: { message: { type: 'string' } },
+                        required: ['message'],
                     },
+                    401: ErrorSchema,
+                },
+            },
+        }, async (req, reply) => {
+            const sessionId = req.cookies.sessionId;
+            if (!sessionId) {
+                reply.clearCookie('sessionId');
+                return reply.send({ message: 'Already logged out' });
+            }
+
+            await app.sm.destroy(sessionId);
+            req.session = {};
+            reply.clearCookie('sessionId');
+            return reply.send({ message: 'Logged out successfully' });
+        });
+
+        //POST /auth/2fa/setup
+        app.post('/auth/2fa/setup', {
+            schema: {
+                tags: ['auth'],
+                summary: 'Initiate 2FA setup',
+                body: {
+                    type: 'object',
+                    required: ['method'],
+                    properties: {
+                        method: { type: 'string', enum: ['totp', 'email'] },
+                        email: { type: 'string' } // Required if method is 'email'
+                    }
+                }
+            }
+        }, async (req, reply) => {
+            const userId = req.session?.userId; // From session middleware
+            if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
+
+            const user = await app.em.findOne(User, { id: userId });
+            if (!user) return reply.code(404).send({ error: 'User not found' });
+
+            const { method, email } = req.body as { method: 'totp' | 'email'; email?: string };;
+
+            if (method === 'totp') {
+                const { secret, qrCodeUrl } = TwoFactorService.generateTOTPSecret(user.username);
+                
+                // Store temporarily (don't enable yet)
+                user.twoFactorSecret = secret;
+                user.twoFactorMethod = 'totp';
+                await app.em.flush();
+
+                return reply.send({
+                    secret: secret,
+                    qrCodeUrl: qrCodeUrl,
+                    message: 'Scan QR code with authenticator app'
+                });
+            }
+
+            if (method === 'email') {
+                if (!email) return reply.code(400).send({ error: 'Email required' });
+                user.email = email;
+                user.twoFactorMethod = 'email';
+                await app.em.flush();
+
+                const code = codeStore.generateCode(user.id, 'email');
+                await EmailService.send2FACode(email, code);
+
+                return reply.send({
+                    message: 'Verification code sent to email',
+                    // Don't send code back, just confirmation
+                });
+            }
+
+            return reply.code(400).send({ error: 'Invalid method' });
+        });
+
+        // POST /auth/2fa/verify-setup
+        app.post('/auth/2fa/verify-setup', {
+            schema: {
+                tags: ['auth'],
+                summary: 'Verify and enable 2FA',
+                body: {
+                    type: 'object',
+                    required: ['code'],
+                    properties: {
+                        code: { type: 'string' }
+                    }
+                }
+            }
+        }, async (req, reply) => {
+            const userId = req.session?.userId;
+            if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
+            
+            const user = await app.em.findOne(User, { id: userId });
+            if (!user) return reply.code(404).send({ error: 'User not found' });
+            
+            if (!user.twoFactorSecret && !user.twoFactorMethod) {
+                return reply.code(400).send({ error: '2FA setup not initiated' });
+            }
+
+            const { code } = req.body as { code: string };
+            let isValid = false;
+
+            if (user.twoFactorMethod === 'totp') {
+                isValid = TwoFactorService.verifyTOTP(code, user.twoFactorSecret!);
+            } else if (user.twoFactorMethod === 'email' || user.twoFactorMethod === 'sms') {
+                isValid = codeStore.verifyCode(code, user.id);
+            }
+
+            if (!isValid) {
+                return reply.code(401).send({ error: 'Invalid verification code' });
+            }
+
+            // Enable 2FA and generate backup codes
+            user.twoFactorEnabled = true;
+            const backupCodes = TwoFactorService.generateBackupCodes();
+            user.backupCodes = TwoFactorService.hashBackupCodes(backupCodes);
+            await app.em.flush();
+
+            return reply.send({
+                message: '2FA enabled successfully',
+                backupCodes: backupCodes, // Show only once!
+                warning: 'Save these backup codes in a safe place'
+            });
+        });
+
+        // GET users/me
+        app.get<{Reply: UserResponse}>('/me', {
+            schema: {
+                response: {
+                    200: userResponseSchema,
+                    401: {
+                        type: 'object',
+                        properties: { error: { type: 'string' } },
+                        required: ['error'],
+                    },
+                    404: {
+                        type: 'object',
+                        properties: { error: { type: 'string' } },
+                        required: ['error'],
+                    },
+                },
+                tags: ['profile'],
+                summary: 'Get current authenticated user info',
+                description: 'Returns the current user’s profile, stats, and settings.',
+            }
+        }, async (req: FastifyRequest, reply: FastifyReply) => {
+            console.log(req);
+            if (!req.cookies.sessionId || !req.session.userId) {
+                return reply.status(401).send({ error: 'Not authenticated' });
+            }
+
+            try {
+                const user = await app.em.findOne(User, { id: req.session!.userId }, {
+                    populate: ['statistics']
+                });
+
+                if (!user) {
+                    return reply.code(404).send({ error: 'User not found' });
+                }
+
+                const response = {
+                    id: user.id,
+                    username: user.username,
+                    role: user.role,
+                    profile: {
+                        avatarUrl: user.avatarUrl,
+                        onlineStatus: user.onlineStatus,
+                        activityType: user.activityType
+                    },
+                    stats: {
+                        totalGames: user.statistics.getItems()[0]?.totalGames || 0,
+                        wins: user.statistics.getItems()[0]?.wins || 0,
+                        losses: user.statistics.getItems()[0]?.losses || 0,
+                        draws: user.statistics.getItems()[0]?.draws || 0,
+                        averageGameDuration: user.statistics.getItems()[0]?.averageGameDuration || 0,
+                        longestGame: user.statistics.getItems()[0]?.longestGame || 0,
+                        bestWinStreak: user.statistics.getItems()[0]?.bestWinStreak || 0,
+                        currentRating: user.statistics.getItems()[0]?.currentRating || 1000,
+                        highestRating: user.statistics.getItems()[0]?.highestRating || 1000,
+                        ratingChange: user.statistics.getItems()[0]?.ratingChange || 0
+                    },
+                    twofa_enabled: user.twoFactorEnabled,
+                    last_login: user.lastLogin
+                };
+
+                return reply.send(response);
+            } catch (error) {
+                app.log.error('Error fetching user profile:' + String(error));
+                return reply.code(500).send({ error: 'Internal server error' });
+            }
+        });
+
+        app.post<{Reply: UploadResponse}>('/me/picture', {
+            schema: {
+                consumes: ['multipart/form-data'],
+                response: {
+                    200: uploadResponseSchema,
                     400: {
                         type: 'object',
                         properties: {
                             error: { type: 'string' },
-                            details: { type: ['string', 'array', 'object', 'null'] },
+                            details: { type: 'string' },
                         },
+                        required: ['error', 'details'],
+                    },
+                    401: {
+                        type: 'object',
+                        properties: { error: { type: 'string' } },
+                        required: ['error'],
+                    },
+                    404: {
+                        type: 'object',
+                        properties: { error: { type: 'string' } },
+                        required: ['error'],
                     },
                 },
-                tags: ['auth'],
-                summary: 'Authenticate user with given credentials',
-                description: 'Verifies user credentials and sets a session cookie.',
-            }}, async (req: FastifyRequest<{Body: AuthBody}>, reply: FastifyReply) => {
-                try {
-                    if (!req.body || typeof req.body !== 'object') {
-                        return reply.code(400).send({ 
-                            error: 'Invalid request body',
-                            details: 'Request body must be a valid JSON object'
-                        });
-                    }
-
-                    const { username: rawUsername, password: rawPassword } = req.body as any;
-
-                    if (!rawUsername || typeof rawUsername !== 'string' || rawUsername.trim().length === 0) {
-                        return reply.code(400).send({ 
-                            error: 'Invalid credentials',
-                            details: 'Username is required'
-                        });
-                    }
-
-                    if (!rawPassword || typeof rawPassword !== 'string' || rawPassword.length === 0) {
-                        return reply.code(400).send({ 
-                            error: 'Invalid credentials',
-                            details: 'Password is required'
-                        });
-                    }
-
-                    const username = sanitizeInput(rawUsername);
-                    const password = rawPassword;
-
-                    const user = await app.em.findOne(User, { username });
-                    if (!user) {
-                        return reply.code(401).send({ 
-                            error: 'Invalid credentials',
-                            details: 'Username or password is incorrect'
-                        });
-                    }
-
-                    // Verify password
-                    const valid = await argon2.verify(user.passwordHash, password);
-                    if (!valid) {
-                        return reply.code(401).send({ 
-                            error: 'Invalid credentials',
-                            details: 'Username or password is incorrect'
-                        });
-                    }
-
-                    // Update last login
-                    user.lastLogin = new Date();
-                    await app.em.flush();
-
-                    // Generate tokens
-                    // const deviceInfo = extractDeviceInfo(req);
-
-                    // Check if user is already logged in
-                    const existingSession = await app.em.findOne(
-                        Session, 
-                        { userId: user.id },
-                        { refresh: true } // <-- force DB fetch, bypass cached entity
-                    );
-
-                    if (existingSession) {
-                        if (existingSession.expiresAt <= new Date()) {
-                            await app.em.removeAndFlush(existingSession);
-                        } else {
-                            return reply
-                                .code(409)
-                                .send({ error: 'User already logged in. Please log out first.' });
-                        }
-                    }
-
-                    const sessionId = await app.sm.create({ userId: user.id, username: user.username });
-                    reply.setCookie('sessionId', sessionId, {
-                        httpOnly: true,
-                        secure: process.env.NODE_ENV === 'production',
-                        sameSite: 'lax',
-                        maxAge: 86400,
-                        path: '/',
+                tags: ['profile'],
+                summary: 'Upload or replace profile picture',
+                description:
+                    'Uploads and saves a new profile picture for the authenticated user. If an avatar already exists, it is deleted adn replaced with the new upload.',
+            }
+        }, async (req: FastifyRequest, reply) => {
+            const userId = req.session?.userId;
+            if (!userId) {
+                return reply.status(401).send({
+                    error: 'Not authenticated',
+                    message: 'Not authenticated',
+                    uri: ''
                     });
-                    return { 
-                        id: user.id, 
-                        username: user.username,
-                        lastLogin: user.lastLogin,
-                        message: 'Login successful'
-                    };
+            }
 
-                } catch (error) {
-                    app.log.error('Login error: ' + String(error));
-                    return reply.code(500).send({ 
-                        error: 'Internal server error',
-                        details: 'Unable to process login at this time'
-                    });
-                }
-            });
-
-            // POST users/auth/logout
-            app.post('/auth/logout', {
-                schema: {
-                    tags: ['auth'],
-                    summary: 'Logout current user',
-                    description: 'Destroys the active session and clears session cookies.',
-                    response: {
-                        200: {
-                            type: 'object',
-                            properties: { message: { type: 'string' } },
-                            required: ['message'],
-                        },
-                        401: ErrorSchema,
-                    },
-                },
-            }, async (req, reply) => {
-                const sessionId = req.cookies.sessionId;
-                if (!sessionId) {
-                    reply.clearCookie('sessionId');
-                    return reply.send({ message: 'Already logged out' });
-                }
-
-                await app.sm.destroy(sessionId);
-                req.session = {};
-                reply.clearCookie('sessionId');
-                return reply.send({ message: 'Logged out successfully' });
-            });
-
-            // GET users/me
-            app.get<{Reply: UserResponse}>('/me', {
-                schema: {
-                    response: {
-                        200: userResponseSchema,
-                        401: {
-                            type: 'object',
-                            properties: { error: { type: 'string' } },
-                            required: ['error'],
-                        },
-                        404: {
-                            type: 'object',
-                            properties: { error: { type: 'string' } },
-                            required: ['error'],
-                        },
-                    },
-                    tags: ['profile'],
-                    summary: 'Get current authenticated user info',
-                    description: 'Returns the current user’s profile, stats, and settings.',
-                }
-            }, async (req: FastifyRequest, reply: FastifyReply) => {
-                console.log(req);
-                if (!req.cookies.sessionId || !req.session.userId) {
-                    return reply.status(401).send({ error: 'Not authenticated' });
-                }
-
-                try {
-                    const user = await app.em.findOne(User, { id: req.session!.userId }, {
-                        populate: ['statistics']
-                    });
-
-                    if (!user) {
-                        return reply.code(404).send({ error: 'User not found' });
-                    }
-
-                    const response = {
-                        id: user.id,
-                        username: user.username,
-                        role: user.role,
-                        profile: {
-                            avatarUrl: user.avatarUrl,
-                            onlineStatus: user.onlineStatus,
-                            activityType: user.activityType
-                        },
-                        stats: {
-                            totalGames: user.statistics.getItems()[0]?.totalGames || 0,
-                            wins: user.statistics.getItems()[0]?.wins || 0,
-                            losses: user.statistics.getItems()[0]?.losses || 0,
-                            draws: user.statistics.getItems()[0]?.draws || 0,
-                            averageGameDuration: user.statistics.getItems()[0]?.averageGameDuration || 0,
-                            longestGame: user.statistics.getItems()[0]?.longestGame || 0,
-                            bestWinStreak: user.statistics.getItems()[0]?.bestWinStreak || 0,
-                            currentRating: user.statistics.getItems()[0]?.currentRating || 1000,
-                            highestRating: user.statistics.getItems()[0]?.highestRating || 1000,
-                            ratingChange: user.statistics.getItems()[0]?.ratingChange || 0
-                        },
-                        twofa_enabled: user.twoFactorEnabled,
-                        last_login: user.lastLogin
-                    };
-
-                    return reply.send(response);
-                } catch (error) {
-                    app.log.error('Error fetching user profile:' + String(error));
-                    return reply.code(500).send({ error: 'Internal server error' });
-                }
-            });
-
-            app.post<{Reply: UploadResponse}>('/me/picture', {
-                schema: {
-                    consumes: ['multipart/form-data'],
-                    response: {
-                        200: uploadResponseSchema,
-                        400: {
-                            type: 'object',
-                            properties: {
-                                error: { type: 'string' },
-                                details: { type: 'string' },
-                            },
-                            required: ['error', 'details'],
-                        },
-                        401: {
-                            type: 'object',
-                            properties: { error: { type: 'string' } },
-                            required: ['error'],
-                        },
-                        404: {
-                            type: 'object',
-                            properties: { error: { type: 'string' } },
-                            required: ['error'],
-                        },
-                    },
-                    tags: ['profile'],
-                    summary: 'Upload or replace profile picture',
-                    description:
-                        'Uploads and saves a new profile picture for the authenticated user. If an avatar already exists, it is deleted adn replaced with the new upload.',
-                }
-            }, async (req: FastifyRequest, reply) => {
-                const userId = req.session?.userId;
-                if (!userId) {
-                    return reply.status(401).send({
-                        error: 'Not authenticated',
-                        message: 'Not authenticated',
+            try {
+                // authentication
+                const user = await app.em.findOne(User, { id: userId });
+                if (!user) {
+                    return reply.code(401).send({ 
+                        error: 'User not foundd',
+                        message: 'User not found',
                         uri: ''
-                      });
-                }
-
-                try {
-                    // authentication
-                    const user = await app.em.findOne(User, { id: userId });
-                    if (!user) {
-                        return reply.code(401).send({ 
-                            error: 'User not foundd',
-                            message: 'User not found',
-                            uri: ''
-                        });
-                    }
-
-                    // const existingUser = await app.em.findOne(User, { id: userId });
-                    // if (!existingUser) {
-                    // return reply.code(404).send({
-                    //     error: 'User not found',
-                    //     message: 'User not found',
-                    //     uri: ''
-                    // });
-                    // }
-
-                    const data = await req.file();
-                    if (!data) {
-                        return reply.code(400).send({ 
-                            error: 'No file provided',
-                            uri: "",
-                            message: 'Please upload an image file'
-                        });
-                    }
-
-                    if (!ALLOWED_MIME_TYPES.includes(data.mimetype)) {
-                        return reply.code(400).send({ 
-                            error: 'Invalid file type',
-                            uri: "",
-                            message: `Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
-                        });
-                    }
-
-                    const chunks: Buffer[] = [];
-                    let size = 0;
-
-                    for await (const chunk of data.file) {
-                        size += chunk.length;
-                        if (size > MAX_FILE_SIZE) {
-                            return reply.code(400).send({ 
-                                error: 'File too large',
-                                uri: "",
-                                message: `Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`
-                            });
-                        }
-                        chunks.push(chunk);
-                    }
-
-                    const ext = data.mimetype.split('/')[1];
-                    const randomName = randomBytes(16).toString('hex');
-                    const filename = `${randomName}.${ext}`;
-                    const filepath = join(UPLOAD_DIR, filename);
-
-                    // Save file
-                    const buffer = Buffer.concat(chunks);
-                    await pipeline(
-                        async function* () { yield buffer; },
-                        createWriteStream(filepath)
-                    );
-
-                     // remove old avatar if it existed
-                    if (user.avatarUrl) {
-                        const oldPath = join(process.cwd(), 'public', user.avatarUrl.replace(/^\//, ''));
-                        try {
-                        await unlink(oldPath);
-                        } catch (err: any) {
-                        if (err.code !== 'ENOENT') app.log.warn({ err }, 'Failed to remove old avatar');
-                        }
-                    }
-
-                    user.avatarUrl = `/uploads/profiles/${filename}`;
-                    await app.em.flush();
-
-                    return { 
-                        message: 'Profile picture uploaded successfully',
-                        uri: user.avatarUrl
-                    };
-                } catch (error) {
-                    app.log.error('Profile picture upload error: ' + String(error));
-                    return reply.code(500).send({ 
-                        error: 'Internal server error',
-                        uri: "",
-                        message: 'Unable to upload profile picture at this time'
                     });
                 }
-            });
 
-            // PATCH users/me - Update user profile
-            app.patch('/me', {
-                schema: {
-                    tags: ['profile'],
-                    body: {
+                // const existingUser = await app.em.findOne(User, { id: userId });
+                // if (!existingUser) {
+                // return reply.code(404).send({
+                //     error: 'User not found',
+                //     message: 'User not found',
+                //     uri: ''
+                // });
+                // }
+
+                const data = await req.file();
+                if (!data) {
+                    return reply.code(400).send({ 
+                        error: 'No file provided',
+                        uri: "",
+                        message: 'Please upload an image file'
+                    });
+                }
+
+                if (!ALLOWED_MIME_TYPES.includes(data.mimetype)) {
+                    return reply.code(400).send({ 
+                        error: 'Invalid file type',
+                        uri: "",
+                        message: `Allowed types: ${ALLOWED_MIME_TYPES.join(', ')}`
+                    });
+                }
+
+                const chunks: Buffer[] = [];
+                let size = 0;
+
+                for await (const chunk of data.file) {
+                    size += chunk.length;
+                    if (size > MAX_FILE_SIZE) {
+                        return reply.code(400).send({ 
+                            error: 'File too large',
+                            uri: "",
+                            message: `Maximum file size is ${MAX_FILE_SIZE / 1024 / 1024}MB`
+                        });
+                    }
+                    chunks.push(chunk);
+                }
+
+                const ext = data.mimetype.split('/')[1];
+                const randomName = randomBytes(16).toString('hex');
+                const filename = `${randomName}.${ext}`;
+                const filepath = join(UPLOAD_DIR, filename);
+
+                // Save file
+                const buffer = Buffer.concat(chunks);
+                await pipeline(
+                    async function* () { yield buffer; },
+                    createWriteStream(filepath)
+                );
+
+                    // remove old avatar if it existed
+                if (user.avatarUrl) {
+                    const oldPath = join(process.cwd(), 'public', user.avatarUrl.replace(/^\//, ''));
+                    try {
+                    await unlink(oldPath);
+                    } catch (err: any) {
+                    if (err.code !== 'ENOENT') app.log.warn({ err }, 'Failed to remove old avatar');
+                    }
+                }
+
+                user.avatarUrl = `/uploads/profiles/${filename}`;
+                await app.em.flush();
+
+                return { 
+                    message: 'Profile picture uploaded successfully',
+                    uri: user.avatarUrl
+                };
+            } catch (error) {
+                app.log.error('Profile picture upload error: ' + String(error));
+                return reply.code(500).send({ 
+                    error: 'Internal server error',
+                    uri: "",
+                    message: 'Unable to upload profile picture at this time'
+                });
+            }
+        });
+
+        // PATCH users/me - Update user profile
+        app.patch('/me', {
+            schema: {
+                tags: ['profile'],
+                body: {
+                    type: 'object',
+                    properties: {
+                        username: { type: 'string', minLength: 3, maxLength: 32 },
+                    },
+                    additionalProperties: false,
+                    },
+                response: {
+                    200: {
                         type: 'object',
                         properties: {
-                          username: { type: 'string', minLength: 3, maxLength: 32 },
-                        },
-                        additionalProperties: false,
-                      },
-                    response: {
-                        200: {
-                          type: 'object',
-                          properties: {
-                            message: { type: 'string' },
-                            user: {
-                              type: 'object',
-                              properties: {
-                                id: { type: 'number' },
-                                username: { type: 'string' },
-                              },
-                              required: ['id', 'username'],
-                            },
-                          },
-                          required: ['message', 'user'],
-                        },
-                        400: ErrorSchema,
-                        401: ErrorSchema,
-                        404: ErrorSchema,
-                        409: ErrorSchema,
-                      },
-                      summary: 'Update user profile',
-                      description: 'Updates the user\'s profile information.',
-                  },
-            }, async (req, reply) => {
-                const userId = req.session?.userId;
-                if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
-              
-                const user = await app.em.findOne(User, { id: userId });
-                if (!user) return reply.code(404).send({ error: 'User not found' });
-              
-                const { username, profile } = req.body as any;
-              
-                if (username && username !== user.username) {
-                  const validation = validateUsername(username);
-                  if (!validation.isValid) return reply.code(400).send({ error: 'Invalid username', details: validation.errors });
-              
-                  const existing = await app.em.findOne(User, { username });
-                  if (existing) return reply.code(409).send({ error: 'Username already exists' });
-              
-                  user.username = sanitizeInput(username);
-                }
-                
-                await app.em.flush();
-                return reply.send({ message: 'Profile updated successfully', user: { id: user.id, username: user.username } });
-            });
-
-            //PATCH /users/me/password - Update user password
-            app.patch('/me/password', {
-                schema: {
-                  tags: ['profile'],
-                  body: {
-                    type: 'object',
-                    required: ['currentPassword', 'newPassword'],
-                    properties: {
-                      currentPassword: { type: 'string', minLength: 8, maxLength: 128 },
-                      newPassword: { type: 'string', minLength: 8, maxLength: 128 },
-                    },
-                    additionalProperties: false,
-                  },
-                  response: {
-                    200: {
-                      type: 'object',
-                      properties: {
                         message: { type: 'string' },
-                      },
-                      required: ['message'],
-                    },
-                    400: ErrorSchema,
-                    401: ErrorSchema,
-                    404: ErrorSchema,
-                  },
-                  summary: 'Update user password',
-                  description: 'Updates the user\'s password.',
-                },
-              }, async (req, reply) => {
-                const userId = req.session?.userId;
-                if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
-              
-                const { currentPassword, newPassword } = req.body as any;
-                if (!currentPassword || !newPassword) return reply.code(400).send({ error: 'Missing required fields' });
-              
-                const user = await app.em.findOne(User, { id: userId });
-                if (!user) return reply.code(404).send({ error: 'User not found' });
-              
-                const valid = await argon2.verify(user.passwordHash, currentPassword);
-                if (!valid) return reply.code(400).send({ error: 'Current password is incorrect' });
-              
-                const passwordValidation = validatePassword(newPassword);
-                if (!passwordValidation.isValid) return reply.code(400).send({ error: 'Invalid password', details: passwordValidation.errors });
-              
-                user.passwordHash = await argon2.hash(newPassword);
-                await app.em.flush();
-              
-                return reply.send({ message: 'Password updated successfully' });
-            });
-
-            // GET /users/friends - Get user's friends list
-            app.get<{Reply: FriendResponse}>('/friends', {
-                schema: {
-                    tags: ['friends'],
-                    summary: 'Get user friends list',
-                    description: 'Returns the current user’s friends, including status and last login.',
-                    response: {
-                        200: {
+                        user: {
                             type: 'object',
                             properties: {
-                                friends: {
-                                    type: 'array',
-                                    items: FriendSchema
-                                }
-                            }
-                        },
-                        401: ErrorSchema,
-                        404: ErrorSchema,
-                        500: ErrorSchema
-                    }
-                }
-
-            }, async (req: FastifyRequest, reply: FastifyReply) => {
-                if (!req.cookies.sessionId || !req.session.userId) {
-                    return reply.status(401).send({ 
-                        error: 'Not authenticated',
-                        message: 'Not authenticated',
-                        uri: ''
-                    });
-                }
-                try {
-                    const user = await app.em.findOne(User, { id: req.session.userId }, {
-                        populate: ['friends']
-                    });
-
-                    if (!user) {
-                        return reply.code(404).send({ error: 'User not found' });
-                    }
-
-                    const friends = user.friends.getItems().map(friend => ({
-                        id: friend.id,
-                        username: friend.username,
-                        avatarUrl: friend.avatarUrl,
-                        onlineStatus: friend.onlineStatus,
-                        activityType: friend.activityType,
-                        lastLogin: friend.lastLogin
-                    }));
-
-                    return reply.send({ friends });
-                } catch (error) {
-                    app.log.error('Error fetching friends: ' + String(error));
-                    return reply.code(500).send({ error: 'Internal server error' });
-                }
-            });
-
-            // POST users/friends - Add a friend
-            app.post('/friends', {
-                schema: {
-                  tags: ['friends'],
-                  summary: 'Add friend',
-                  description: 'Adds another user to the current user’s friends list.',
-                  body: {
-                    type: 'object',
-                    required: ['username'],
-                    properties: {
-                      username: { type: 'string' },
-                    },
-                    additionalProperties: false,
-                  },
-                  response: {
-                    200: {
-                      type: 'object',
-                      properties: {
-                        message: { type: 'string' },
-                        friend: {
-                          type: 'object',
-                          properties: {
                             id: { type: 'number' },
                             username: { type: 'string' },
-                            onlineStatus: { type: ['string', 'null'] },
-                          },
-                          required: ['id', 'username'],
+                            },
+                            required: ['id', 'username'],
                         },
-                      },
-                      required: ['message', 'friend'],
+                        },
+                        required: ['message', 'user'],
                     },
                     400: ErrorSchema,
                     401: ErrorSchema,
                     404: ErrorSchema,
                     409: ErrorSchema,
-                    500: ErrorSchema,
-                  },
-                },
-            }, async (req: FastifyRequest, reply: FastifyReply) => {
-                if (!req.cookies.sessionId || !req.session.userId) {
-                    return reply.status(401).send({ error: 'Not authenticated' });
-                }
-
-                try {
-                    const { username } = req.body as any;
-
-                    if (!username || typeof username !== 'string') {
-                        return reply.code(400).send({ 
-                            error: 'Invalid request',
-                            details: 'Username is required'
-                        });
-                    }
-
-                    const currentUser = await app.em.findOne(User, { id: req.session.userId }, {
-                        populate: ['friends']
-                    });
-
-                    if (!currentUser) {
-                        return reply.code(404).send({ error: 'User not found' });
-                    }
-
-                    // Check if trying to add self
-                    if (username === currentUser.username) {
-                        return reply.code(400).send({ error: 'Cannot add yourself as a friend' });
-                    }
-
-                    // Find the user to add as friend
-                    const friendToAdd = await app.em.findOne(User, { username });
-                    if (!friendToAdd) {
-                        return reply.code(404).send({ error: 'User not found' });
-                    }
-
-                    // Check if already friends
-                    const existingFriend = currentUser.friends.getItems().find(friend => friend.id === friendToAdd.id);
-                if (existingFriend) {
-                    return reply.code(409).send({ error: 'User is already your friend' });
-                }
-
-                // Add friend relationship (bidirectional)
-                currentUser.friends.add(friendToAdd);
-                friendToAdd.friends.add(currentUser);
-
-                await app.em.persistAndFlush([currentUser, friendToAdd]);
-
-                return reply.send({ 
-                    message: 'Friend added successfully',
-                    friend: {
-                        id: friendToAdd.id,
-                        username: friendToAdd.username,
-                        onlineStatus: friendToAdd.onlineStatus
-                    }
-                });
-                } catch (error) {
-                    app.log.error('Error adding friend: ' + String(error));
-                    return reply.code(500).send({ error: 'Internal server error' });
-                }
-            });
-
-            // DELETE /users/friends/:username - Remove a friend
-            app.delete('/friends/:username', {
-                schema: {
-                  tags: ['friends'],
-                  summary: 'Remove friend',
-                  description: 'Removes a user from the current user’s friends list.',
-                  params: {
-                    type: 'object',
-                    required: ['username'],
-                    properties: {
-                      username: { type: 'string' },
                     },
-                  },
-                  response: {
+                    summary: 'Update user profile',
+                    description: 'Updates the user\'s profile information.',
+                },
+        }, async (req, reply) => {
+            const userId = req.session?.userId;
+            if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
+            
+            const user = await app.em.findOne(User, { id: userId });
+            if (!user) return reply.code(404).send({ error: 'User not found' });
+            
+            const { username, profile } = req.body as any;
+            
+            if (username && username !== user.username) {
+                const validation = validateUsername(username);
+                if (!validation.isValid) return reply.code(400).send({ error: 'Invalid username', details: validation.errors });
+            
+                const existing = await app.em.findOne(User, { username });
+                if (existing) return reply.code(409).send({ error: 'Username already exists' });
+            
+                user.username = sanitizeInput(username);
+            }
+            
+            await app.em.flush();
+            return reply.send({ message: 'Profile updated successfully', user: { id: user.id, username: user.username } });
+        });
+
+        //PATCH /users/me/password - Update user password
+        app.patch('/me/password', {
+            schema: {
+                tags: ['profile'],
+                body: {
+                type: 'object',
+                required: ['currentPassword', 'newPassword'],
+                properties: {
+                    currentPassword: { type: 'string', minLength: 8, maxLength: 128 },
+                    newPassword: { type: 'string', minLength: 8, maxLength: 128 },
+                },
+                additionalProperties: false,
+                },
+                response: {
+                200: {
+                    type: 'object',
+                    properties: {
+                    message: { type: 'string' },
+                    },
+                    required: ['message'],
+                },
+                400: ErrorSchema,
+                401: ErrorSchema,
+                404: ErrorSchema,
+                },
+                summary: 'Update user password',
+                description: 'Updates the user\'s password.',
+            },
+            }, async (req, reply) => {
+            const userId = req.session?.userId;
+            if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
+            
+            const { currentPassword, newPassword } = req.body as any;
+            if (!currentPassword || !newPassword) return reply.code(400).send({ error: 'Missing required fields' });
+            
+            const user = await app.em.findOne(User, { id: userId });
+            if (!user) return reply.code(404).send({ error: 'User not found' });
+            
+            const valid = await argon2.verify(user.passwordHash, currentPassword);
+            if (!valid) return reply.code(400).send({ error: 'Current password is incorrect' });
+            
+            const passwordValidation = validatePassword(newPassword);
+            if (!passwordValidation.isValid) return reply.code(400).send({ error: 'Invalid password', details: passwordValidation.errors });
+            
+            user.passwordHash = await argon2.hash(newPassword);
+            await app.em.flush();
+            
+            return reply.send({ message: 'Password updated successfully' });
+        });
+
+        // GET /users/friends - Get user's friends list
+        app.get<{Reply: FriendResponse}>('/friends', {
+            schema: {
+                tags: ['friends'],
+                summary: 'Get user friends list',
+                description: 'Returns the current user’s friends, including status and last login.',
+                response: {
                     200: {
-                      type: 'object',
-                      properties: { message: { type: 'string' } },
-                      required: ['message'],
+                        type: 'object',
+                        properties: {
+                            friends: {
+                                type: 'array',
+                                items: FriendSchema
+                            }
+                        }
                     },
                     401: ErrorSchema,
                     404: ErrorSchema,
-                    500: ErrorSchema,
-                  },
-                },
-              }, async (req: FastifyRequest, reply: FastifyReply) => {
-                if (!req.cookies.sessionId || !req.session.userId) {
-                    return reply.status(401).send({ error: 'Not authenticated' });
+                    500: ErrorSchema
+                }
+            }
+
+        }, async (req: FastifyRequest, reply: FastifyReply) => {
+            if (!req.cookies.sessionId || !req.session.userId) {
+                return reply.status(401).send({ 
+                    error: 'Not authenticated',
+                    message: 'Not authenticated',
+                    uri: ''
+                });
+            }
+            try {
+                const user = await app.em.findOne(User, { id: req.session.userId }, {
+                    populate: ['friends']
+                });
+
+                if (!user) {
+                    return reply.code(404).send({ error: 'User not found' });
                 }
 
-                try {
-                    const { username } = req.params as any;
-
-                    const currentUser = await app.em.findOne(User, { id: req.session.userId }, {
-                        populate: ['friends']
-                    });
-
-                    if (!currentUser) {
-                        return reply.code(404).send({ error: 'User not found' });
-                    }
-
-                    const friendToRemove = await app.em.findOne(User, { username });
-                    if (!friendToRemove) {
-                        return reply.code(404).send({ error: 'User not found' });
-                    }
-
-                    // Check if they are friends
-                    const existingFriend = currentUser.friends.getItems().find(friend => friend.id === friendToRemove.id);
-                if (!existingFriend) {
-                    return reply.code(404).send({ error: 'User is not your friend' });
-                }
-
-                // Remove friend relationship (bidirectional)
-                currentUser.friends.remove(friendToRemove);
-                friendToRemove.friends.remove(currentUser);
-
-                await app.em.persistAndFlush([currentUser, friendToRemove]);
-
-                return reply.send({ message: 'Friend removed successfully' });
-                } catch (error) {
-                    app.log.error('Error removing friend: ' + String(error));
-                    return reply.code(500).send({ error: 'Internal server error' });
-                }
-            });
-
-            // GET users/search/:username - Search for users by username
-            app.get('/search/:username', {
-                schema: {
-                  tags: ['friends'],
-                  summary: 'Search users by username',
-                  description: 'Find other users whose usernames match the query so they can be added as friends.',
-                  params: {
-                    type: 'object',
-                    required: ['username'],
-                    properties: {
-                      username: { type: 'string' },
-                    },
-                  },
-                  response: {
-                    200: {
-                      type: 'object',
-                      properties: {
-                        users: {
-                          type: 'array',
-                          items: {
-                            type: 'object',
-                            properties: {
-                              id: { type: 'number' },
-                              username: { type: 'string' },
-                              avatarUrl: { type: ['string', 'null'] },
-                              onlineStatus: { type: ['string', 'null'] },
-                              activityType: { type: ['string', 'null'] },
-                            },
-                            required: ['id', 'username'],
-                          },
-                        },
-                      },
-                      required: ['users'],
-                    },
-                    401: ErrorSchema,
-                  },
-                },
-              }, async (req: FastifyRequest, reply: FastifyReply) => {
-                if (!req.cookies.sessionId || !req.session.userId) {
-                    return reply.status(401).send({ error: 'Not authenticated' });
-                }
-
-                const { username } = req.params as any;
-                const { limit = 20, offset = 0 } = req.query as any;
-
-                const users: User[] = await app.em.find(
-                    User,
-                    { username: { $like: `%${username}%` }, id: { $ne: req.session.userId  } },
-                    { limit: Number(limit), offset: Number(offset) }
-                );
-
-                const searchResults = users.map((user: User) => ({
-                    id: user.id,
-                    username: user.username,
-                    avatarUrl: user.avatarUrl,
-                    onlineStatus: user.onlineStatus,
-                    activityType: user.activityType
+                const friends = user.friends.getItems().map(friend => ({
+                    id: friend.id,
+                    username: friend.username,
+                    avatarUrl: friend.avatarUrl,
+                    onlineStatus: friend.onlineStatus,
+                    activityType: friend.activityType,
+                    lastLogin: friend.lastLogin
                 }));
 
-                return reply.send({ users: searchResults });
+                return reply.send({ friends });
+            } catch (error) {
+                app.log.error('Error fetching friends: ' + String(error));
+                return reply.code(500).send({ error: 'Internal server error' });
+            }
+        });
+
+        // POST users/friends - Add a friend
+        app.post('/friends', {
+            schema: {
+                tags: ['friends'],
+                summary: 'Add friend',
+                description: 'Adds another user to the current user’s friends list.',
+                body: {
+                type: 'object',
+                required: ['username'],
+                properties: {
+                    username: { type: 'string' },
+                },
+                additionalProperties: false,
+                },
+                response: {
+                200: {
+                    type: 'object',
+                    properties: {
+                    message: { type: 'string' },
+                    friend: {
+                        type: 'object',
+                        properties: {
+                        id: { type: 'number' },
+                        username: { type: 'string' },
+                        onlineStatus: { type: ['string', 'null'] },
+                        },
+                        required: ['id', 'username'],
+                    },
+                    },
+                    required: ['message', 'friend'],
+                },
+                400: ErrorSchema,
+                401: ErrorSchema,
+                404: ErrorSchema,
+                409: ErrorSchema,
+                500: ErrorSchema,
+                },
+            },
+        }, async (req: FastifyRequest, reply: FastifyReply) => {
+            if (!req.cookies.sessionId || !req.session.userId) {
+                return reply.status(401).send({ error: 'Not authenticated' });
+            }
+
+            try {
+                const { username } = req.body as any;
+
+                if (!username || typeof username !== 'string') {
+                    return reply.code(400).send({ 
+                        error: 'Invalid request',
+                        details: 'Username is required'
+                    });
+                }
+
+                const currentUser = await app.em.findOne(User, { id: req.session.userId }, {
+                    populate: ['friends']
+                });
+
+                if (!currentUser) {
+                    return reply.code(404).send({ error: 'User not found' });
+                }
+
+                // Check if trying to add self
+                if (username === currentUser.username) {
+                    return reply.code(400).send({ error: 'Cannot add yourself as a friend' });
+                }
+
+                // Find the user to add as friend
+                const friendToAdd = await app.em.findOne(User, { username });
+                if (!friendToAdd) {
+                    return reply.code(404).send({ error: 'User not found' });
+                }
+
+                // Check if already friends
+                const existingFriend = currentUser.friends.getItems().find(friend => friend.id === friendToAdd.id);
+            if (existingFriend) {
+                return reply.code(409).send({ error: 'User is already your friend' });
+            }
+
+            // Add friend relationship (bidirectional)
+            currentUser.friends.add(friendToAdd);
+            friendToAdd.friends.add(currentUser);
+
+            await app.em.persistAndFlush([currentUser, friendToAdd]);
+
+            return reply.send({ 
+                message: 'Friend added successfully',
+                friend: {
+                    id: friendToAdd.id,
+                    username: friendToAdd.username,
+                    onlineStatus: friendToAdd.onlineStatus
+                }
             });
+            } catch (error) {
+                app.log.error('Error adding friend: ' + String(error));
+                return reply.code(500).send({ error: 'Internal server error' });
+            }
+        });
+
+        // DELETE /users/friends/:username - Remove a friend
+        app.delete('/friends/:username', {
+            schema: {
+                tags: ['friends'],
+                summary: 'Remove friend',
+                description: 'Removes a user from the current user’s friends list.',
+                params: {
+                type: 'object',
+                required: ['username'],
+                properties: {
+                    username: { type: 'string' },
+                },
+                },
+                response: {
+                200: {
+                    type: 'object',
+                    properties: { message: { type: 'string' } },
+                    required: ['message'],
+                },
+                401: ErrorSchema,
+                404: ErrorSchema,
+                500: ErrorSchema,
+                },
+            },
+            }, async (req: FastifyRequest, reply: FastifyReply) => {
+            if (!req.cookies.sessionId || !req.session.userId) {
+                return reply.status(401).send({ error: 'Not authenticated' });
+            }
+
+            try {
+                const { username } = req.params as any;
+
+                const currentUser = await app.em.findOne(User, { id: req.session.userId }, {
+                    populate: ['friends']
+                });
+
+                if (!currentUser) {
+                    return reply.code(404).send({ error: 'User not found' });
+                }
+
+                const friendToRemove = await app.em.findOne(User, { username });
+                if (!friendToRemove) {
+                    return reply.code(404).send({ error: 'User not found' });
+                }
+
+                // Check if they are friends
+                const existingFriend = currentUser.friends.getItems().find(friend => friend.id === friendToRemove.id);
+            if (!existingFriend) {
+                return reply.code(404).send({ error: 'User is not your friend' });
+            }
+
+            // Remove friend relationship (bidirectional)
+            currentUser.friends.remove(friendToRemove);
+            friendToRemove.friends.remove(currentUser);
+
+            await app.em.persistAndFlush([currentUser, friendToRemove]);
+
+            return reply.send({ message: 'Friend removed successfully' });
+            } catch (error) {
+                app.log.error('Error removing friend: ' + String(error));
+                return reply.code(500).send({ error: 'Internal server error' });
+            }
+        });
+
+        // GET users/search/:username - Search for users by username
+        app.get('/search/:username', {
+            schema: {
+                tags: ['friends'],
+                summary: 'Search users by username',
+                description: 'Find other users whose usernames match the query so they can be added as friends.',
+                params: {
+                type: 'object',
+                required: ['username'],
+                properties: {
+                    username: { type: 'string' },
+                },
+                },
+                response: {
+                200: {
+                    type: 'object',
+                    properties: {
+                    users: {
+                        type: 'array',
+                        items: {
+                        type: 'object',
+                        properties: {
+                            id: { type: 'number' },
+                            username: { type: 'string' },
+                            avatarUrl: { type: ['string', 'null'] },
+                            onlineStatus: { type: ['string', 'null'] },
+                            activityType: { type: ['string', 'null'] },
+                        },
+                        required: ['id', 'username'],
+                        },
+                    },
+                    },
+                    required: ['users'],
+                },
+                401: ErrorSchema,
+                },
+            },
+            }, async (req: FastifyRequest, reply: FastifyReply) => {
+            if (!req.cookies.sessionId || !req.session.userId) {
+                return reply.status(401).send({ error: 'Not authenticated' });
+            }
+
+            const { username } = req.params as any;
+            const { limit = 20, offset = 0 } = req.query as any;
+
+            const users: User[] = await app.em.find(
+                User,
+                { username: { $like: `%${username}%` }, id: { $ne: req.session.userId  } },
+                { limit: Number(limit), offset: Number(offset) }
+            );
+
+            const searchResults = users.map((user: User) => ({
+                id: user.id,
+                username: user.username,
+                avatarUrl: user.avatarUrl,
+                onlineStatus: user.onlineStatus,
+                activityType: user.activityType
+            }));
+
+            return reply.send({ users: searchResults });
+        });
 }
 
 // function extractDeviceInfo(req: any): string {

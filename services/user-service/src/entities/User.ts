@@ -49,6 +49,12 @@ export class User {
     @Enum(() => UserRole)
     role: UserRole = UserRole.USER;
 
+    @Property({ type: 'string', nullable: true })
+    email?: string;
+
+    @Property({ type: 'string', nullable: true })
+    twoFactorMethod?: string; // 'totp', 'email'
+
     // Two-factor authentication
     @Property({ type: 'boolean', default: false })
     twoFactorEnabled: boolean = false;
