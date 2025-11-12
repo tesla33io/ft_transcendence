@@ -1,5 +1,6 @@
-import fastify from 'fastify'
+import fastify, { FastifyRequest } from 'fastify'
 import { AuthRequest, JWTHelper } from './JWT_helper'
+import rateLimit  from '@fastify/rate-limit'
 
 const server = fastify({logger: true})
 const PORT = 3000
@@ -12,6 +13,12 @@ if(!JWT_SECRET){
 }
 
 server.register(require('@fastify/cookie'))
+
+server.register(rateLimit, {
+    max: 10,
+    timeWindow: '1 minute',
+    keyGenerator: (req: FastifyRequest) => req.ip
+})
 
 server.register(require('@fastify/jwt'),{
     secret: process.env.JWT_SECRET
@@ -28,7 +35,7 @@ server.register(require('@fastify/cors'),{
 // Initialize JWT Helper
 let jwtHelper: JWTHelper;
 
-//counter for guest ID (starts -1 decrements ) -> we see if id is -1 its guest 
+//counter for guest ID (starts -1 decrements ) -> we see if id is -1 its guest
 let guestIdCounter = -1;
 
 // ===== WAIT FOR PLUGINS TO LOAD =====
@@ -43,7 +50,7 @@ server.get("/test/status", async (req, reply) => {
 
 
 
-//guest login 
+//guest login
 // ===== GUEST JWT ENDPOINT =====
 server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
     try {
@@ -52,7 +59,7 @@ server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
         // Generate unique guest ID (negative integer)
         const guestId = guestIdCounter;
         guestIdCounter--; // Decrement for next guest
-        
+
         const guestUsername = 'guest';
 
         // Create JWT tokens for guest
@@ -94,7 +101,7 @@ server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
     }
 });
 
-//me end point 
+//me end point
 server.get('/api/v1/auth/me', async (request: AuthRequest, reply: any) => {
     try {
         console.log('[GATEWAY] /me endpoint called');
@@ -152,7 +159,7 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
             },
             body: JSON.stringify({}) // user-service route expects a JSON body
         });
-    
+
         if (!userServiceResponse.ok) {
             console.error(
             '[GATEWAY] user-service logout failed:',
@@ -263,17 +270,17 @@ server.addHook('onRequest', async (request: AuthRequest, reply) => {
     console.log(`[GATEWAY] Game route request: ${request.method} ${request.url}`);
 
     // Determine which middleware to apply based on endpoint
-    if (request.url.includes('/bot-classic') || 
+    if (request.url.includes('/bot-classic') ||
         request.url.includes('/join-classic')) {
         // Bot and Classic require 'user' role (not guest)
         console.log(`[GATEWAY] Enforcing ROLE check for: ${request.url}`);
         await jwtHelper.requireRole(['user'])(request, reply);
-        
+
     } else if (request.url.includes('/join-tournament')) {
         // Tournament just needs valid JWT (any role: user or guest)
         console.log(`[GATEWAY] Enforcing JWT check for tournament: ${request.url}`);
         await jwtHelper.requireJWT()(request, reply);
-        
+
     } else {
         // All other /api/v1/game/* routes need JWT
         console.log(`[GATEWAY] Enforcing JWT check for: ${request.url}`);
@@ -281,7 +288,7 @@ server.addHook('onRequest', async (request: AuthRequest, reply) => {
     }
 });
 
-// for user routes 
+// for user routes
 server.addHook('onRequest', async (request: AuthRequest, reply) => {
     if (!request.url.startsWith('/users')) {
         return; // Skip non-user routes
@@ -338,14 +345,14 @@ server.register(require('@fastify/http-proxy'), {
 server.addHook('onSend', async (request: any, reply: any, payload: any) => {
     try {
         // Only process successful auth responses
-        if (reply.statusCode === 200 && 
-            (request.url.includes('/users/auth/register') || 
+        if (reply.statusCode === 200 &&
+            (request.url.includes('/users/auth/register') ||
              request.url.includes('/users/auth/login'))) {
-            
+
             console.log('[GATEWAY] Intercepting auth response with onSend hook');
-            
+
             let bodyString = payload;
-            
+
             // If payload is a stream (BodyReadable), convert to string
             if (payload && typeof payload === 'object' && !Buffer.isBuffer(payload)) {
                 bodyString = await new Promise((resolve, reject) => {
