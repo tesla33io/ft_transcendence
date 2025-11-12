@@ -376,24 +376,57 @@ export default async function userRoutes(app: FastifyInstance) {
                 user.lastLogin = new Date();
                 await app.em.flush();
 
-                // Generate tokens
-                // const deviceInfo = extractDeviceInfo(req);
-
-                // Check if user is already logged in
+                // Check if user already has an active session in the database
                 const existingSession = await app.em.findOne(
                     Session, 
                     { userId: user.id },
-                    { refresh: true } // <-- force DB fetch, bypass cached entity
+                    { refresh: true }
                 );
 
+                // If session exists, check if the incoming request has a matching cookie
                 if (existingSession) {
+                    // Check if session is expired
                     if (existingSession.expiresAt <= new Date()) {
+                        // Session expired, clean it up and allow login
                         await app.em.removeAndFlush(existingSession);
                     } else {
-                        return reply
-                            .code(409)
-                            .send({ error: 'User already logged in. Please log out first.' });
+                        // Session is still valid - check if request has matching cookie
+                        const sessionIdFromCookie = req.cookies?.sessionId;
+                        
+                        if (sessionIdFromCookie === existingSession.id) {
+                            // Request has the same session cookie - user is already logged in from this browser
+                            // Return success without creating a new session
+                            return { 
+                                id: user.id, 
+                                username: user.username,
+                                lastLogin: user.lastLogin,
+                                message: 'Login successful'
+                            };
+                        } else {
+                            // Session exists but cookie doesn't match (or no cookie)
+                            // This means user is trying to log in from a different browser/window
+                            return reply
+                                .code(409)
+                                .send({ error: 'User already logged in. Please log out first.' });
+                        }
                     }
+                }
+
+                // If no active session, delete any stale sessions in DB and allow login
+                try {
+                    const existingSession = await app.em.findOne(
+                        Session, 
+                        { userId: user.id },
+                        { refresh: true }
+                    );
+
+                    if (existingSession) {
+                        // Clean up stale session (user closed window without logging out)
+                        await app.em.removeAndFlush(existingSession);
+                    }
+                } catch (error) {
+                    // If cleanup fails, log but continue with login
+                    app.log.warn('Error cleaning up stale session: ' + String(error));
                 }
 
                 const sessionId = await app.sm.create({ userId: user.id, username: user.username });
