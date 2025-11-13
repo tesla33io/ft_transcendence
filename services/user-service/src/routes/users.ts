@@ -668,6 +668,43 @@ export default async function userRoutes(app: FastifyInstance) {
                     properties: {
                         method: { type: 'string', enum: ['totp'] }
                     }
+                },
+                response: {
+                    200: {
+                        oneOf: [
+                            {
+                                type: 'object',
+                                properties: {
+                                    secret: { type: 'string' },
+                                    qrCodeUrl: { type: 'string' },
+                                    message: { type: 'string' }
+                                },
+                                required: ['secret', 'qrCodeUrl', 'message']
+                            },
+                            {
+                                type: 'object',
+                                properties: {
+                                    message: { type: 'string' }
+                                },
+                                required: ['message']
+                            }
+                        ]
+                    },
+                    400: {
+                        type: 'object',
+                        properties: { error: { type: 'string' } },
+                        required: ['error']
+                    },
+                    401: {
+                        type: 'object',
+                        properties: { error: { type: 'string' } },
+                        required: ['error']
+                    },
+                    404: {
+                        type: 'object',
+                        properties: { error: { type: 'string' } },
+                        required: ['error']
+                    }
                 }
             }
         }, async (req, reply) => {

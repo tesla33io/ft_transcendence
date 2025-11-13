@@ -1,5 +1,5 @@
 export class ApiService {
-    static readonly BASE_URL = 'http://localhost:3000'
+    static readonly BASE_URL = `http://${window.location.hostname}:3000`
 
     private static getAuthHeaders(): Record<string, string> {
         const token = localStorage.getItem('authToken');
@@ -71,7 +71,7 @@ export class ApiService {
 				// Token expired, trigger refresh
 				const { UserService } = await import('./userService');
 				console.log('[API] 401 Unauthorized - Attempting refresh...');
-				
+
 				try {
 					await UserService.refreshToken();
 					// Retry with new token
