@@ -74,6 +74,9 @@ web_modules/
 .env.*
 !.env.example
 
+# Session cookies with sensitive authentication data
+cookies.txt
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
