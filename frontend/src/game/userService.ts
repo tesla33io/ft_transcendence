@@ -15,11 +15,13 @@ import  {
 } from '../types';
 
 export interface Friend {
-	userId: number;
-	userName: string;
-	isOnline: boolean;
-	lastOnlineAt: string;
-	avatarUrl?: string;
+    id: string;
+    username: string;
+    avatarUrl: string | null;
+    onlineStatus: 'online' | 'offline' | 'away';
+    activityType: string | null;   
+    activityDetails: string | null;
+    lastOnlineAt: string | null;
 }
 
 export interface FriendRequest {
@@ -339,99 +341,58 @@ export class UserService {
 	// ===== FRIENDS API METHODS =====
 
 	// Get current user's friends list
+	// ===== FRIENDS API METHODS =====
+
+// Get current user's friends list
 	static async getFriends(): Promise<Friend[]> {
 		try {
-			console.log('Get friends...');
-
-			const friends = await ApiService.get<Friend[]>('/users/friends');
+			const response = await ApiService.get<{ friends: Friend[] }>('/users/friends');
+			const friends = response.friends || [];
 			
-			console.log('Friends fetched successfully:', friends);
-			console.log(`Total friends: ${friends.length}`);
-			
+			console.log('✅ [UserService] Friends fetched successfully:', friends);
+			console.log(`📊 [UserService] Total friends: ${friends.length}`);
 			return friends;
+		} catch (error) {
+			console.error('❌ [UserService] Failed to fetch friends:', error);
+			throw new Error('Failed to load Friends');
+		}
+	}
+	
+	// Send friend request
+	static async sendFriendRequest(username: string): Promise<{ success: boolean; message: string }> {
+		try {
+			
+			const response = await ApiService.post<{ message: string; friend?: Friend }>('/users/friends', {
+				username: username
+			});
+			
+			return {
+				success: true,
+				message: response.message || 'Friend added successfully'
+			};
 			
 		} catch (error) {
-			console.error('Failed to fetch friends:', error);
 			
-			throw new Error('Failed to load Friends')
-		}
-	
-	}
-
-	// Get friend requests
-	static async getFriendRequests(): Promise<FriendRequest[]> {
-		// TODO: Uncomment when backend is ready
-		// return await ApiService.get<FriendRequest[]>('/users/me/friend-requests');
-		
-		// Mock response
-		await new Promise(resolve => setTimeout(resolve, 200));
-		
-		const mockRequests: FriendRequest[] = [
-			{
-				userId: 201,
-				userName: "NewPlayer_123",
-				requestSendDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-				avatarUrl: '/images/default-avatar.png'
-			},
-			{
-				userId: 202,
-				userName: "PongMaster_99",
-				requestSendDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-				avatarUrl: '/images/default-avatar.png'
+			// Extract error message
+			let errorMessage = 'Failed to add friend';
+			
+			if (error instanceof Error) {
+				// Check if it's an API error with details
+				const apiError = error as any;
+				if (apiError.details?.error) {
+					errorMessage = apiError.details.error;
+				} else if (apiError.message) {
+					errorMessage = apiError.message;
+				}
 			}
-		];
-		
-		return mockRequests;
-	}
-
-	// Send friend request
-	static async sendFriendRequest(friendsName: string): Promise<{ success: boolean; message: string }> {
-		// TODO: Uncomment when backend is ready
-		// return await ApiService.post<{ success: boolean; message: string }>('/users/me/friend-requests', { friendsName });
-		
-		// Mock response
-		await new Promise(resolve => setTimeout(resolve, 500));
-		
-		// Simulate different responses
-		if (friendsName.toLowerCase() === 'invalid') {
-			return { success: false, message: 'User does not exist' };
+			
+			return {
+				success: false,
+				message: errorMessage
+			};
 		}
-		if (friendsName.toLowerCase() === 'already') {
-			return { success: false, message: 'Friend request already sent' };
-		}
-		
-		return { success: true, message: 'Friend request sent successfully' };
 	}
-
-	// Accept friend request
-	static async acceptFriendRequest(otherUserName: string): Promise<{ success: boolean; message: string }> {
-		// TODO: Uncomment when backend is ready
-		// const currentUser = this.getCurrentUserFromStorage();
-		// if (!currentUser) throw new Error('Not logged in');
-		// return await ApiService.post<{ success: boolean; message: string }>('/users/me/friend-requests/accept', {
-		//     myUserID: currentUser.id,
-		//     myUsername: currentUser.username,
-		//     otherUserName
-		// });
-		
-		// Mock response
-		await new Promise(resolve => setTimeout(resolve, 400));
-		
-		return { success: true, message: 'Friend request accepted' };
-	}
-
-	// Reject friend request
-	static async rejectFriendRequest(otherUserName: string): Promise<{ success: boolean; message: string }> {
-		// TODO: Uncomment when backend is ready
-		// return await ApiService.post<{ success: boolean; message: string }>('/users/me/friend-requests/reject', { otherUserName });
-		
-		// Mock response
-		await new Promise(resolve => setTimeout(resolve, 300));
-		
-		return { success: true, message: 'Friend request rejected' };
-	}
-    // ===== UTILITY FUNCTIONS =====
-    
+  
     // Check if user is logged in
     static isLoggedIn(): boolean {
         const token = localStorage.getItem('authToken');
