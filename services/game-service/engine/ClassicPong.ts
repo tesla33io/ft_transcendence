@@ -3,6 +3,8 @@ import { GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH, PLAYER_OFFSET } f
 import { Game, Player} from "../types/interfaces"
 
 export class ClassicPong extends GameEngine {
+	private maxBallSpeed = 18
+
 	public initializeGameState(game: Game){
 		game.player1.Y = GAME_HEIGHT / 2
 		game.player1.X = PLAYER_OFFSET
@@ -103,6 +105,8 @@ export class ClassicPong extends GameEngine {
 		else if ((game.ball.y === player.Y - PADDLE_HEIGHT / 2 - K ||
 			game.ball.y === player.Y + PADDLE_HEIGHT / 2 + K)){
 			game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
+			if (Math.abs(game.ball.vx) > this.maxBallSpeed)
+				game.ball.vx = game.ball.vx < 0 ? -20 : 20
 			game.ball.vx *= -1
 			game.ball.vy *= -1
 		}
@@ -110,6 +114,8 @@ export class ClassicPong extends GameEngine {
 		else if ((game.ball.y >= player.Y - PADDLE_HEIGHT / 2 &&
 			game.ball.y <= player.Y + PADDLE_HEIGHT / 2)){
 			game.ball.vx = game.ball.vx < 0 ? game.ball.vx - K : game.ball.vx + K
+			if (Math.abs(game.ball.vx) > this.maxBallSpeed)
+				game.ball.vx = game.ball.vx < 0 ? -20 : 20
 			game.ball.vx *= -1
 		}
 	}
