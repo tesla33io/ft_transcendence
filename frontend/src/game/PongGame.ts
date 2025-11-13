@@ -144,7 +144,7 @@ export class PongGame {
                 timestamp: new Date().toISOString()
             });
 
-            console.log('Join game response:', data);
+            // console.log('Join game response:', data);
             this.handleJoinSuccess(data);
 
         } catch (error) {
@@ -153,7 +153,7 @@ export class PongGame {
     }
 
     private handleJoinSuccess(data: GameData): void {
-        console.log('Game data:', data);
+        // console.log('Game data:', data);
 
         if (data.status === 'waiting') {
             this.initializeWebSocket(data.playerId || this.playerId);

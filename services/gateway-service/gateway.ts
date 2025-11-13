@@ -15,7 +15,7 @@ if(!JWT_SECRET){
 server.register(require('@fastify/cookie'))
 
 server.register(rateLimit, {
-    max: 10,
+    max: 20,
     timeWindow: '1 minute',
     keyGenerator: (req: FastifyRequest) => req.ip
 })
@@ -151,7 +151,7 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
         // Step 2: Try to destroy session in user-service (FAIL SILENTLY)
         try {
             console.log('[GATEWAY] Attempting to destroy session in user-service...');
-            
+
             const userServiceResponse = await fetch('http://user-service:8000/users/auth/logout', {
                 method: 'POST',
                 headers: {
@@ -196,7 +196,7 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
 
     } catch (error) {
         console.error('[GATEWAY] Unexpected error in logout endpoint:', error);
-        
+
         // Even on catastrophic error, try to clear cookies
         try {
             reply.clearCookie('refreshToken', {
