@@ -182,7 +182,7 @@ export class UserService {
         try {
             //console.log('[UserService] Refreshing token...');
 
-            const response = await fetch('http://${window.location.hostname}:3000/api/v1/auth/refresh', {
+            const response = await fetch(`http://${window.location.hostname}:3000/api/v1/auth/refresh`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
