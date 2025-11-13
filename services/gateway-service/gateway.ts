@@ -136,43 +136,49 @@ server.get('/api/v1/auth/me', async (request: AuthRequest, reply: any) => {
 // ===== LOGOUT ENDPOINT =====
 server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
     try {
-        console.log('[GATEWAY] /logout endpoint called');
+        console.log('[GATEWAY] Logout endpoint called');
 
-        // Verify JWT first
-        await jwtHelper.requireJWT()(request, reply);
-
-        if (!request.user) {
-            return reply.status(401).send({
-                error: 'Unauthorized',
-                code: 'NO_USER'
-            });
+        // Step 1: Verify JWT (optional - don't fail if invalid)
+        try {
+            await jwtHelper.requireJWT()(request, reply);
+            if (request.user) {
+                console.log(`[GATEWAY] User ${request.user.username} (ID: ${request.user.id}) logging out`);
+            }
+        } catch (jwtError) {
+            console.log('[GATEWAY] Invalid/expired JWT during logout (continuing anyway)');
         }
 
-        console.log(`✅ [GATEWAY] User ${request.user.username} logging out`);
-
-        // forward logout to user-service so the session is destroyed
-        const userServiceResponse = await fetch('http://user-service:8000/users/auth/logout', {
-            method: 'POST',
-            headers: {
-            'Content-Type': 'application/json',
-            cookie: request.headers.cookie ?? ''  // forward sessionId cookie
-            },
-            body: JSON.stringify({}) // user-service route expects a JSON body
-        });
-
-        if (!userServiceResponse.ok) {
-            console.error(
-            '[GATEWAY] user-service logout failed:',
-            userServiceResponse.status,
-            await userServiceResponse.text()
-            );
-            return reply.status(500).send({
-            error: 'Logout failed on user-service',
-            code: 'LOGOUT_FAILED'
+        // Step 2: Try to destroy session in user-service (FAIL SILENTLY)
+        try {
+            console.log('[GATEWAY] Attempting to destroy session in user-service...');
+            
+            const userServiceResponse = await fetch('http://user-service:8000/users/auth/logout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(request.headers.cookie && { 'cookie': request.headers.cookie })
+                },
+                body: JSON.stringify({
+                    userId: request.user?.id,
+                    username: request.user?.username
+                })
             });
+
+            if (userServiceResponse.ok) {
+                console.log('[GATEWAY] User-service session destroyed successfully');
+            } else {
+                const status = userServiceResponse.status;
+                const text = await userServiceResponse.text().catch(() => 'No response body');
+                console.log(`[GATEWAY] User-service logout failed (${status}): ${text}`);
+                console.log('[GATEWAY] Continuing with JWT logout anyway...');
+            }
+
+        } catch (fetchError) {
+            console.error('[GATEWAY] Failed to reach user-service:', fetchError);
+            console.log('[GATEWAY] Continuing with JWT logout anyway...');
         }
 
-        // Clear refresh token cookie
+        // Step 3: ALWAYS clear refresh token cookie (JWT logout)
         reply.clearCookie('refreshToken', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -182,19 +188,39 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
 
         console.log('[GATEWAY] Refresh token cookie cleared');
 
+        //  Step 4: ALWAYS return success (logout is "best effort")
         return reply.status(200).send({
             message: 'Logged out successfully',
             code: 'LOGOUT_SUCCESS'
         });
 
     } catch (error) {
-        console.error('[GATEWAY] Error in /logout endpoint:', error);
-        return reply.status(500).send({
-            error: 'Logout failed',
-            code: 'LOGOUT_FAILED'
+        console.error('[GATEWAY] Unexpected error in logout endpoint:', error);
+        
+        // Even on catastrophic error, try to clear cookies
+        try {
+            reply.clearCookie('refreshToken', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                path: '/'
+            });
+            console.log('[GATEWAY] Refresh token cookie cleared (fallback)');
+        } catch (cookieError) {
+            console.error('[GATEWAY] Failed to clear cookie:', cookieError);
+        }
+
+        //Still return 200 (logout should always succeed from user perspective)
+        return reply.status(200).send({
+            message: 'Logged out',
+            code: 'LOGOUT_PARTIAL',
+            warning: 'Some cleanup operations failed but you are logged out'
         });
     }
 });
+
+
+
 
 // ===== REFRESH TOKEN ENDPOINT =====
 server.post('/api/v1/auth/refresh', async (request: AuthRequest, reply: any) => {

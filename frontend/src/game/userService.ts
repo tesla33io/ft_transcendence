@@ -180,7 +180,7 @@ export class UserService {
         refreshToken: string;
     }> {
         try {
-            console.log('[UserService] Refreshing token...');
+            //console.log('[UserService] Refreshing token...');
 
             const response = await fetch('http://localhost:3000/api/v1/auth/refresh', {
                 method: 'POST',
@@ -192,29 +192,28 @@ export class UserService {
             });
 
             if (!response.ok) {
-                throw new Error(`Token refresh failed: ${response.status}`);
+                if (response.status === 401) {
+					console.log('[UserService] No valid refresh token (user not logged in)');
+				} else {
+					console.warn(`[UserService] Token refresh failed: ${response.status}`);
+				}
+            	throw new Error(`Token refresh failed: ${response.status}`);
             }
 
             const data = await response.json();
 
-            console.log('[UserService] Token refreshed successfully');
-
             // Update localStorage with new access token
             localStorage.setItem('authToken', data.accessToken);
-
             return {
                 accessToken: data.accessToken,
                 refreshToken: data.refreshToken
             };
 
         } catch (error) {
-            console.error('[UserService] Token refresh failed:', error);
-            
             // If refresh fails, user is logged out
             localStorage.removeItem('authToken');
             localStorage.removeItem('userId');
             localStorage.removeItem('username');
-            
             throw error;
         }
     }
@@ -230,9 +229,10 @@ export class UserService {
         } finally {
             // Clear local storage
             this.clearUserData()
+			this.roleCache = null;
             // refreshToken cookie is cleared by server
         }
-        this.roleCache = null;
+
     }
 
     // ===== USER DATA (GETTERS) =====
