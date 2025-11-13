@@ -40,16 +40,18 @@ export abstract class GameEngine {
 	}
 
 	protected updateBallPosition(game: Game){
+		const offset = 5
+
 		game.ball.x += game.ball.vx
 		game.ball.y += game.ball.vy
 
 		this.paddleCollisionCheck(game)
-		if (game.ball.y <= 0){
+		if (game.ball.y <= 0 + offset){
 			game.ball.y = 10
 			game.ball.vy *= -1
 			game.ball.vx = game.ball.vx < 0 ? --game.ball.vx : ++game.ball.vx
 		}
-		else if(game.ball.y >= GAME_HEIGHT){
+		else if(game.ball.y >= GAME_HEIGHT - offset){
 			game.ball.y = GAME_HEIGHT - 10
 			game.ball.vy *= -1
 			game.ball.vx = game.ball.vx < 0 ? --game.ball.vx : ++game.ball.vx
