@@ -130,8 +130,9 @@ export enum OnlineStatus {
 }
 
 export enum UserRole {
-    USER = 'USER',
-    ADMIN = 'ADMIN'
+    USER = 'user',
+	GUEST = 'guest',
+    ADMIN = 'admin'
 }
 
 export enum MatchResult {
@@ -226,7 +227,6 @@ export interface AuthResponse {
     user: PublicUser;
     token: string;
     refreshToken?: string;
-    expiresAt: string;
 }
 
 // For login requests
@@ -241,6 +241,7 @@ export interface RegisterRequest {
     username: string;
     password: string;
     avatarUrl?: string;
+	twoFactorEnabled?: boolean;
 }
 
 // For profile updates
