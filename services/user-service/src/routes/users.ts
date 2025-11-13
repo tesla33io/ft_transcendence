@@ -332,30 +332,37 @@ export default async function userRoutes(app: FastifyInstance) {
                         }
                     }
 
-                    // Verify 2FA code
+                    // Verify 2FA code - ensure it's provided and not empty
+                    if (!twoFactorCode || typeof twoFactorCode !== 'string' || twoFactorCode.trim().length === 0) {
+                        return reply.code(401).send({ error: '2FA code is required' });
+                    }
+
                     let twoFactorValid = false;
                     
                     if (user.twoFactorMethod === 'totp') {
-                        // Try TOTP verification first
-                        twoFactorValid = TwoFactorService.verifyTOTP(twoFactorCode, user.twoFactorSecret!);
-                    } else if (user.twoFactorMethod === 'email') {
-                        twoFactorValid = codeStore.verifyCode(twoFactorCode, user.id);
-
-                        // If TOTP fails, try backup codes as fallback
-                        if (!twoFactorValid) {
+                        // Try TOTP verification first (for 6-digit codes)
+                        if (twoFactorCode.length === 6) {
+                            twoFactorValid = TwoFactorService.verifyTOTP(twoFactorCode, user.twoFactorSecret!);
+                            app.log.info(`TOTP verification for user ${user.id}: code=${twoFactorCode}, valid=${twoFactorValid}`);
+                        }
+                        
+                        // If TOTP fails or code is 8 digits, try backup codes as fallback
+                        if (!twoFactorValid && twoFactorCode.length === 8) {
                             twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                            app.log.info(`Backup code verification for user ${user.id}: valid=${twoFactorValid}`);
                         }
                     } else if (user.twoFactorMethod === 'email') {
                         // Try email code verification first
                         twoFactorValid = codeStore.verifyCode(twoFactorCode, user.id);
                         
-                        // If email code fails, try backup codes as fallback
-                        if (!twoFactorValid) {
+                        if (!twoFactorValid && twoFactorCode.length === 8) {
                             twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
                         }
                     } else {
                         // No specific method, only check backup codes
-                        twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                        if (twoFactorCode.length === 8) {
+                            twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                        }
                     }
                     
                     // If backup code was used, remove it
@@ -368,6 +375,42 @@ export default async function userRoutes(app: FastifyInstance) {
                             await app.em.flush();
                         } catch (error) {
                             app.log.warn('Error removing backup code: ' + String(error));
+                        }
+                    }
+
+                    // IMPORTANT: Return error if 2FA validation failed
+                    if (!twoFactorValid) {
+                        app.log.warn(`2FA validation failed for user ${user.id}: method=${user.twoFactorMethod}, code=${twoFactorCode}`);
+                        return reply.code(401).send({ error: 'Invalid 2FA code' });
+                    }
+                    
+                    // 2FA validation passed - check for existing sessions
+                    // If there's a session with a matching cookie, user is already logged in (same window)
+                    // If there's a session without a matching cookie, it's stale (window was closed) - clean it up
+                    const existingSession = await app.em.findOne(
+                        Session, 
+                        { userId: user.id },
+                        { refresh: true }
+                    );
+                    
+                    if (existingSession) {
+                        const sessionIdFromCookie = req.cookies?.sessionId;
+                        
+                        if (sessionIdFromCookie === existingSession.id) {
+                            // Same window - already logged in, just return success
+                            user.lastLogin = new Date();
+                            await app.em.flush();
+                            return { 
+                                id: user.id, 
+                                username: user.username,
+                                lastLogin: user.lastLogin,
+                                message: 'Login successful'
+                            };
+                        } else {
+                            // Different window or no cookie - this is a new login attempt
+                            // Clean up the stale session to allow re-login
+                            await app.em.removeAndFlush(existingSession);
+                            app.log.info(`Cleaned up stale session for user ${user.id} - allowing re-login`);
                         }
                     }
                 }
@@ -405,6 +448,8 @@ export default async function userRoutes(app: FastifyInstance) {
                         } else {
                             // Session exists but cookie doesn't match (or no cookie)
                             // This means user is trying to log in from a different browser/window
+                            // BUT: If 2FA was just validated, we already cleaned up the session above
+                            // So this should only happen if 2FA is not enabled
                             return reply
                                 .code(409)
                                 .send({ error: 'User already logged in. Please log out first.' });
