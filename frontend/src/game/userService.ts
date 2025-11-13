@@ -223,7 +223,7 @@ export class UserService {
         try {
             // Call logout endpoint to invalidate tokens
             await ApiService.post<void>('/api/v1/auth/logout', {});
-            console.log('Logged out successfully');
+            // console.log('Logged out successfully');
         } catch (error) {
             // console.error('Logout error (clearing local data anyway):', error);
         } finally {
@@ -243,11 +243,11 @@ export class UserService {
      */
     static async getMe(): Promise<{id: number; username: string; role: string}> {
         try {
-            console.log('[UserService] Fetching current user info...');
+            // console.log('[UserService] Fetching current user info...');
 
             const userInfo = await ApiService.get<{id: number; username: string; role: string}>('/api/v1/auth/me');
 
-            console.log('User info fetched:', userInfo);
+            // console.log('User info fetched:', userInfo);
 
             // Cache role IN MEMORY with timestamp (not localStorage)
             this.roleCache = {
@@ -271,12 +271,12 @@ export class UserService {
         try {
             // Check if cache is valid (less than 1 minute old)
             if (this.roleCache && (Date.now() - this.roleCache.timestamp) < this.CACHE_DURATION) {
-                console.log('[UserService] Using cached role (fresh)');
+                // console.log('[UserService] Using cached role (fresh)');
                 return this.roleCache.role;
             }
 
             // Cache expired or doesn't exist - fetch fresh
-            console.log('[UserService] Cache expired, fetching fresh role...');
+            // console.log('[UserService] Cache expired, fetching fresh role...');
             const userInfo = await this.getMe();
             return userInfo.role;
 
@@ -461,7 +461,7 @@ export class UserService {
         // Clear in-memory cache
         this.roleCache = null;
 
-        console.log('✅ User data and role cache cleared');
+        // console.log('✅ User data and role cache cleared');
     }
 
     // ===== PROFILE & STATISTICS API METHODS =====
