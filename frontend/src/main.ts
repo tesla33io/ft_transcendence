@@ -17,6 +17,7 @@ import {aiGameSetupView} from './views/aiSetupPage.ts'
 import {settingsView} from './views/settingsPage'
 import { notFoundView } from './views/notFoundPage'
 import { localModeSelectionView } from './views/localGameModeSelection.ts'
+import { GAME_MODES } from './types.ts'
 
 // ===== SESSION HEARTBEAT =====
 // Send periodic heartbeat to keep session alive while browser is open
@@ -93,6 +94,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     router.register("/localgame/setup", () => localGameSetupView(router), { requireAuth: true });
     router.register("/localgame/play", () => localGameView(router), { requireAuth: true });
     router.register("/guest", () => guestDesktopView(router), { requireAuth: true });
+	// local game mode routes
+    router.register("/localgame/play/classic", () => localGameView(router, GAME_MODES.CLASSIC), { requireAuth: true });
+    router.register("/localgame/play/speed", () => localGameView(router, GAME_MODES.SPEED), { requireAuth: true });
+    router.register("/localgame/play/pellet", () => localGameView(router, GAME_MODES.PELLET), { requireAuth: true });
+    router.register("/localgame/play/multiball", () => localGameView(router, GAME_MODES.MULTIBALL), { requireAuth: true });
+    router.register("/localgame/play/twod", () => localGameView(router, GAME_MODES.TWOD), { requireAuth: true });
 
     // ===== USER-ONLY ROUTES (JWT required, guest NOT allowed) =====
     router.register("/desktop", () => desktopView(router), { requireAuth: true, requireUser: true });
