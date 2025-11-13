@@ -74,7 +74,7 @@ export function gameView(router: Router, wsHandler: WebSocketHandler) {
 	// Create the main game window
 	const gameWindow = createWindow({
 		title: "Pong Game",
-		width: "920px",
+		width: "930px",
 		height: "620px",
 		content: content,
 		titleBarControls: {

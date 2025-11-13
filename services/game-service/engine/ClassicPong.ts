@@ -7,7 +7,7 @@ export class ClassicPong extends GameEngine {
 
 	public initializeGameState(game: Game){
 		game.player1.Y = GAME_HEIGHT / 2
-		game.player1.X = PLAYER_OFFSET
+		game.player1.X = PLAYER_OFFSET + PLAYER_OFFSET
 		game.player1.score = 0
 
 		game.player2.Y = GAME_HEIGHT / 2

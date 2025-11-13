@@ -10,20 +10,12 @@ export const GAME_CONFIG = {
         OFFSET_FROM_EDGE: 20
     },
     BALL: {
-        RADIUS: 10,
+        RADIUS: 5,
         INITIAL_SPEED: {
             X: 5,
             Y: 2
         }
     },
-
-    SCORE: {//can i probaply delete 
-        FONT: '32px Arial',
-        OFFSET_Y: 50,
-        LEFT_X: 50,
-        RIGHT_X: 850
-    }
-
 };
 
 
