@@ -13,8 +13,6 @@ import { pipeline } from 'stream/promises';
 import { FromSchema } from "json-schema-to-ts";
 
 import { TwoFactorService } from '../utils/TwoFactorService';
-import { EmailService } from '../utils/EmailService';
-import { codeStore } from '../utils/TwoFactorCodeStore';
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'profiles');
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -49,6 +47,7 @@ const authBodySchema = {
         username: { type: 'string', minLength: 3, maxLength: 32 },
         password: { type: 'string', minLength: 8, maxLength: 128 },
         twoFactorCode: { type: 'string', minLength: 6, maxLength: 8 }, // Optional 2FA code
+        enable2FA: { type: 'boolean' }, // Optional: enable 2FA during registration
     },
     additionalProperties: false,
 } as const;
@@ -144,6 +143,15 @@ export default async function userRoutes(app: FastifyInstance) {
                         id: { type: 'number' },
                         username: { type: 'string' },
                         message: { type: 'string' },
+                        // Optional 2FA setup data
+                        twoFactorSetup: {
+                            type: 'object',
+                            properties: {
+                                secret: { type: 'string' },
+                                qrCodeUrl: { type: 'string' },
+                                message: { type: 'string' }
+                            }
+                        }
                     },
                 },
                 400: {
@@ -165,10 +173,11 @@ export default async function userRoutes(app: FastifyInstance) {
         console.log('🔵 [REGISTER] Request headers:', req.headers);
         
         try {
-            const { username: rawUsername, password: rawPassword } = req.body as any;
+            const { username: rawUsername, password: rawPassword, enable2FA } = req.body as any;
             
             console.log('🔵 [REGISTER] Extracted username:', rawUsername);
             console.log('🔵 [REGISTER] Extracted password length:', rawPassword?.length);
+            console.log('🔵 [REGISTER] Enable 2FA:', enable2FA);
 
             // Validate username
             const usernameValidation = validateUsername(rawUsername);
@@ -211,9 +220,7 @@ export default async function userRoutes(app: FastifyInstance) {
 
             await app.em.persistAndFlush(user);
 
-            // Generate tokens for the newly registered user
-            // const deviceInfo = extractDeviceInfo(req);
-
+            // Create session AFTER user is created (so we have userId)
             const sessionId = await app.sm.create({ userId: user.id, username: user.username });
             reply.setCookie('sessionId', sessionId, {
                 httpOnly: true,
@@ -222,11 +229,44 @@ export default async function userRoutes(app: FastifyInstance) {
                 maxAge: 86400,
                 path: '/',
             });
-            return { 
+
+            // If 2FA is requested during registration, set it up automatically
+            let twoFactorSetup = undefined;
+            if (enable2FA === true) {
+                try {
+                    // Generate TOTP secret and QR code (same logic as /auth/2fa/setup)
+                    const { secret, qrCodeUrl } = await TwoFactorService.generateTOTPSecret(user.username);
+                    
+                    // Store temporarily (don't enable yet - user needs to verify first)
+                    user.twoFactorSecret = secret;
+                    user.twoFactorMethod = 'totp';
+                    await app.em.flush();
+
+                    twoFactorSetup = {
+                        secret: secret,
+                        qrCodeUrl: qrCodeUrl,
+                        message: 'Scan QR code with authenticator app. You will need to verify the code to enable 2FA.'
+                    };
+
+                    app.log.info(`2FA setup initiated for new user ${user.id} during registration`);
+                } catch (error) {
+                    app.log.error(`Failed to set up 2FA during registration for user ${user.id}: ${String(error)}`);
+                    // Don't fail registration if 2FA setup fails, just log it
+                }
+            }
+
+            const response: any = { 
                 id: user.id, 
                 username: user.username,
                 message: 'User registered successfully'
             };
+
+            // Include 2FA setup data if it was requested
+            if (twoFactorSetup) {
+                response.twoFactorSetup = twoFactorSetup;
+            }
+
+            return reply.send(response);
 
         } catch (error) {
             console.error('🔴 [REGISTER] Error:', error);
@@ -309,20 +349,26 @@ export default async function userRoutes(app: FastifyInstance) {
 
                 // Check if 2FA is enabled
                 if (user.twoFactorEnabled) {
+                    // Check if account is locked due to too many failed attempts
+                    if (user.twoFactorLockedUntil && user.twoFactorLockedUntil > new Date()) {
+                        const minutesRemaining = Math.ceil((user.twoFactorLockedUntil.getTime() - Date.now()) / 60000);
+                        return reply.code(429).send({ 
+                            error: 'Account temporarily locked',
+                            message: `Too many failed 2FA attempts. Please try again in ${minutesRemaining} minute(s).`,
+                            retryAfter: minutesRemaining * 60
+                        });
+                    }
+
+                    // Reset lockout if it has expired
+                    if (user.twoFactorLockedUntil && user.twoFactorLockedUntil <= new Date()) {
+                        user.twoFactorFailedAttempts = 0;
+                        user.twoFactorLockedUntil = undefined;
+                        await app.em.flush();
+                    }
+
                     const { twoFactorCode } = req.body as any;
                     
                     if (!twoFactorCode) {
-                        // Send code if method is email/sms
-                        if (user.twoFactorMethod === 'email' && user.email) {
-                            const code = codeStore.generateCode(user.id, 'email');
-                            await EmailService.send2FACode(user.email, code);
-                            return reply.code(200).send({
-                                requires2FA: true,
-                                method: 'email',
-                                message: '2FA code sent to email'
-                            });
-                        }
-                        
                         if (user.twoFactorMethod === 'totp') {
                             return reply.code(200).send({
                                 requires2FA: true,
@@ -330,6 +376,12 @@ export default async function userRoutes(app: FastifyInstance) {
                                 message: 'Enter code from authenticator app'
                             });
                         }
+                        // If 2FA is enabled but method is not set or invalid, still require code
+                        return reply.code(200).send({
+                            requires2FA: true,
+                            method: 'totp',
+                            message: 'Enter code from authenticator app'
+                        });
                     }
 
                     // Verify 2FA code - ensure it's provided and not empty
@@ -343,25 +395,31 @@ export default async function userRoutes(app: FastifyInstance) {
                         // Try TOTP verification first (for 6-digit codes)
                         if (twoFactorCode.length === 6) {
                             twoFactorValid = TwoFactorService.verifyTOTP(twoFactorCode, user.twoFactorSecret!);
-                            app.log.info(`TOTP verification for user ${user.id}: code=${twoFactorCode}, valid=${twoFactorValid}`);
+                            // Log with code only in development for debugging
+                            if (process.env.NODE_ENV === 'development') {
+                                app.log.info(`TOTP verification for user ${user.id}: code=${twoFactorCode}, valid=${twoFactorValid}`);
+                            } else {
+                                app.log.info(`TOTP verification for user ${user.id}: valid=${twoFactorValid}`);
+                            }
                         }
                         
                         // If TOTP fails or code is 8 digits, try backup codes as fallback
                         if (!twoFactorValid && twoFactorCode.length === 8) {
-                            twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
-                            app.log.info(`Backup code verification for user ${user.id}: valid=${twoFactorValid}`);
-                        }
-                    } else if (user.twoFactorMethod === 'email') {
-                        // Try email code verification first
-                        twoFactorValid = codeStore.verifyCode(twoFactorCode, user.id);
-                        
-                        if (!twoFactorValid && twoFactorCode.length === 8) {
-                            twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                            twoFactorValid = await TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                            // Log with code only in development
+                            if (process.env.NODE_ENV === 'development') {
+                                app.log.info(`Backup code verification for user ${user.id}: code=${twoFactorCode}, valid=${twoFactorValid}`);
+                            } else {
+                                app.log.info(`Backup code verification for user ${user.id}: valid=${twoFactorValid}`);
+                            }
                         }
                     } else {
-                        // No specific method, only check backup codes
+                        // Unknown or invalid 2FA method - only check backup codes
                         if (twoFactorCode.length === 8) {
-                            twoFactorValid = TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                            twoFactorValid = await TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                        } else {
+                            app.log.warn(`Invalid 2FA method for user ${user.id}: ${user.twoFactorMethod}`);
+                            return reply.code(400).send({ error: 'Invalid 2FA configuration' });
                         }
                     }
                     
@@ -371,18 +429,56 @@ export default async function userRoutes(app: FastifyInstance) {
                         try {
                             const codes = JSON.parse(user.backupCodes || '[]');
                             const updatedCodes = codes.filter((c: string) => c !== twoFactorCode);
-                            user.backupCodes = TwoFactorService.hashBackupCodes(updatedCodes);
+                            user.backupCodes = await TwoFactorService.hashBackupCodes(updatedCodes);
                             await app.em.flush();
                         } catch (error) {
                             app.log.warn('Error removing backup code: ' + String(error));
                         }
                     }
 
-                    // IMPORTANT: Return error if 2FA validation failed
+                    // Handle failed 2FA attempts with rate limiting
                     if (!twoFactorValid) {
-                        app.log.warn(`2FA validation failed for user ${user.id}: method=${user.twoFactorMethod}, code=${twoFactorCode}`);
-                        return reply.code(401).send({ error: 'Invalid 2FA code' });
+                        const MAX_ATTEMPTS = 5;
+                        const LOCKOUT_MINUTES = 15;
+                        
+                        user.twoFactorFailedAttempts = (user.twoFactorFailedAttempts || 0) + 1;
+                        
+                        if (user.twoFactorFailedAttempts >= MAX_ATTEMPTS) {
+                            // Lock the account
+                            const lockoutUntil = new Date();
+                            lockoutUntil.setMinutes(lockoutUntil.getMinutes() + LOCKOUT_MINUTES);
+                            user.twoFactorLockedUntil = lockoutUntil;
+                            
+                            app.log.warn(`2FA account locked for user ${user.id} after ${MAX_ATTEMPTS} failed attempts`);
+                            
+                            await app.em.flush();
+                            
+                            return reply.code(429).send({ 
+                                error: 'Too many failed attempts',
+                                message: `Account temporarily locked. Please try again in ${LOCKOUT_MINUTES} minutes.`,
+                                retryAfter: LOCKOUT_MINUTES * 60
+                            });
+                        }
+                        
+                        await app.em.flush();
+                        
+                        const remainingAttempts = MAX_ATTEMPTS - user.twoFactorFailedAttempts;
+                        if (process.env.NODE_ENV === 'development') {
+                            app.log.warn(`2FA validation failed for user ${user.id}: method=${user.twoFactorMethod}, code=${twoFactorCode}, attempts=${user.twoFactorFailedAttempts}/${MAX_ATTEMPTS}`);
+                        } else {
+                            app.log.warn(`2FA validation failed for user ${user.id}: method=${user.twoFactorMethod}, attempts=${user.twoFactorFailedAttempts}/${MAX_ATTEMPTS}`);
+                        }
+                        
+                        return reply.code(401).send({ 
+                            error: 'Invalid 2FA code',
+                            remainingAttempts: remainingAttempts
+                        });
                     }
+
+                     // Success! Reset failed attempts counter
+                    user.twoFactorFailedAttempts = 0;
+                    user.twoFactorLockedUntil = undefined;
+                    await app.em.flush();
                     
                     // 2FA validation passed - check for existing sessions
                     // If there's a session with a matching cookie, user is already logged in (same window)
@@ -570,8 +666,7 @@ export default async function userRoutes(app: FastifyInstance) {
                     type: 'object',
                     required: ['method'],
                     properties: {
-                        method: { type: 'string', enum: ['totp', 'email'] },
-                        email: { type: 'string' } // Required if method is 'email'
+                        method: { type: 'string', enum: ['totp'] }
                     }
                 }
             }
@@ -579,10 +674,29 @@ export default async function userRoutes(app: FastifyInstance) {
             const userId = req.session?.userId; // From session middleware
             if (!userId) return reply.code(401).send({ error: 'Not authenticated' });
 
+            // In production, ensure the request is over HTTPS
+            if (process.env.NODE_ENV === 'production') {
+                // Check multiple ways the connection might be marked as secure
+                const protocol = req.protocol || 
+                                req.headers['x-forwarded-proto'] || 
+                                (req.headers['x-forwarded-ssl'] === 'on' ? 'https' : '') ||
+                                '';
+                const isSecure = protocol === 'https' ||  
+                                req.headers['x-forwarded-ssl'] === 'on';
+                
+                if (!isSecure) {
+                    app.log.warn(`2FA setup attempted over insecure connection from ${req.ip}`);
+                    return reply.code(403).send({ 
+                        error: 'Secure connection required',
+                        message: '2FA setup requires HTTPS. Please use a secure connection.'
+                    });
+                }
+            }
+
             const user = await app.em.findOne(User, { id: userId });
             if (!user) return reply.code(404).send({ error: 'User not found' });
 
-            const { method, email } = req.body as { method: 'totp' | 'email'; email?: string };;
+            const { method } = req.body as { method: 'totp' };
 
             if (method === 'totp') {
                 const { secret, qrCodeUrl } = await TwoFactorService.generateTOTPSecret(user.username);
@@ -599,22 +713,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 });
             }
 
-            if (method === 'email') {
-                if (!email) return reply.code(400).send({ error: 'Email required' });
-                user.email = email;
-                user.twoFactorMethod = 'email';
-                await app.em.flush();
-
-                const code = codeStore.generateCode(user.id, 'email');
-                await EmailService.send2FACode(email, code);
-
-                return reply.send({
-                    message: 'Verification code sent to email',
-                    // Don't send code back, just confirmation
-                });
-            }
-
-            return reply.code(400).send({ error: 'Invalid method' });
+            return reply.code(400).send({ error: 'Invalid method. Only TOTP is supported.' });
         });
 
         // POST /auth/2fa/verify-setup
@@ -646,8 +745,8 @@ export default async function userRoutes(app: FastifyInstance) {
 
             if (user.twoFactorMethod === 'totp') {
                 isValid = TwoFactorService.verifyTOTP(code, user.twoFactorSecret!);
-            } else if (user.twoFactorMethod === 'email' || user.twoFactorMethod === 'sms') {
-                isValid = codeStore.verifyCode(code, user.id);
+            } else {
+                return reply.code(400).send({ error: 'Invalid 2FA method. Only TOTP is supported.' });
             }
 
             if (!isValid) {
@@ -657,7 +756,7 @@ export default async function userRoutes(app: FastifyInstance) {
             // Enable 2FA and generate backup codes
             user.twoFactorEnabled = true;
             const backupCodes = TwoFactorService.generateBackupCodes();
-            user.backupCodes = TwoFactorService.hashBackupCodes(backupCodes);
+            user.backupCodes = await TwoFactorService.hashBackupCodes(backupCodes);
             await app.em.flush();
 
             return reply.send({
@@ -906,7 +1005,7 @@ export default async function userRoutes(app: FastifyInstance) {
             const user = await app.em.findOne(User, { id: userId });
             if (!user) return reply.code(404).send({ error: 'User not found' });
             
-            const { username, profile } = req.body as any;
+            const { username } = req.body as any;
             
             if (username && username !== user.username) {
                 const validation = validateUsername(username);

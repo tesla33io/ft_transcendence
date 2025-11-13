@@ -179,3 +179,5 @@ build/
 
 ### VS Code ###
 .vscode/
+
+*.cookies.txt

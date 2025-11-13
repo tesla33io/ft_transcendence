@@ -5,6 +5,39 @@ export function setupGlobalErrorHandling(app: FastifyInstance) {
     app.setErrorHandler((error, req, reply) => {
         const { method, url, id: requestId } = req;
         const userId = (req as any).session?.userId;
+
+        // Check if this is a validation error
+        const isValidationError = 
+            error.validation || 
+            error.code === 'FST_ERR_VALIDATION' ||
+            error.code === 'FST_ERR_VALIDATION' ||
+            (error.statusCode === 400 && (
+                error.message?.includes('must be equal to one of the allowed values') ||
+                error.message?.includes('must match') ||
+                error.message?.includes('must be') ||
+                error.message?.includes('Validation')
+            ));
+        
+        if (isValidationError) {
+            const statusCode = 400;
+            app.log.warn(
+                {
+                    method,
+                    url,
+                    requestId,
+                    userId,
+                    validation: error.validation,
+                    message: error.message,
+                },
+                `Validation error for ${method} ${url}`
+            );
+            
+            return reply.status(statusCode).send({
+                error: 'Validation error',
+                details: error.validation || error.message,
+            });
+        }
+
         const statusCode = reply.statusCode || error.statusCode || 500;
 
         app.log.error(

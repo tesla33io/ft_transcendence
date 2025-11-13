@@ -1,6 +1,7 @@
 import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
+import argon2 from 'argon2';
 
 export class TwoFactorService {
     // Generate TOTP secret for authenticator apps
@@ -48,15 +49,31 @@ export class TwoFactorService {
     }
 
     // Hash backup codes for storage
-    static hashBackupCodes(codes: string[]): string {
-        return JSON.stringify(codes); // In production, hash these with argon2
+    static async hashBackupCodes(codes: string[]): Promise<string> {
+        // Hash each code individually
+        const hashedCodes = await Promise.all(
+            codes.map(code => argon2.hash(code))
+        );
+        return JSON.stringify(hashedCodes); // In production, hash these with argon2
     }
 
     // Verify backup code
-    static verifyBackupCode(code: string, hashedCodes: string): boolean {
+    static async verifyBackupCode(code: string, hashedCodes: string): Promise<boolean> {
         try {
-            const codes: string[] = JSON.parse(hashedCodes);
-            return codes.includes(code);
+            const storedHashes: string[] = JSON.parse(hashedCodes);
+            
+            // Hash the input code and compare with stored hashes
+            for (const storedHash of storedHashes) {
+                try {
+                    if (await argon2.verify(storedHash, code)) {
+                        return true;
+                    }
+                } catch {
+                    // If verification fails, continue to next hash
+                    continue;
+                }
+            }
+            return false;
         } catch {
             return false;
         }

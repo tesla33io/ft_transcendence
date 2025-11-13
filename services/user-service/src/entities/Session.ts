@@ -1,7 +1,8 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, PrimaryKey, Property, Index } from '@mikro-orm/core';
 
 
 @Entity()
+@Index({ properties: ['userId'] }) // Add index on userId for query performance
 export class Session {
     @PrimaryKey({ type: 'string' })
     id!: string;

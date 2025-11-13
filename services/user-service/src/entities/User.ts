@@ -53,7 +53,7 @@ export class User {
     email?: string;
 
     @Property({ type: 'string', nullable: true })
-    twoFactorMethod?: string; // 'totp', 'email'
+    twoFactorMethod?: string; // 'totp'
 
     // Two-factor authentication
     @Property({ type: 'boolean', default: false })
@@ -71,6 +71,13 @@ export class User {
     // Timestamps
     @Property({ type: 'datetime', nullable: true })
     lastLogin?: Date;
+
+    // Rate limiting for 2FA
+    @Property({ type: 'number', default: 0 })
+    twoFactorFailedAttempts: number = 0;
+
+    @Property({ type: 'datetime', nullable: true })
+    twoFactorLockedUntil?: Date;
 
     // Relationships
     @OneToMany(() => UserStatistics, (stats) => stats.user)
