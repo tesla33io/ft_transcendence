@@ -158,26 +158,26 @@ export function loginView(router: Router) {
                 // add later twoFactorCode
             };
 
-            console.log('login request:', credentials);
+            // console.log('login request:', credentials);
 
             // Call UserService login method
             const authResponse = await UserService.login(credentials);
 
-            console.log('Login successful!', {
-                user: authResponse.user,
-                token: authResponse.token ? 'Token received' : 'No token',
-                expiresAt: authResponse.expiresAt
-            });
+            // console.log('Login successful!', {
+            //     user: authResponse.user,
+            //     token: authResponse.token ? 'Token received' : 'No token',
+            //     expiresAt: authResponse.expiresAt
+            // });
 
 			//test me endpoint
 			try {
-                console.log('📍 Calling /me endpoint to verify user...');
+                // console.log('📍 Calling /me endpoint to verify user...');
                 const meData = await UserService.getMe();
-                console.log('✅ /me endpoint verified:', {
-                    id: meData.id,
-                    username: meData.username,
-                    role: meData.role
-                });
+                // console.log('✅ /me endpoint verified:', {
+                //     id: meData.id,
+                //     username: meData.username,
+                //     role: meData.role
+                // });
             } catch (meError) {
                 console.error('⚠️ /me endpoint failed:', meError);
             }
@@ -185,7 +185,7 @@ export function loginView(router: Router) {
             router.navigate("/desktop");
 
         } catch (error) {
-            console.error('Login failed:', error);
+            // console.error('Login failed:', error);
             hideLoading();
             showError(error instanceof Error ? error.message : 'Login failed. Please try again.');
         }
@@ -195,7 +195,7 @@ export function loginView(router: Router) {
         showLoading("Creating guest session...");
 
         try {
-            console.log('🎮 Guest login request');
+            // console.log('🎮 Guest login request');
 
             const response = await fetch(`http://${window.location.hostname}:3000/api/v1/auth/guest`, {
                 method: 'POST',
