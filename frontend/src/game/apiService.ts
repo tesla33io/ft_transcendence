@@ -107,7 +107,7 @@ export class ApiService {
                 body: JSON.stringify(data)
             });
 
-            console.log(`📨 [API] POST ${endpoint} - Status: ${response.status}`);
+            // console.log(`📨 [API] POST ${endpoint} - Status: ${response.status}`);
 
             if (response.status === 401) {
                 // Token expired, trigger refresh

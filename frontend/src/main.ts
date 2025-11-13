@@ -1,7 +1,7 @@
 import './styles/style.css'
 
 import {Router} from './router'
-import { AuthService } from './game/authService.ts'
+import { AuthService } from './game/AuthService.ts'
 import {gameView} from './views/gamePage'
 import {friendsView} from './views/friendsPage'
 import {loginView} from './views/loginPage'
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const isAuthenticated = await AuthService.checkAuth(router);
     if (isAuthenticated) {
         //console.log('[App] User is authenticated');
-        
+
         //user is on login/register page, redirect to their desktop
         if (currentPath === '/login' || currentPath === '/register' || currentPath === '/') {
             //console.log('[App] Already logged in - redirecting to desktop');
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     } else {
         //console.log('[App] Not authenticated');
-        
+
         // If user is trying to access protected route, redirect to login
         if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/') {
             //console.log('[App] Protected route requested - redirecting to login');
