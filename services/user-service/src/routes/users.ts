@@ -310,7 +310,7 @@ export default async function userRoutes(app: FastifyInstance) {
                     // const deviceInfo = extractDeviceInfo(req);
 
                     // Check if user is already logged in
-                    const existingSession = await app.em.findOne(
+                   /* const existingSession = await app.em.findOne(
                         Session, 
                         { userId: user.id },
                         { refresh: true } // <-- force DB fetch, bypass cached entity
@@ -324,7 +324,7 @@ export default async function userRoutes(app: FastifyInstance) {
                                 .code(409)
                                 .send({ error: 'User already logged in. Please log out first.' });
                         }
-                    }
+                    }*/
 
                     const sessionId = await app.sm.create({ userId: user.id, username: user.username });
                     reply.setCookie('sessionId', sessionId, {
