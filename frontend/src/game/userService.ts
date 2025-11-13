@@ -1,6 +1,6 @@
 import { ApiService } from './apiService';
 
-import type { 
+import type {
     LoginRequest,
     RegisterRequest,
     AuthResponse,
@@ -37,7 +37,7 @@ export interface OneVOneStatistics {
     winPercentage: number;
     currentWinStreak: number;
     longestWinStreak: number;
-    currentRating?: number; // ELO rating 
+    currentRating?: number; // ELO rating
     peakRating?: number;
 }
 
@@ -59,10 +59,10 @@ export interface PlayerVsAIStatistics {
 export interface TournamentStatistics {
     userId: number;
     userName: string;
-    tournamentsWon: number;        
+    tournamentsWon: number;
     tournamentsParticipated: number;
-    winPercentage: number;        
-    bestPlacement?: number;   
+    winPercentage: number;
+    bestPlacement?: number;
 }
 
 export interface MatchHistoryEntry {
@@ -105,17 +105,17 @@ export class UserService {
         accessToken: string;
         refreshToken: string;
     }>('/users/auth/login', credentials);
-    
-    console.log('Login successful!');
-    console.log('User ID:', response.id);
-    console.log('Username:', response.username);
-    console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
-    
+
+    // console.log('Login successful!');
+    // console.log('User ID:', response.id);
+    // console.log('Username:', response.username);
+    // console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
+
     // Store tokens and user data
     localStorage.setItem('authToken', response.accessToken);
     localStorage.setItem('userId', response.id.toString());
     localStorage.setItem('username', response.username);
-    
+
     // Create AuthResponse with real data from gateway
     const authData: AuthResponse = {
         user: {
@@ -129,7 +129,7 @@ export class UserService {
         },
         token: response.accessToken,
     };
-    
+
     return authData;
 }
 
@@ -146,17 +146,17 @@ export class UserService {
         username: userData.username,
         password: userData.password
     });
-    
-    console.log('Registration successful!');
-    console.log('User ID:', response.id);
-    console.log('Username:', response.username);
-    console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
-    
+
+    // console.log('Registration successful!');
+    // console.log('User ID:', response.id);
+    // console.log('Username:', response.username);
+    // console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
+
     // Store tokens and user data
     localStorage.setItem('authToken', response.accessToken);
     localStorage.setItem('userId', response.id.toString());
     localStorage.setItem('username', response.username);
-    
+
     // Create AuthResponse with real data from gateway
     const authData: AuthResponse = {
         user: {
@@ -170,7 +170,7 @@ export class UserService {
         },
         token: response.accessToken,
     };
-    
+
     return authData;
 }
 
@@ -236,7 +236,7 @@ export class UserService {
     }
 
     // ===== USER DATA (GETTERS) =====
-    
+
     /**
      * Get current user info from gateway (includes role)
      * Now uses ApiService for consistency and auto token refresh
@@ -244,19 +244,19 @@ export class UserService {
     static async getMe(): Promise<{id: number; username: string; role: string}> {
         try {
             console.log('[UserService] Fetching current user info...');
-            
+
             const userInfo = await ApiService.get<{id: number; username: string; role: string}>('/api/v1/auth/me');
-            
+
             console.log('User info fetched:', userInfo);
-            
+
             // Cache role IN MEMORY with timestamp (not localStorage)
             this.roleCache = {
                 role: userInfo.role,
                 timestamp: Date.now()
             };
-            
+
             return userInfo;
-            
+
         } catch (error) {
             console.error('❌ Failed to fetch user info:', error);
             throw new Error(`Failed to get user info: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -279,7 +279,7 @@ export class UserService {
             console.log('[UserService] Cache expired, fetching fresh role...');
             const userInfo = await this.getMe();
             return userInfo.role;
-            
+
         } catch (error) {
             console.error('Failed to get role:', error);
             return null;
@@ -303,15 +303,15 @@ export class UserService {
     }
 
     // ===== USER UPDATES (SENDERS) =====
-    
+
     // Update current user's profile ON THE BACKEND
     static async updateProfile(updates: ProfileUpdateRequest): Promise<PublicUser> {
         try {
             // Call PATCH endpoint
             const response = await ApiService.patch<any>('/users/me', updates);
-            
+
             console.log('Profile updated successfully:', response);
-            
+
             // Map response to PublicUser
             const user: PublicUser = {
                 id: response.id,
@@ -322,19 +322,19 @@ export class UserService {
                 role: response.role || UserRole.USER,
                 lastLogin: response.last_login
             };
-            
+
             // Update localStorage
             localStorage.setItem('user', JSON.stringify(user));
-            
+
             return user;
-            
+
         } catch (error) {
             console.error('Failed to update profile:', error);
             throw error;
         }
     }
 
-  
+
 
 	// ===== FRIENDS API METHODS =====
 
@@ -344,28 +344,28 @@ export class UserService {
 			console.log('Get friends...');
 
 			const friends = await ApiService.get<Friend[]>('/users/friends');
-			
+
 			console.log('Friends fetched successfully:', friends);
 			console.log(`Total friends: ${friends.length}`);
-			
+
 			return friends;
-			
+
 		} catch (error) {
 			console.error('Failed to fetch friends:', error);
-			
+
 			throw new Error('Failed to load Friends')
 		}
-	
+
 	}
 
 	// Get friend requests
 	static async getFriendRequests(): Promise<FriendRequest[]> {
 		// TODO: Uncomment when backend is ready
 		// return await ApiService.get<FriendRequest[]>('/users/me/friend-requests');
-		
+
 		// Mock response
 		await new Promise(resolve => setTimeout(resolve, 200));
-		
+
 		const mockRequests: FriendRequest[] = [
 			{
 				userId: 201,
@@ -380,7 +380,7 @@ export class UserService {
 				avatarUrl: '/images/default-avatar.png'
 			}
 		];
-		
+
 		return mockRequests;
 	}
 
@@ -388,10 +388,10 @@ export class UserService {
 	static async sendFriendRequest(friendsName: string): Promise<{ success: boolean; message: string }> {
 		// TODO: Uncomment when backend is ready
 		// return await ApiService.post<{ success: boolean; message: string }>('/users/me/friend-requests', { friendsName });
-		
+
 		// Mock response
 		await new Promise(resolve => setTimeout(resolve, 500));
-		
+
 		// Simulate different responses
 		if (friendsName.toLowerCase() === 'invalid') {
 			return { success: false, message: 'User does not exist' };
@@ -399,7 +399,7 @@ export class UserService {
 		if (friendsName.toLowerCase() === 'already') {
 			return { success: false, message: 'Friend request already sent' };
 		}
-		
+
 		return { success: true, message: 'Friend request sent successfully' };
 	}
 
@@ -413,10 +413,10 @@ export class UserService {
 		//     myUsername: currentUser.username,
 		//     otherUserName
 		// });
-		
+
 		// Mock response
 		await new Promise(resolve => setTimeout(resolve, 400));
-		
+
 		return { success: true, message: 'Friend request accepted' };
 	}
 
@@ -424,14 +424,14 @@ export class UserService {
 	static async rejectFriendRequest(otherUserName: string): Promise<{ success: boolean; message: string }> {
 		// TODO: Uncomment when backend is ready
 		// return await ApiService.post<{ success: boolean; message: string }>('/users/me/friend-requests/reject', { otherUserName });
-		
+
 		// Mock response
 		await new Promise(resolve => setTimeout(resolve, 300));
-		
+
 		return { success: true, message: 'Friend request rejected' };
 	}
     // ===== UTILITY FUNCTIONS =====
-    
+
     // Check if user is logged in
     static isLoggedIn(): boolean {
         const token = localStorage.getItem('authToken');
@@ -457,10 +457,10 @@ export class UserService {
         localStorage.removeItem('userId');
         localStorage.removeItem('userName');
         localStorage.removeItem('user');
-        
+
         // Clear in-memory cache
         this.roleCache = null;
-        
+
         console.log('✅ User data and role cache cleared');
     }
 
@@ -470,15 +470,15 @@ export class UserService {
     static async getUserProfile(userId?: number): Promise<UserProfile> {
         try {
             console.log('👤 [UserService] Fetching user profile...');
-            
+
             // Determine endpoint
             const endpoint = '/users/me'//= userId ? `/users/${userId}` : '/users/me';
-            
+
             // Call the real endpoint through gateway
             const response = await ApiService.get<any>(endpoint);
-            
+
             console.log('Profile fetched successfully:', response);
-            
+
             // Map backend response to UserProfile interface
             const profile: UserProfile = {
                 userId: response.id,
@@ -490,13 +490,13 @@ export class UserService {
                 accountCreationDate: response.accountCreationDate || new Date().toISOString(),
                 currentElo: response.currentElo || 1000
             };
-            
+
             return profile;
-            
+
         } catch (error) {
             console.error('❌ Failed to fetch profile:', error);
             throw new Error("Failed to get user Profile")
-			
+
         }
     }
 
@@ -504,35 +504,35 @@ export class UserService {
 static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
     try {
         console.log('[UserService] Fetching 1v1 statistics...');
-        
+
         // Determine endpoint
         const endpoint = userId ? `/users/${userId}` : '/users/me';
-        
+
         // Call the real endpoint
         const response = await ApiService.get<any>(endpoint);
-        
+
         console.log(' 1v1 Statistics fetched:', response.stats);
-        
+
         // Map backend response to OneVOneStatistics interface
         const totalGames = response.stats?.totalGames || 0;
         const wins = response.stats?.wins || 0;
-        
+
         const stats: OneVOneStatistics = {
             userId: response.id,
             userName: response.username,
             gamesWon: wins,
             gamesLost: response.stats?.losses || 0,
-            winPercentage: totalGames > 0 
-                ? Math.round((wins / totalGames) * 100) 
+            winPercentage: totalGames > 0
+                ? Math.round((wins / totalGames) * 100)
                 : 0,
             currentWinStreak: response.stats?.currentWinStreak || 0,
             longestWinStreak: response.stats?.bestWinStreak || 0,
             currentRating: response.stats?.currentRating || 1000,
             peakRating: response.stats?.highestRating || 1000
         };
-        
+
         return stats;
-        
+
     } catch (error) {
         console.error('Failed to fetch 1v1 statistics:', error);
         throw new Error(`Failed to load 1v1 statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -544,14 +544,14 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
         // TODO: Uncomment when backend is ready
         // const endpoint = userId ? `/users/${userId}/stats/ai` : '/users/me/stats/ai';
         // return await ApiService.get<PlayerVsAIStatistics>(endpoint);
-        
+
         // Mock response
         await new Promise(resolve => setTimeout(resolve, 200));
-        
+
         const gamesWon = Math.floor(Math.random() * 30) + 5;
         const gamesLost = Math.floor(Math.random() * 20) + 3;
         const totalGames = gamesWon + gamesLost;
-        
+
         const mockStats: PlayerVsAIStatistics = {
             userId: userId || 1,
             userName: userId ? `User_${userId}` : "CurrentUser",
@@ -566,7 +566,7 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
                 hard: { wins: Math.floor(gamesWon * 0.2), losses: Math.floor(gamesLost * 0.4) }
             }
         };
-        
+
         return mockStats;
     }
 
@@ -575,13 +575,13 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
         // TODO: Uncomment when backend is ready
         // const endpoint = userId ? `/users/${userId}/stats/tournaments` : '/users/me/stats/tournaments';
         // return await ApiService.get<TournamentStatistics>(endpoint);
-        
+
         // Mock response
         await new Promise(resolve => setTimeout(resolve, 200));
-        
+
         const tournamentsWon = Math.floor(Math.random() * 8) + 1;        // ✅ Fixed variable name
         const tournamentsParticipated = tournamentsWon + Math.floor(Math.random() * 15) + 2;
-        
+
         const mockStats: TournamentStatistics = {
             userId: userId || 1,
             userName: userId ? `User_${userId}` : "CurrentUser",
@@ -590,7 +590,7 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
             winPercentage: Math.round((tournamentsWon / tournamentsParticipated) * 100), // ✅ Fixed property name
             bestPlacement: Math.floor(Math.random() * 3) + 1            // ✅ Add missing property
         };
-        
+
         return mockStats;
     }
 
@@ -600,23 +600,23 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
         // TODO: Uncomment when backend is ready
         // const endpoint = userId ? `/users/${userId}/matches` : '/users/me/matches';
         // return await ApiService.get<MatchHistoryEntry[]>(`${endpoint}?limit=${limit}`);
-        
+
         // Mock response
         await new Promise(resolve => setTimeout(resolve, 400));
-        
+
         const mockMatches: MatchHistoryEntry[] = [];
-        
+
         const opponents = [
             'AliceGamer', 'BobPro', 'CharlieWin', 'DianaFast', 'EveChampion',
             'FrankMaster', 'GraceElite', 'HenrySkill', 'IvyStrong', 'JackSpeed'
         ];
-        
+
         for (let i = 0; i < Math.min(30, 20); i++) {
             const isWin = Math.random() > 0.45; // Slightly favor wins
             const userScore = isWin ? Math.floor(Math.random() * 3) + 3 : Math.floor(Math.random() * 3) + 1;
             const opponentScore = isWin ? Math.floor(Math.random() * 3) + 1 : Math.floor(Math.random() * 3) + 3;
             const eloChange = isWin ? Math.floor(Math.random() * 30) + 10 : -(Math.floor(Math.random() * 25) + 5);
-            
+
             mockMatches.push({
                 matchId: 1000 + i,
                 opponentId: Math.floor(Math.random() * 1000) + 100,
@@ -630,10 +630,10 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
                 matchDuration: Math.floor(Math.random() * 300) + 60 // 1-6 minutes
             });
         }
-        
+
         // Sort by date (newest first)
         mockMatches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        
+
         return mockMatches;
     }
 }

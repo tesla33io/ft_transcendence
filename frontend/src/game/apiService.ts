@@ -124,7 +124,7 @@ export class ApiService {
                     // Retry with new token
                     return this.post<T>(endpoint, data);
                 } catch (refreshError) {
-                    console.error('[API] Refresh failed, logging out');
+                    // console.error('[API] Refresh failed, logging out');
                     localStorage.clear();
                     window.location.href = '/login';
                     throw refreshError;
@@ -144,7 +144,7 @@ export class ApiService {
 
             return response.json();
         } catch (error) {
-            console.error('[API] POST error:', error);
+            // console.error('[API] POST error:', error);
             throw error;
         }
     }

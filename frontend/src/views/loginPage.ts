@@ -185,7 +185,7 @@ export function loginView(router: Router) {
             router.navigate("/desktop");
 
         } catch (error) {
-            console.error('Login failed:', error);
+            // console.error('Login failed:', error);
             hideLoading();
             showError(error instanceof Error ? error.message : 'Login failed. Please try again.');
         }
