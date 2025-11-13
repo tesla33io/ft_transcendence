@@ -9,7 +9,7 @@ import {
     createTaskbar
 } from '../components';
 
-export function localGameView(router: Router) {
+export function localGameView(router: Router, mode: string = GAME_MODES.CLASSIC) {
     const app = document.getElementById('app');
     if (!app) {
         console.error("App element not found!");
@@ -22,8 +22,7 @@ export function localGameView(router: Router) {
     staticBackground.attachToPage(app);
 
     const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get('mode') || GAME_MODES.CLASSIC;
-    const winningScore = parseInt(urlParams.get('score') || '5', 10);
+    const winningScore = 5;
 
     const content = document.createElement("div");
 
@@ -37,7 +36,6 @@ export function localGameView(router: Router) {
 
     content.appendChild(header);
 
-    // ✅ CHANGED: Create game container with proper layout
     const gameContainer = document.createElement("div");
     gameContainer.className = "game-container";
     gameContainer.style.display = "flex";
@@ -50,7 +48,6 @@ export function localGameView(router: Router) {
     canvas.height = GAME_CONFIG.CANVAS.HEIGHT;
     gameContainer.appendChild(canvas);
 
-    // ✅ CHANGED: Add description text with better styling
     const description = document.createElement("p");
     description.style.fontSize = "16px";
     description.style.color = "";
@@ -119,7 +116,6 @@ function getModeName(mode: string): string {
     return modeNames[mode] || 'Classic';
 }
 
-// ✅ NEW: Helper function to get mode-specific control text
 function getModeControlsText(mode: string): string {
     const controls: { [key: string]: string } = {
         'classic': 'P1: W/S to move | P2: ↑/↓ to move',
