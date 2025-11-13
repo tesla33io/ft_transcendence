@@ -66,7 +66,7 @@ export class AuthService {
      */
     private static async tryRefreshToken(): Promise<boolean> {
         try {
-            console.log('[AuthService] Attempting token refresh...');
+            //console.log('[AuthService] Attempting token refresh...');
             
             // Call refresh endpoint
             await UserService.refreshToken();
