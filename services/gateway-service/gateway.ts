@@ -54,7 +54,7 @@ server.get("/test/status", async (req, reply) => {
 // ===== GUEST JWT ENDPOINT =====
 server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
     try {
-        console.log('[GATEWAY] Guest login request');
+        // console.log('[GATEWAY] Guest login request');
 
         // Generate unique guest ID (negative integer)
         const guestId = guestIdCounter;

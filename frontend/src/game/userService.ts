@@ -225,7 +225,7 @@ export class UserService {
             await ApiService.post<void>('/api/v1/auth/logout', {});
             console.log('Logged out successfully');
         } catch (error) {
-            console.error('Logout error (clearing local data anyway):', error);
+            // console.error('Logout error (clearing local data anyway):', error);
         } finally {
             // Clear local storage
             this.clearUserData()

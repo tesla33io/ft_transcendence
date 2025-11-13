@@ -50,7 +50,7 @@ export class Router {
     try {
       const role = await UserService.getUserRoleSecure();
       if (!role) return false;
-      
+
       console.log(`User role: ${role}`);
       return role === 'user' || role === 'admin';
     } catch (error) {
@@ -69,7 +69,7 @@ export class Router {
     }
     try {
       const isUser = await this.checkUserRole();
-      
+
       if (isUser) {
         console.log('User role detected → /desktop');
         await this.navigate('/desktop');
@@ -85,7 +85,7 @@ export class Router {
 
   // navigate programmatically to a path (update history and show view)
   public async navigate(path: string, addToHistory = true): Promise<void> {
-    console.log(`Navigating to: ${path}`);
+    // console.log(`Navigating to: ${path}`);
 
     let config = this.routes.get(path);
     if (!config) {

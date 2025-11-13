@@ -158,7 +158,7 @@ export function loginView(router: Router) {
                 // add later twoFactorCode
             };
 
-            console.log('login request:', credentials);
+            // console.log('login request:', credentials);
 
             // Call UserService login method
             const authResponse = await UserService.login(credentials);
@@ -195,7 +195,7 @@ export function loginView(router: Router) {
         showLoading("Creating guest session...");
 
         try {
-            console.log('🎮 Guest login request');
+            // console.log('🎮 Guest login request');
 
             const response = await fetch(`http://${window.location.hostname}:3000/api/v1/auth/guest`, {
                 method: 'POST',
