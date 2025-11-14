@@ -2,7 +2,7 @@ import { Router } from '../router';
 import { createWindow } from '../components/_components';
 import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
 import { PongGame } from '../game/PongGame';
-import { createPlayerVsAIStatsComponent } from '../components/_userComponents';
+//import { createPlayerVsAIStatsComponent } from '../components/_userComponents';
 
 let currentPongGame: PongGame | undefined = undefined;
 
@@ -20,7 +20,6 @@ export function aiGameSetupView(router: Router) {
     const playerVsAIContainer = document.createElement('div');
     playerVsAIContainer.className = "col-span-1 bg-gray-200";
 
-    // ✅ Title outside the sunken box
     const titleSection = document.createElement("div");
     titleSection.style.cssText = `
         text-align: center;
