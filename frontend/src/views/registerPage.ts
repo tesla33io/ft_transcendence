@@ -17,7 +17,7 @@ export function registerView(router: Router) {
     const content = document.createElement("div");
 
     // ----------------------------
-    // Registration form 
+    // Registration form
     // ----------------------------
     content.innerHTML = `
         <p></p>
@@ -28,7 +28,7 @@ export function registerView(router: Router) {
             <label for="email">Enter Email</label>
             <input id="email" type="text" />
         </div>
-        <div class="field-row-stacked" style="width: 240px"> 
+        <div class="field-row-stacked" style="width: 240px">
             <label for="password">Enter Password</label>
             <input id="password" type="password" />
         </div>
@@ -36,7 +36,7 @@ export function registerView(router: Router) {
             <label for="repeat_password">Repeat Password</label>
             <input id="repeat_password" type="password" />
         </div>
-            
+
         <div class="twofactor">
             <label>Enable 2Factor authentication</label>
             <div class="field-row">
@@ -49,9 +49,9 @@ export function registerView(router: Router) {
             </div>
         </div>
         <div class="profileBio">
-            <div class="field-row-stacked" style="width: 240px"> 
+            <div class="field-row-stacked" style="width: 240px">
                 <label for="profileBio">Add a Bio to your Profile</label>
-                <textarea id="profileBio" rows="3"></textarea> 
+                <textarea id="profileBio" rows="3"></textarea>
             </div>
         </div>
     `;
@@ -74,14 +74,14 @@ export function registerView(router: Router) {
         margin-bottom: 8px;
         justify-content: center;
         flex-wrap: wrap;
-    `; 
+    `;
 
     const avatars = [agent, book_user, rabit];
-    
+
     avatars.forEach(src => {
         const img = document.createElement("img");
         img.src = src;
-        img.width = 45; 
+        img.width = 45;
         img.height = 45;
         img.style.cursor = "pointer";
         img.style.border = "2px solid transparent";
@@ -109,7 +109,7 @@ export function registerView(router: Router) {
     avatarSection.appendChild(avatarContainer);
     avatarSection.appendChild(avatarInput);
 
-    
+
     const uploadSection = createAvatarUpload(avatarInput, avatarContainer);
     avatarSection.appendChild(uploadSection);
 
@@ -134,7 +134,7 @@ export function registerView(router: Router) {
     content.appendChild(loadingMessage);
 
     // ----------------------------
-    // Register button 
+    // Register button
     // ----------------------------
     const buttonContainer = document.createElement("div");
     buttonContainer.className = "field-row";
@@ -156,7 +156,7 @@ export function registerView(router: Router) {
     // Create window
     const simpleWindow = createWindow({
         title: "Register New Account",
-        width: "280px", 
+        width: "280px",
         initialPosition: {x: 500 , y: 200},
         content: content,
         titleBarControls: {
@@ -204,13 +204,13 @@ export function registerView(router: Router) {
         if (!data.username) return "Username is required";
         if (data.username.length < 3) return "Username must be at least 3 characters";
         if (data.username.length > 30) return "Username must be less than 30 characters";
-        
+
         if (!data.email) return "Email is required";
         if (!data.email.includes('@')) return "Please enter a valid email";
-        
+
         if (!data.password) return "Password is required";
         if (data.password.length < 6) return "Password must be at least 6 characters";
-        
+
         if (data.password !== data.repeatPassword) return "Passwords don't match";
         */
         return null; // No errors
@@ -226,22 +226,22 @@ export function registerView(router: Router) {
         }
         showLoading();
         try {
-            // Create RegisterRequest object 
+            // Create RegisterRequest object
             const registerData: RegisterRequest = {
                 username: data.username,
                 password: data.password,
                 avatarUrl: data.avatar || undefined // Use selected avatar or undefined
             };
 
-            console.log(" Sending registration request:", {
-                ...registerData,
-            });
+            // console.log(" Sending registration request:", {
+            //     ...registerData,
+            // });
 
             // Call UserService register method
             const authResponse = await UserService.register(registerData);
 
-            console.log('Registered New User:', authResponse.user.username);
-            console.log('User ID:', authResponse.user.id);
+            // console.log('Registered New User:', authResponse.user.username);
+            // console.log('User ID:', authResponse.user.id);
 
             // Navigate to desktop on success (user is automatically logged in)
             router.navigate("/desktop");
@@ -263,7 +263,7 @@ export function registerView(router: Router) {
             handleRegistration();
         }
     };
-    
+
     content.querySelector<HTMLInputElement>("#username")?.addEventListener('keypress', handleEnterKey);
     content.querySelector<HTMLInputElement>("#password")?.addEventListener('keypress', handleEnterKey);
     content.querySelector<HTMLInputElement>("#repeat_password")?.addEventListener('keypress', handleEnterKey);
@@ -293,7 +293,7 @@ function createAvatarUpload(avatarInput: HTMLInputElement, avatarContainer: HTML
         gap: 6px;
         margin-top: 8px;
     `;
-    
+
     const uploadLabel = document.createElement("label");
     uploadLabel.textContent = "Or upload custom:";
     uploadLabel.style.cssText = `display: block; font-size: 11px; margin-bottom: 4px;`;
@@ -347,10 +347,10 @@ function createAvatarUpload(avatarInput: HTMLInputElement, avatarContainer: HTML
         const file = uploadInput.files?.[0];
         if (file) {
             // Show selected file name
-            fileNameDisplay.textContent = file.name.length > 18 
-                ? file.name.substring(0, 15) + "..." 
+            fileNameDisplay.textContent = file.name.length > 18
+                ? file.name.substring(0, 15) + "..."
                 : file.name;
-            
+
             const reader = new FileReader();
             reader.onload = (e) => {
                 avatarInput.value = e.target!.result as string;
@@ -370,6 +370,6 @@ function createAvatarUpload(avatarInput: HTMLInputElement, avatarContainer: HTML
     uploadSection.appendChild(uploadButton);
     uploadSection.appendChild(uploadInput);
     uploadSection.appendChild(fileNameDisplay);
-    
+
     return uploadSection;
 }

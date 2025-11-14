@@ -91,7 +91,7 @@ export function aiGameSetupView(router: Router) {
 			console.log('no userid found please login again');
 			return;
 		}
-		console.log('username and id', playerName, playerId)
+		// console.log('username and id', playerName, playerId)
 		try {
 			const game = new PongGame(
 				playerName,

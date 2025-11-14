@@ -3,12 +3,12 @@
 import { UserService } from '../game/userService';
 import { createWindow } from '../components/_components';
 import type { Friend, FriendRequest } from '../game/userService';
-import type { 
-    OneVOneStatistics, 
-    PlayerVsAIStatistics, 
-    TournamentStatistics, 
-    MatchHistoryEntry, 
-    UserProfile 
+import type {
+    OneVOneStatistics,
+    PlayerVsAIStatistics,
+    TournamentStatistics,
+    MatchHistoryEntry,
+    UserProfile
 } from '../game/userService';
 
 
@@ -138,7 +138,7 @@ export class FriendsComponent {
         `;
 
         const tbody = document.createElement('tbody');
-        
+
         if (this.friends.length === 0) {
             tbody.innerHTML = `
                 <tr><td colspan="3" style="padding: 20px; text-align: center; color: #666;">
@@ -210,8 +210,8 @@ export function createSendFriendRequestWindow(options: { onSend?: (username: str
         <label for="friendUsername" style="display: block; margin-bottom: 5px; font-weight: bold; font-size: 12px;">
             Enter username:
         </label>
-        <input type="text" id="friendUsername" placeholder="Username to add..." 
-               style="width: 100%; padding: 4px; box-sizing: border-box; font-size: 12px; margin-bottom: 10px;" 
+        <input type="text" id="friendUsername" placeholder="Username to add..."
+               style="width: 100%; padding: 4px; box-sizing: border-box; font-size: 12px; margin-bottom: 10px;"
                maxlength="30">
         <div style="display: flex; gap: 8px; justify-content: flex-end;">
             <button id="sendBtn" style="padding: 6px 12px; font-size: 12px;">Send Request</button>
@@ -268,10 +268,10 @@ export function createSendFriendRequestWindow(options: { onSend?: (username: str
     return window;
 }
 
-export function createIncomingRequestsWindow(options: { 
-    onAccept?: (username: string) => Promise<void>; 
-    onReject?: (username: string) => Promise<void>; 
-    onClose?: () => void 
+export function createIncomingRequestsWindow(options: {
+    onAccept?: (username: string) => Promise<void>;
+    onReject?: (username: string) => Promise<void>;
+    onClose?: () => void
 } = {}): HTMLElement {
     const content = document.createElement('div');
     content.style.cssText = `padding: 10px; display: flex; flex-direction: column; height: 100%;`;
@@ -320,7 +320,7 @@ export function createIncomingRequestsWindow(options: {
 
             div.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                    <img src="${request.avatarUrl || '/images/default-avatar.png'}" width="32" height="32" 
+                    <img src="${request.avatarUrl || '/images/default-avatar.png'}" width="32" height="32"
                          style="border-radius: 3px; border: 1px solid #c0c0c0;">
                     <div>
                         <div style="font-weight: bold; font-size: 13px;">${request.userName}</div>
@@ -516,7 +516,7 @@ export const createFriendsComponent = (options: FriendsComponentOptions) => new 
 export const createSimpleFriendsActionsComponent = (options: SimpleFriendsActionsOptions) => new SimpleFriendsActionsComponent(options);
 
 
-//profile components 
+//profile components
 
 // 1v1 Statistics Component
 export interface OneVOneStatsComponentOptions {
@@ -541,30 +541,30 @@ export class OneVOneStatsComponent {
             showTitle: true,
             ...options
         };
-        
+
         this.init();
     }
 
     private async init() {
         this.loading = true;
         this.showLoading();
-        
+
         try {
             this.stats = await UserService.getOneVOneStatistics(this.options.userId);
             this.loading = false;
 			this.render();
         } catch (error) {
-            console.error('Failed to load 1v1 statistics:', error);
-            this.showError('Failed to load 1v1 statistics');
+            // console.error('Failed to load 1v1 statistics:', error);
+            // this.showError('Failed to load 1v1 statistics');
 			this.loading = false;
-        } 
+        }
     }
 
     private showLoading() {
         this.container.innerHTML = '';
         this.container.className = 'sunken-panel';
         this.container.style.cssText = this.getContainerStyle();
-        
+
         this.container.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 11px;">
                 ⏳ Loading 1v1 stats...
@@ -718,8 +718,8 @@ export class OneVOneStatsComponent {
         `;
 
         const currentStreakColor = this.stats.currentWinStreak > 0 ? '#006600' : '#cc0000';
-        const currentStreakText = this.stats.currentWinStreak > 0 ? 
-            `${this.stats.currentWinStreak} wins` : 
+        const currentStreakText = this.stats.currentWinStreak > 0 ?
+            `${this.stats.currentWinStreak} wins` :
             `${Math.abs(this.stats.currentWinStreak)} losses`;
 
         streakDiv.innerHTML = `
@@ -783,7 +783,7 @@ export class MatchHistoryComponent {
     private async init() {
         this.loading = true;
         this.showLoading();
-        
+
         try {
             this.matches = await UserService.getMatchHistory(this.options.userId);
             this.loading = false;
@@ -818,7 +818,7 @@ export class MatchHistoryComponent {
         this.container.innerHTML = '';
         this.container.className = 'sunken-panel bg-gray-300 p-2 flex flex-col overflow-hidden';
         this.container.style.cssText = `
-        width: ${this.options.width}; 
+        width: ${this.options.width};
         height: ${this.options.height};
         background-color: #e0e0e0;
         padding: 12px;
@@ -861,7 +861,7 @@ export class MatchHistoryComponent {
         this.matches.forEach((match, index) => {
             const row = document.createElement('tr');
             row.className = 'hover:bg-gray-100 cursor-pointer';
-            
+
             const resultColor = match.isWin ? 'text-green-600' : 'text-red-600';
             const resultIcon = match.isWin ? '✓' : '✗';
             const eloColor = match.eloGained >= 0 ? 'text-green-600' : 'text-red-600';
@@ -935,7 +935,7 @@ export class UserInfoComponent {
     private async init() {
         this.loading = true;
         this.showLoading();
-        
+
         try {
             this.profile = await UserService.getUserProfile(this.options.userId);
             this.loading = false;
@@ -970,7 +970,7 @@ export class UserInfoComponent {
         this.container.innerHTML = '';
         this.container.className = 'sunken-panel bg-gray-300 p-3 flex flex-col';
         this.container.style.cssText = `
-        width: ${this.options.width}; 
+        width: ${this.options.width};
         height: ${this.options.height};
         background-color: #e0e0e0;
         padding: 12px;
@@ -1095,7 +1095,7 @@ export class TournamentStatsComponent {
     private async init() {
         this.loading = true;
         this.showLoading();
-        
+
         try {
             this.stats = await UserService.getTournamentStatistics(this.options.userId);
             this.loading = false;
@@ -1130,7 +1130,7 @@ export class TournamentStatsComponent {
         this.container.innerHTML = '';
         this.container.className = 'sunken-panel bg-gray-300 p-2 flex flex-col overflow-hidden';
         this.container.style.cssText = `
-        width: ${this.options.width}; 
+        width: ${this.options.width};
         height: ${this.options.height};
         background-color: #e0e0e0;
         padding: 12px;
@@ -1173,7 +1173,7 @@ export class TournamentStatsComponent {
 
             statsGrid.appendChild(statDiv);
         });
-        
+
         this.container.appendChild(statsGrid);
     }
 
@@ -1217,7 +1217,7 @@ export class PlayerVsAIStatsComponent {
     private async init() {
         this.loading = true;
         this.showLoading();
-        
+
         try {
             this.stats = await UserService.getPlayerVsAIStatistics(this.options.userId);
             this.loading = false;
@@ -1252,7 +1252,7 @@ export class PlayerVsAIStatsComponent {
         this.container.innerHTML = '';
         this.container.className = 'sunken-panel bg-gray-300 p-2 flex flex-col overflow-hidden';
          this.container.style.cssText = `
-        width: ${this.options.width}; 
+        width: ${this.options.width};
         height: ${this.options.height};
         background-color: #e0e0e0;
         padding: 12px;
@@ -1279,7 +1279,7 @@ export class PlayerVsAIStatsComponent {
         mainStatsData.forEach(stat => {
             const statDiv = document.createElement('div');
             statDiv.className = 'text-center flex flex-col justify-center';
-            
+
             statDiv.style.cssText = `
                 background-color: #f0f0f0;
                 border: 1px inset #c0c0c0;
@@ -1299,7 +1299,7 @@ export class PlayerVsAIStatsComponent {
         });
 
         this.container.appendChild(mainStats);
-        
+
     }
 
     public async refresh() {

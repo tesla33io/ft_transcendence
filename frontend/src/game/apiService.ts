@@ -18,7 +18,7 @@ export class ApiService {
                 credentials: 'include'
             });
 
-            console.log(`[API] GET ${endpoint} - Status: ${response.status}`);
+            // console.log(`[API] GET ${endpoint} - Status: ${response.status}`);
 
             if (response.status === 401) {
                 // Token expired, trigger refresh
@@ -50,7 +50,7 @@ export class ApiService {
 
             return response.json();
         } catch (error) {
-            console.error('[API] GET error:', error);
+            // console.error('[API] GET error:', error);
             throw error;
         }
     }
