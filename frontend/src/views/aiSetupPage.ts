@@ -28,7 +28,7 @@ export function aiGameSetupView(router: Router) {
         padding: 12px 12px 0 12px;
     `;
     titleSection.innerHTML = `
-        <h3 style="margin: 0; font-size: 16px; font-weight: bold;">
+        <h3 style="margin: 0; font-size: 22px; font-weight: bold;">
             Man vs Machine
         </h3>
     `;
@@ -54,7 +54,6 @@ export function aiGameSetupView(router: Router) {
 
     content.appendChild(playerVsAIContainer);
 
-    // ✅ Reduced spacing between info and button
     const buttonContainer = document.createElement("div");
     buttonContainer.className = 'flex flex-col items-center';
     buttonContainer.style.cssText = `
@@ -80,7 +79,7 @@ export function aiGameSetupView(router: Router) {
     const setupWindow = createWindow({
         title: "AI Game Setup",
         width: "400px",
-        height: "280px", // ✅ Adjusted height
+        height: "280px", 
         content: content,
         titleBarControls: {
             help: true,
