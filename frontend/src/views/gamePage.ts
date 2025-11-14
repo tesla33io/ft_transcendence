@@ -133,7 +133,6 @@ export function gameView(router: Router, wsHandler: WebSocketHandler, gameMode?:
 		resultContent.appendChild(resultText);
 		resultContent.appendChild(resultScore);
 		resultContent.appendChild(opponentText);
-		console.log("mode and win ? ",gameMode,isWin)
 		if (gameMode === 'tournament' && isWin) {
            const waitingText = document.createElement("p");
             waitingText.textContent = "Waiting for other players to finish...";
