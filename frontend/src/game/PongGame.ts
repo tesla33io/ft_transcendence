@@ -126,7 +126,7 @@ export class PongGame {
 
     async joinGame(): Promise<void> {
         try {
-            console.log(`PlayerID: ${this.playerId} - ${this.gameMode}`);
+            // console.log(`PlayerID: ${this.playerId} - ${this.gameMode}`);
             let apiEndpoint: string;
             if (this.gameMode === 'tournament') {
                 apiEndpoint = '/api/v1/game/join-tournament';
@@ -163,7 +163,7 @@ export class PongGame {
     }
 
     private handleGameStart(data: GameData): void {
-        console.log('Game start received, initializing view...');
+        // console.log('Game start received, initializing view...');
         this.gameId = data.id || '';
         if (this.wsHandler) {
             this.wsHandler.setGameId(this.gameId);
@@ -185,7 +185,7 @@ export class PongGame {
                 this.renderer = new Renderer(this.gameView.canvas);
                 this.renderer.initializeCanvas();
                 if (this.renderer.isReady() && this.wsHandler) {
-                    console.log('View Render ready, sending ready message');
+                    // console.log('View Render ready, sending ready message');
                     this.wsHandler.sendReadyMessage();
                     this.gameView.canvas.style.display = "block";
                     // Start synchronized game loop

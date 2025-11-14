@@ -82,7 +82,7 @@ export class WebSocketHandler {
     public sendTournamentReady(): void {
         console.log('send Tournament ready message with tournament id',this.tournamentId, 'and player id', this.playerId);
 		if (!this.tournamentId) {
-            console.error("No tournamentId set for ready message!");
+            // console.error("No tournamentId set for ready message!");
             return;
         }
         const readyMsg = {
@@ -171,11 +171,11 @@ export class WebSocketHandler {
 
     // WebSocket connection management
     private connect(): void {
-        console.log(`Attempting to connect WebSocket with playerId: ${this.playerId}`);
+        // console.log(`Attempting to connect WebSocket with playerId: ${this.playerId}`);
         this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws/${this.gameMode}?playerId=${this.playerId}`)
 
         this.ws.onopen = () => {
-            console.log('WebSocket connected successfully');
+            // console.log('WebSocket connected successfully');
         };
 
         this.ws.onmessage = (event: MessageEvent) => {
@@ -184,11 +184,11 @@ export class WebSocketHandler {
         };
 
         this.ws.onclose = () => {
-            console.log('WebSocket disconnected');
+            // console.log('WebSocket disconnected');
         };
 
         this.ws.onerror = (error: Event) => {
-            console.error('WebSocket error:', error);
+            // console.error('WebSocket error:', error);
             this.onError('Connection failed. Please try again.');
         };
     }
