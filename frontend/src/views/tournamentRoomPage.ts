@@ -10,10 +10,10 @@ export function tournamentRoomView(
 	) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
-	
+
 	const staticBackground = createStaticDesktopBackground();
     staticBackground.attachToPage(root);
-	
+
 	const content = document.createElement("div");
 	content.className = "grid grid-cols-3 gap-4 p-4 relative";
 
@@ -21,10 +21,10 @@ export function tournamentRoomView(
 	const semifinals = document.createElement("div");
 	semifinals.className = "flex flex-col items-center";
 	semifinals.innerHTML = `<h4 class="text-sm font-bold mb-2">Semifinals</h4>`;
-	
+
 	const match0 = tournamentData.bracket[0];
 	const match1 = tournamentData.bracket[1];
-	
+
 	semifinals.appendChild(createMatch(
 		match0?.player1?.name ?? null,
 		match0?.player2?.name ?? null,
@@ -42,7 +42,7 @@ export function tournamentRoomView(
 	const final = document.createElement("div");
 	final.className = "flex flex-col items-center justify-center self-center";
 	final.innerHTML = `<h4 class="text-sm font-bold mb-2">Final</h4>`;
-	
+
 	const finalMatch = tournamentData.bracket[2];
 	final.appendChild(createMatch(
 		finalMatch?.player1?.name ?? null,
@@ -54,7 +54,7 @@ export function tournamentRoomView(
 	// Champion - Find and display the winner's name
 	const champion = document.createElement("div");
 	champion.className = "flex flex-col items-center justify-center self-center";
-	
+
 	let championName = "Winner of Final";
 	let isFinished = false;
 
@@ -139,18 +139,22 @@ export function tournamentRoomView(
 		width: "700px",
 		content: content,
 		titleBarControls: {
-		close: true,
-		onClose: () => router.navigateToDesktop()
+			close: true,
+			onClose: () => {
+				if (wsHandler)
+					wsHandler.disconnect();
+				router.navigateToDesktop()
+			}
 		},
 	});
 
 	root.append(bracketsWindow);
-	
+
 	const { taskbar } = createTaskbar({
 		clock: true,
 		router: router
 	});
-	
+
 	root.appendChild(taskbar);
 
 }
@@ -169,7 +173,7 @@ export function tournamentRoomView(
 	const p1 = document.createElement("div");
 	p1.textContent = player1 || "Winner of Semifinal";
 	p1.classList.add("slot", state1, "text-center", "mb-2", "w-full", "p-1", player1 ? "bg-color" : "text-gray-500");
-	
+
 	// Add visual styling for winners/losers
 	if (state1 === "win") p1.classList.add( "font-bold");
 	if (state1 === "loss") p1.classList.add( "line-through");
@@ -177,7 +181,7 @@ export function tournamentRoomView(
 	const p2 = document.createElement("div");
 	p2.textContent = player2 || "Winner of Semifinal";
 	p2.classList.add("slot", state2, "text-center", "w-full", "p-1", player2 ? "bg-gray-500" : "text-gray-500");
-	
+
 	if (state2 === "win") p2.classList.add( "font-bold");
 	if (state2 === "loss") p2.classList.add( "line-through");
 

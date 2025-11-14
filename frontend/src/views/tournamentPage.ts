@@ -90,7 +90,7 @@ export function tournamentView(router: Router) {
 		clock: true,
 		router: router
 	});
-	
+
 		root.appendChild(taskbar);
 
 	form.addEventListener("submit", async (e: Event) => {
