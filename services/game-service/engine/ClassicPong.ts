@@ -1,5 +1,5 @@
 import { GameEngine } from "./GameEngine";
-import { GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH, PLAYER_OFFSET } from "../types/types";
+import { GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH, PLAYER_OFFSET, GAME_SCORE } from "../types/types";
 import { Game, Player} from "../types/interfaces"
 
 export class ClassicPong extends GameEngine {
@@ -37,8 +37,8 @@ export class ClassicPong extends GameEngine {
 		this.paddleCollisionCheck(game)
 		if (this.onGameStatusUpdate)
 			this.onGameStatusUpdate(game)
-		if (game.player1.score >= this.GAME_SCORE ||
-			game.player2.score >= this.GAME_SCORE){
+		if (game.player1.score >= GAME_SCORE ||
+			game.player2.score >= GAME_SCORE){
 			this.stopGame(game.id)
 			const winner = game.player1.score > game.player2.score ? game.player1.id : game.player2.id
 			if (this.declareWinner)

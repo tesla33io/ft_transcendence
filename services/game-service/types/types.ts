@@ -7,6 +7,7 @@ export const PADDLE_HEIGHT = Number(process.env.PADDLE_HEIGHT || "50")
 export const PADDLE_WIDTH = Number(process.env.PADDLE_WIDTH || "10")
 export const FPS = Number(process.env.FPS || "60")
 export const PLAYER_OFFSET = Number(process.env.PLAYER_OFFSET || "20")
+export const GAME_SCORE = Number(process.env.GAME_SCORE || "3")
 
 export type GameMode = 'classic' | 'tournament' | 'bot-classic'
 

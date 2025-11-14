@@ -34,16 +34,16 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     read -p "SMTP Host (default: smtp.gmail.com): " SMTP_HOST
     SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
-    
+
     read -p "SMTP Port (default: 587): " SMTP_PORT
     SMTP_PORT=${SMTP_PORT:-587}
-    
+
     read -p "SMTP User (your email): " SMTP_USER
     SMTP_USER=${SMTP_USER:-your-email@gmail.com}
-    
+
     read -p "SMTP Password (app password): " SMTP_PASSWORD
     SMTP_PASSWORD=${SMTP_PASSWORD:-your-app-password}
-    
+
     read -p "From Email (default: noreply@ponggame.com): " SMTP_FROM
     SMTP_FROM=${SMTP_FROM:-noreply@ponggame.com}
 else
@@ -82,6 +82,7 @@ PADDLE_HEIGHT=50
 PADDLE_WIDTH=10
 FPS=60
 PLAYER_OFFSET=20
+GAME_SCORE=3
 
 # ===== DATABASE =====
 DATABASE_URL=postgresql://postgres:password@localhost:5432/pongdb
