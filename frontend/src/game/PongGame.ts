@@ -273,4 +273,19 @@ export class PongGame {
             this.gameLoopId = undefined;
         }
 	}
+
+	//for window close on not started tournament
+	public disposeTornament(): void {
+        document.removeEventListener("keydown", this.boundHandleKeyPress);
+        document.removeEventListener("keyup", this.boundHandleKeyRelease);
+
+        //- Stop game loop
+        this.stopGameLoop();
+            this.wsHandler?.disconnect();
+            this.wsHandler = undefined;
+    }
 }
+
+
+
+

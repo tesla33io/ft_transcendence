@@ -234,7 +234,6 @@ export function registerView(router: Router) {
         showLoading();
 
         try {
-            // ✅ Send avatar ID to backend
             const registerData: RegisterRequest = {
                 username: data.username,
                 password: data.password,
@@ -242,7 +241,7 @@ export function registerView(router: Router) {
                 twoFactorEnabled: data.twoFactor
             };
 
-            console.log("📤 Sending registration request:", {
+            console.log(" Sending registration request:", {
                 username: registerData.username,
                 twoFactorEnabled: registerData.twoFactorEnabled,
                 avatarId: registerData.avatarUrl
@@ -250,13 +249,13 @@ export function registerView(router: Router) {
 
             const authResponse = await UserService.register(registerData);
 
-            console.log('✅ Registered New User:', authResponse.user.username);
-            console.log('✅ User ID:', authResponse.user.id);
+            console.log('Registered New User:', authResponse.user.username);
+            console.log('User ID:', authResponse.user.id);
 
             router.navigate("/desktop");
 
         } catch (error) {
-            console.error('❌ Registration failed:', error);
+            console.error('Registration failed:', error);
             hideLoading();
             showError(error instanceof Error ? error.message : 'Registration failed. Please try again.');
         }

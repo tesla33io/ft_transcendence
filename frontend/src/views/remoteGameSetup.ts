@@ -2,7 +2,7 @@ import { Router } from '../router';
 import { createWindow } from '../components/_components';
 import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
 import { PongGame } from '../game/PongGame';
-import { OneVOneStatsComponent } from '../components/_userComponents';
+//import { OneVOneStatsComponent } from '../components/_userComponents';
 
 export function remoteGameSetupView(router: Router) {
     const root = document.getElementById("app")!;
