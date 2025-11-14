@@ -56,11 +56,11 @@ export function createWindow(options: WindowOptions): HTMLElement {
 		// Center the window on screen
 		const windowWidth = parseInt(options.width || '400');
 		const windowHeight = parseInt(options.height || '300');
-		
+
 		// Calculate center position
 		const centerX = (window.innerWidth - windowWidth) / 2;
 		const centerY = (window.innerHeight - windowHeight) / 2;
-		
+
 		windowDiv.style.left = `${Math.max(0, centerX)}px`;
 		windowDiv.style.top = `${Math.max(0, centerY)}px`;
 	}
@@ -268,7 +268,7 @@ export class MatchHistory {
 }
 
 
-//stats component 
+//stats component
 export interface StatsData{
 	wins: number,
 	losses: number,
@@ -406,7 +406,7 @@ export class Stats {
 
 
 
-//task bar 
+//task bar
 interface TaskbarOptions {
   startButton?: {
 	label: string;
@@ -426,7 +426,7 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
   taskbar.style.borderColor = '#e7e9e6'
   taskbar.style.borderTop = '2px solid #e7e9e6'
   // Start Button
-  
+
 	const startButton = document.createElement("div");
 	startButton.className = "start-button flex items-center px-4 py-2 bg-win98-button text-win98-text cursor-pointer hover:bg-gray-600";
 	startButton.style.border = "2px solid #a5a9a6"; // Outer border
@@ -437,12 +437,12 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
 	  <img src="${start}" alt="Start" class="w-6 h-6 mr-2">
 	  <span>start</span>
 	`;
-	
-	//default logout on start button 
+
+	//default logout on start button
 	startButton.addEventListener("click",async () =>{
 		try{
 			await UserService.logout()
-			console.log("log out succesful")
+			// console.log("log out succesful")
 			if(options.router){
 				options.router?.navigate('/login');
 			}
@@ -455,9 +455,9 @@ export function createTaskbar(options: TaskbarOptions): { taskbar: HTMLElement; 
 			window.location.href = '/login'
 		}
 	})
-	
+
 	taskbar.appendChild(startButton);
-  
+
 
 
   // Task Area (Dynamic Content)

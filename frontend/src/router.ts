@@ -50,46 +50,46 @@ export class Router {
     try {
       const role = await UserService.getUserRoleSecure();
       if (!role) return false;
-      
-      console.log(`User role: ${role}`);
+
+      // console.log(`User role: ${role}`);
       return role === 'user' || role === 'admin';
     } catch (error) {
-      console.error('Failed to check user role:', error);
+      // console.error('Failed to check user role:', error);
       return false;
     }
   }
   //Navigate to desktop /guest Desktop
    public async navigateToDesktop(): Promise<void> {
-    console.log('[Router] Navigating to desktop...');
+    // console.log('[Router] Navigating to desktop...');
 
     if (!this.isAuthenticated()) {
-      console.log('Not authenticated, going to login');
+      // console.log('Not authenticated, going to login');
       await this.navigate('/login');
       return;
     }
     try {
       const isUser = await this.checkUserRole();
-      
+
       if (isUser) {
-        console.log('User role detected → /desktop');
+        // console.log('User role detected → /desktop');
         await this.navigate('/desktop');
       } else {
-        console.log('Guest role detected → /guest');
+        // console.log('Guest role detected → /guest');
         await this.navigate('/guest');
       }
     } catch (error) {
-      console.error('Error determining desktop:', error);
+      // console.error('Error determining desktop:', error);
       await this.navigate('/login');
     }
   }
 
   // navigate programmatically to a path (update history and show view)
   public async navigate(path: string, addToHistory = true): Promise<void> {
-    console.log(`Navigating to: ${path}`);
+    // console.log(`Navigating to: ${path}`);
 
     let config = this.routes.get(path);
     if (!config) {
-      console.warn(`Route not found: ${path}`);
+      // console.warn(`Route not found: ${path}`);
       path = '/404';
       config = this.routes.get('/404');
       if (!config) return;
@@ -98,13 +98,13 @@ export class Router {
     // Auth checks
     if (config.requireAuth || config.requireUser) {
       if (!this.isAuthenticated()) {
-        console.log('Auth required → /login');
-        sessionStorage.setItem('redirectAfterLogin', path);
+        // console.log('Auth required → /login');
+        // sessionStorage.setItem('redirectAfterLogin', path);
         path = '/login';
       } else if (config.requireUser) {
         const isUser = await this.checkUserRole();
         if (!isUser) {
-          console.log('User role required → /login');
+          // console.log('User role required → /login');
           alert('This feature requires a registered account.');
           sessionStorage.setItem('redirectAfterLogin', path);
           path = '/login';
