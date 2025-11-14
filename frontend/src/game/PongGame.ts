@@ -4,7 +4,7 @@ import { WebSocketHandler } from "./websocketHandler";
 import { gameView} from "../views/gamePage";
 import { Router} from "../router";
 import { tournamentRoomView } from "../views/tournamentRoomPage";
-import { ApiService } from "./apiService";  // ← ADD THIS IMPORT
+import { ApiService } from "./apiService";
 
 export class PongGame {
     private playerName: string;
@@ -176,7 +176,7 @@ export class PongGame {
                 oldCanvas.remove();
             }
 
-            this.gameView = gameView(this.router, this.wsHandler!);
+            this.gameView = gameView(this.router, this.wsHandler!, this.gameMode);
             if (!this.gameView?.canvas) {
                 console.error('Failed to create game view');
                 return;
@@ -249,7 +249,6 @@ export class PongGame {
         if (this.wsHandler) {
             this.wsHandler.setTournamentId(data.id);
         }
-        this.router.navigate("/tournamentroom");
         requestAnimationFrame(() => {
             tournamentRoomView(this.router, data, this.wsHandler!);
         });

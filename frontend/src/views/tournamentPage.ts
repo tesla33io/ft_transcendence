@@ -109,37 +109,58 @@ export function tournamentView(router: Router) {
 		root.appendChild(taskbar);
 
 	form.addEventListener("submit", async (e: Event) => {
-		e.preventDefault();
-		const alias = input.value.trim();
-		if (!alias) return;
+    e.preventDefault();
+    const alias = input.value.trim();
+    if (!alias) return;
 
-		joinClassicBtn.disabled = true;
-		joinClassicBtn.textContent = "Waiting for opponent...";
+    input.disabled = true;
+    input.style.backgroundColor = "#c0c0c0"; 
+    input.style.color = "#808080";
+    input.style.cursor = "not-allowed";
 
-		// Dispose of previous game if it exists
-		if (currentPongGame) {
-			currentPongGame.dispose();
-			currentPongGame = undefined;
-		}
+    joinClassicBtn.disabled = true;
+    joinClassicBtn.textContent = "Waiting for opponent...";
+    joinClassicBtn.style.cursor = "not-allowed";
 
-		const playerId = localStorage.getItem('userId');
-		if(!playerId) {
-			console.log('no userid found please login again');
-			return;
-		}
-		try {
-			const game = new PongGame(
-				alias,
-				playerId,
-				'tournament',
-				router
-			);
-			currentPongGame = game; // Save reference for later disposal
-			await game.joinGame();
-		} catch (error) {
-			console.error("Failed to join game:", error);
-			joinClassicBtn.disabled = false;
-			joinClassicBtn.textContent = "Join Online Game";
-		}
-	});
+    // Dispose of previous game if it exists
+    if (currentPongGame) {
+        currentPongGame.dispose();
+        currentPongGame = undefined;
+    }
+
+    const playerId = localStorage.getItem('userId');
+    if(!playerId) {
+        console.log('no userid found please login again');
+        
+        input.disabled = false;
+        input.style.backgroundColor = "";
+        input.style.color = "";
+        input.style.cursor = "";
+        joinClassicBtn.disabled = false;
+        joinClassicBtn.textContent = "Join Tournament";
+        joinClassicBtn.style.cursor = "";
+        return;
+    }
+    try {
+        const game = new PongGame(
+            alias,
+            playerId,
+            'tournament',
+            router
+        );
+        currentPongGame = game; // Save reference for later disposal
+        await game.joinGame();
+    } catch (error) {
+        console.error("Failed to join game:", error);
+        
+        input.disabled = false;
+        input.style.backgroundColor = "";
+        input.style.color = "";
+        input.style.cursor = "";
+        
+        joinClassicBtn.disabled = false;
+        joinClassicBtn.textContent = "Join Tournament";
+        joinClassicBtn.style.cursor = "";
+    }
+});
 }
