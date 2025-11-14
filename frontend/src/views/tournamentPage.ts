@@ -2,9 +2,10 @@ import { Router } from '../router';
 import { createWindow } from '../components/_components';
 import { PongGame } from '../game/PongGame';
 import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
-import {createTournamentStatsComponent} from "../components/_userComponents";
+//import {createTournamentStatsComponent} from "../components/_userComponents";
 
 let currentPongGame: PongGame | undefined = undefined;
+
 
 export function tournamentView(router: Router) {
 	const root = document.getElementById("app")!;
@@ -16,22 +17,36 @@ export function tournamentView(router: Router) {
     const staticBackground = createStaticDesktopBackground();
     staticBackground.attachToPage(root);
 
-    const statsContainer = document.createElement("div");
-    statsContainer.style.cssText = `
-        flex-shrink: 0;
-        height: 140px;
+     const titleSection = document.createElement("div");
+    titleSection.style.cssText = `
+        text-align: center;
+        margin: 0 0 12px 0;
+        padding: 12px 12px 0 12px;
     `;
+    titleSection.innerHTML = `
+        <h3 style="margin: 0; font-size: 22px; font-weight: bold;">
+            Tournament
+        </h3>
+    `;
+    content.appendChild(titleSection);
 
-	const tournamentStatsComponent = createTournamentStatsComponent({
-        container: statsContainer,
-        userId: undefined, // Will use current user's stats
-        width: '100%',
-        height: '140px',
-        showTitle: true
-    });
-
-    content.appendChild(statsContainer);
-
+    const infoSection = document.createElement("div");
+    infoSection.className = "sunken-panel";
+    infoSection.style.cssText = `
+        padding: 12px;
+        margin: 0 12px 12px 12px;
+        background: #e0e0e0;
+        text-align: center;
+    `;
+    infoSection.innerHTML = `
+        <p style="margin: 0 0 8px 0; line-height: 1.5; font-size: 15px; color: #666">
+            Compete in bracket-style tournaments against 3 other players!
+        </p>
+        <p style="margin: 0; line-height: 1.5; font-size: 15px; color: #666"> 
+            Win consecutive matches to advance through the rounds and claim the championship.
+        </p>
+    `;
+    content.appendChild(infoSection);
 
 	// Form
 	const form = document.createElement("form");
@@ -78,7 +93,7 @@ export function tournamentView(router: Router) {
 			help: true,
 			close: true,
 			onClose: () => {
-				currentPongGame?.dispose();
+				currentPongGame?.disposeTornament();
 				router.navigateToDesktop();
 			}
 		}
@@ -94,37 +109,58 @@ export function tournamentView(router: Router) {
 		root.appendChild(taskbar);
 
 	form.addEventListener("submit", async (e: Event) => {
-		e.preventDefault();
-		const alias = input.value.trim();
-		if (!alias) return;
+    e.preventDefault();
+    const alias = input.value.trim();
+    if (!alias) return;
 
-		joinClassicBtn.disabled = true;
-		joinClassicBtn.textContent = "Waiting for opponent...";
+    input.disabled = true;
+    input.style.backgroundColor = "#c0c0c0"; 
+    input.style.color = "#808080";
+    input.style.cursor = "not-allowed";
 
-		// Dispose of previous game if it exists
-		if (currentPongGame) {
-			currentPongGame.dispose();
-			currentPongGame = undefined;
-		}
+    joinClassicBtn.disabled = true;
+    joinClassicBtn.textContent = "Waiting for opponent...";
+    joinClassicBtn.style.cursor = "not-allowed";
 
-		const playerId = localStorage.getItem('userId');
-		if(!playerId) {
-			console.log('no userid found please login again');
-			return;
-		}
-		try {
-			const game = new PongGame(
-				alias,
-				playerId,
-				'tournament',
-				router
-			);
-			currentPongGame = game; // Save reference for later disposal
-			await game.joinGame();
-		} catch (error) {
-			console.error("Failed to join game:", error);
-			joinClassicBtn.disabled = false;
-			joinClassicBtn.textContent = "Join Online Game";
-		}
-	});
+    // Dispose of previous game if it exists
+    if (currentPongGame) {
+        currentPongGame.dispose();
+        currentPongGame = undefined;
+    }
+
+    const playerId = localStorage.getItem('userId');
+    if(!playerId) {
+        console.log('no userid found please login again');
+        
+        input.disabled = false;
+        input.style.backgroundColor = "";
+        input.style.color = "";
+        input.style.cursor = "";
+        joinClassicBtn.disabled = false;
+        joinClassicBtn.textContent = "Join Tournament";
+        joinClassicBtn.style.cursor = "";
+        return;
+    }
+    try {
+        const game = new PongGame(
+            alias,
+            playerId,
+            'tournament',
+            router
+        );
+        currentPongGame = game; // Save reference for later disposal
+        await game.joinGame();
+    } catch (error) {
+        console.error("Failed to join game:", error);
+        
+        input.disabled = false;
+        input.style.backgroundColor = "";
+        input.style.color = "";
+        input.style.cursor = "";
+        
+        joinClassicBtn.disabled = false;
+        joinClassicBtn.textContent = "Join Tournament";
+        joinClassicBtn.style.cursor = "";
+    }
+});
 }

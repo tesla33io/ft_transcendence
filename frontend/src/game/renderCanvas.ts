@@ -79,7 +79,7 @@ export class Renderer {
         };
     }
 
-    private clear(): void {
+    public clear(): void {
         this.ctx.fillStyle = 'black';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     }
@@ -102,17 +102,14 @@ export class Renderer {
     	);
 	}
     private drawBall(ball: Ball): void {
-        this.ctx.beginPath();
-        this.ctx.arc(
-			ball.x,
-			ball.y,
-			GAME_CONFIG.BALL.RADIUS,
-			0,
-			Math.PI * 2
-		);
         this.ctx.fillStyle = 'white';
-        this.ctx.fill();
-    }
-
+         const size = 10; // Use radius * 2 as square size
+		this.ctx.fillRect(
+			ball.x - (size / 2),  // Center horizontally
+			ball.y - (size / 2),  // Center vertically
+			size,                 // Width
+			size                  // Height
+		);
+		}
 
 }

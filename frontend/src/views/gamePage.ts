@@ -3,7 +3,7 @@ import { createWindow } from "../components/_components";
 import { createTaskbar,createStaticDesktopBackground } from "../components/_components";
 import type { WebSocketHandler } from "../game/websocketHandler";
 
-export function gameView(router: Router, wsHandler: WebSocketHandler) {
+export function gameView(router: Router, wsHandler: WebSocketHandler, gameMode?: string) {
 	const root = document.getElementById("app")!;
 	root.innerHTML = "";
 
@@ -126,19 +126,28 @@ export function gameView(router: Router, wsHandler: WebSocketHandler) {
 		const opponentText = document.createElement("p");
 		opponentText.textContent = `against ${opponentName}`; // Shorter "vs" instead of "against"
 		opponentText.className = "text-xs text-center mb-3 text-gray-600"; // Smaller text
-
-		const backToMenuBtn = document.createElement("button");
-		backToMenuBtn.textContent = "Menu"; // Shorter text
-		backToMenuBtn.className = "button px-2 py-1 text-xs"; // Smaller button
-		backToMenuBtn.addEventListener("click", () => {
-			router.navigate("/desktop");
-		});
+		
+        
 
 		// Add elements to content
 		resultContent.appendChild(resultText);
 		resultContent.appendChild(resultScore);
 		resultContent.appendChild(opponentText);
-		resultContent.appendChild(backToMenuBtn);
+		if (gameMode === 'tournament' && isWin) {
+           const waitingText = document.createElement("p");
+            waitingText.textContent = "Waiting for other players to finish...";
+            waitingText.className = "text-xs text-center text-gray-600 mt-2";
+            resultContent.appendChild(waitingText);
+        } else {
+            
+			 const backToMenuBtn = document.createElement("button");
+            backToMenuBtn.textContent = "Menu";
+            backToMenuBtn.className = "button px-2 py-1 text-xs";
+            backToMenuBtn.addEventListener("click", () => {
+                router.navigate("/desktop");
+            });
+            resultContent.appendChild(backToMenuBtn);
+        }
 
 		// Create result window (slightly bigger)
 		resultWindow = createWindow({
