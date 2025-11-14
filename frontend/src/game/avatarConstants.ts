@@ -18,7 +18,7 @@ export interface AvatarPreset {
 export const AVATAR_PRESETS: readonly AvatarPreset[] = [
     { id: 'agent', name: 'Agent', src: agent },
     { id: 'book_user', name: 'User', src: book_user },
-    { id: 'rabit', name: 'Rabit', src: rabit }
+    { id: 'rabit', name: 'Rabbit', src: rabit }
 ] as const;
 
 
