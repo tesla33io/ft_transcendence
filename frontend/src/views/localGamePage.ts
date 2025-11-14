@@ -42,6 +42,29 @@ export function localGameView(router: Router, mode: string = GAME_MODES.CLASSIC)
     gameContainer.style.flexDirection = "column";
     gameContainer.style.alignItems = "center";
 
+    // Resource display for Pellet mode (shows pellets and magnet uses)
+    if (mode === GAME_MODES.PELLET) {
+        const resourcesBar = document.createElement('div');
+        resourcesBar.style.display = 'flex';
+        resourcesBar.style.justifyContent = 'space-between';
+        resourcesBar.style.width = `${GAME_CONFIG.CANVAS.WIDTH}px`;
+        resourcesBar.style.marginBottom = '8px';
+
+        const player1Resources = document.createElement('div');
+        player1Resources.id = 'player1-resources';
+        player1Resources.style.fontWeight = 'bold';
+        player1Resources.textContent = `Pellets: ${winningScore} | Magnets: ${winningScore * 2}`;
+
+        const player2Resources = document.createElement('div');
+        player2Resources.id = 'player2-resources';
+        player2Resources.style.fontWeight = 'bold';
+        player2Resources.textContent = `Pellets: ${winningScore} | Magnets: ${winningScore * 2}`;
+
+        resourcesBar.appendChild(player1Resources);
+        resourcesBar.appendChild(player2Resources);
+        gameContainer.appendChild(resourcesBar);
+    }
+
     const canvas = document.createElement("canvas");
     canvas.id = "local-pong-canvas";
     canvas.width = GAME_CONFIG.CANVAS.WIDTH;

@@ -40,7 +40,10 @@ export class Renderer {
         // STEP 1: Calculate interpolated position
         const interpolatedBall = this.getInterpolatedBall(gameState.ball);
         this.drawBall(interpolatedBall);
-
+        
+                // Draw extra balls (if any) so multiball balls are visible/animated
+                (this as any).drawExtraBalls?.(gameState);
+        
         // STEP 2: Did the ball position change? If yes, reset interpolation
         if (!this.lastBallPosition ||
             gameState.ball.x !== this.lastBallPosition.x ||
@@ -86,21 +89,38 @@ export class Renderer {
 
     private drawPaddles(gameState: GameState): void {
         this.ctx.fillStyle = 'white';
+        const playerPaddleHeight = (gameState.player as any).paddleHeight ?? GAME_CONFIG.PADDLE.HEIGHT;
+        const opponentPaddleHeight = (gameState.opponent as any).paddleHeight ?? GAME_CONFIG.PADDLE.HEIGHT;
+
     	this.ctx.fillRect(
         gameState.player.X,
-        gameState.player.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
+        gameState.player.Y - (playerPaddleHeight / 2), // center based on dynamic height
         GAME_CONFIG.PADDLE.WIDTH,
-        GAME_CONFIG.PADDLE.HEIGHT
+        playerPaddleHeight
+    
     	);
 
     // Opponent paddle - centered around paddleY
     	this.ctx.fillRect(
         gameState.opponent.X,
-        gameState.opponent.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
-        - GAME_CONFIG.PADDLE.WIDTH,
-          GAME_CONFIG.PADDLE.HEIGHT
+        gameState.opponent.Y - (opponentPaddleHeight / 2), // center based on dynamic height
+        GAME_CONFIG.PADDLE.WIDTH,
+        opponentPaddleHeight
     	);
-	}
+ 	}
+
+    // Draw extra balls used in multiball mode
+    private drawExtraBalls(gameState: any): void {
+        const extraBalls: Ball[] | undefined = gameState.extra_balls;
+        if (!extraBalls || extraBalls.length === 0) return;
+
+        this.ctx.fillStyle = 'white';
+        for (const b of extraBalls) {
+            this.ctx.beginPath();
+            this.ctx.arc(b.x, b.y, GAME_CONFIG.BALL.RADIUS, 0, Math.PI * 2);
+            this.ctx.fill();
+        }
+    }
     private drawBall(ball: Ball): void {
         this.ctx.fillStyle = 'white';
          const size = 10; // Use radius * 2 as square size
