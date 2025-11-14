@@ -103,7 +103,7 @@ export class Renderer {
 	}
     private drawBall(ball: Ball): void {
         this.ctx.fillStyle = 'white';
-         const size = GAME_CONFIG.BALL.RADIUS * 2; // Use radius * 2 as square size
+         const size = 10; // Use radius * 2 as square size
 		this.ctx.fillRect(
 			ball.x - (size / 2),  // Center horizontally
 			ball.y - (size / 2),  // Center vertically
