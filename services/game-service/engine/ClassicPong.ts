@@ -5,7 +5,7 @@ import { Game, Player} from "../types/interfaces"
 export class ClassicPong extends GameEngine {
 	private readonly BALL_MAX_SPEED = 16
 	private readonly K = 2
-	private readonly GOAL_EDGE = 5
+	private readonly GOAL_EDGE = 10
 
 	public initializeGameState(game: Game){
 		game.player1.Y = GAME_HEIGHT / 2
@@ -28,12 +28,13 @@ export class ClassicPong extends GameEngine {
 		game.ball.x =  GAME_WIDTH / 2
 		game.ball.y = Math.random() * GAME_HEIGHT
 		game.ball.vx = Math.random() > 0.5 ? 2 : -2
-		game.ball.vy = (Math.random() * 0.5) ? 2 : -2
+		game.ball.vy = (Math.random() > 0.5) ? 2 : -2
 	}
 
 	protected updateGame(game: Game){
 		this.updateBallPosition(game)
 		this.updatePlayerScore(game)
+		this.paddleCollisionCheck(game)
 		if (this.onGameStatusUpdate)
 			this.onGameStatusUpdate(game)
 		if (game.player1.score >= this.GAME_SCORE ||
@@ -46,12 +47,12 @@ export class ClassicPong extends GameEngine {
 	}
 
 	private updatePlayerScore(game: Game){
-		if (game.ball.x < PLAYER_OFFSET - this.GOAL_EDGE){
+		if (game.ball.x < PLAYER_OFFSET - PADDLE_WIDTH){
 			game.player2.score++
 			this.ballReset(game)
 			console.log(`Player 2 (${game.player2.name}) score!`)
 		}
-		else if (game.ball.x > GAME_WIDTH - PLAYER_OFFSET + this.GOAL_EDGE){
+		else if (game.ball.x > GAME_WIDTH - PLAYER_OFFSET + PADDLE_WIDTH){
 			game.player1.score++
 			this.ballReset(game)
 			console.log(`Player 1 (${game.player1.name}) score!`)
@@ -86,11 +87,11 @@ export class ClassicPong extends GameEngine {
 	}
 
 	protected paddleCollisionCheck(game: Game): void {
-		if (game.ball.x <= game.player1.X + PADDLE_WIDTH){
+		if (game.ball.x < game.player1.X + PADDLE_WIDTH){
 			this.paddleCollision(game, game.player1)
 		}
 
-		else if (game.ball.x >= game.player2.X - PADDLE_WIDTH) {
+		else if (game.ball.x > game.player2.X - PADDLE_WIDTH) {
 			this.paddleCollision(game, game.player2)
 		}
 	}

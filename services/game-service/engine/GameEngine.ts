@@ -43,7 +43,6 @@ export abstract class GameEngine {
 		game.ball.x += game.ball.vx
 		game.ball.y += game.ball.vy
 
-		this.paddleCollisionCheck(game)
 		if (game.ball.y <= 0){
 			game.ball.y = 10
 			game.ball.vy *= -1
