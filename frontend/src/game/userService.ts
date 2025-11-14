@@ -612,47 +612,58 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
 
 
     // Get match history
-    static async getMatchHistory(userId?: number): Promise<MatchHistoryEntry[]> {
-        // TODO: Uncomment when backend is ready
-        // const endpoint = userId ? `/users/${userId}/matches` : '/users/me/matches';
-        // return await ApiService.get<MatchHistoryEntry[]>(`${endpoint}?limit=${limit}`);
-        
-        // Mock response
-        await new Promise(resolve => setTimeout(resolve, 400));
-        
-        const mockMatches: MatchHistoryEntry[] = [];
-        
-        const opponents = [
-            'AliceGamer', 'BobPro', 'CharlieWin', 'DianaFast', 'EveChampion',
-            'FrankMaster', 'GraceElite', 'HenrySkill', 'IvyStrong', 'JackSpeed'
-        ];
-        
-        for (let i = 0; i < Math.min(30, 20); i++) {
-            const isWin = Math.random() > 0.45; // Slightly favor wins
-            const userScore = isWin ? Math.floor(Math.random() * 3) + 3 : Math.floor(Math.random() * 3) + 1;
-            const opponentScore = isWin ? Math.floor(Math.random() * 3) + 1 : Math.floor(Math.random() * 3) + 3;
-            const eloChange = isWin ? Math.floor(Math.random() * 30) + 10 : -(Math.floor(Math.random() * 25) + 5);
-            
-            mockMatches.push({
-                matchId: 1000 + i,
-                opponentId: Math.floor(Math.random() * 1000) + 100,
-                opponentName: opponents[Math.floor(Math.random() * opponents.length)],
-                isWin,
-                userScore,
-                opponentScore,
-                date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-                opponentElo: Math.floor(800 + Math.random() * 1200),
-                eloGained: eloChange,
-                matchDuration: Math.floor(Math.random() * 300) + 60 // 1-6 minutes
-            });
-        }
-        
-        // Sort by date (newest first)
-        mockMatches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        
-        return mockMatches;
-    }
-
+	// Get match history
+	static async getMatchHistory(userId?: number, limit: number = 20): Promise<MatchHistoryEntry[]> {
+		try {
+			console.log('[UserService] Fetching match history...');
+			
+			// Build endpoint
+			// If userId provided, fetch that user's history (public view)
+			// Otherwise fetch current user's history
+			const endpoint = userId ? `/match-history/${userId}` : '/users/me';
+			console.log(`[UserService] Calling endpoint: ${endpoint}`);
+			
+			// Call the real endpoint through gateway
+			const response = await ApiService.get<any>(endpoint);
+			
+			console.log('[UserService] Raw match history response:', response);
+			
+			// Backend might return array directly or wrapped in object
+			const matchesData = Array.isArray(response) ? response : response.matches || response.data || [];
+			
+			// Map backend response to MatchHistoryEntry interface
+			const matches: MatchHistoryEntry[] = matchesData.map((match: any) => ({
+				matchId: match.matchId || match.id,
+				opponentId: match.opponentId || match.opponent_id,
+				opponentName: match.opponentName || match.opponent_name || 'Unknown',
+				isWin: match.isWin || match.is_win || match.result === 'win',
+				userScore: match.userScore || match.user_score || 0,
+				opponentScore: match.opponentScore || match.opponent_score || 0,
+				date: match.date || match.played_at || match.created_at || new Date().toISOString(),
+				opponentElo: match.opponentElo || match.opponent_elo || 1000,
+				eloGained: match.eloGained || match.elo_gained || match.elo_change || 0,
+				matchDuration: match.matchDuration || match.duration || match.match_duration
+			}));
+			
+			console.log(`[UserService] Mapped ${matches.length} match history entries`);
+			
+			// Sort by date (newest first)
+			matches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+			
+			return matches;
+			
+		} catch (error) {
+			console.error('[UserService] Failed to fetch match history:', error);
+			
+			// If endpoint doesn't exist yet, return empty array instead of crashing
+			if (error instanceof Error && error.message.includes('404')) {
+				console.warn('[UserService] Match history endpoint not implemented yet, returning empty array');
+				return [];
+			}
+			
+			throw new Error(`Failed to load match history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		}
+	}
 
 	private static parseUserRole(role: string | undefined): UserRole {
         if (!role) return UserRole.USER;
