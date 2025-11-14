@@ -17,7 +17,15 @@ import { setupGlobalErrorHandling } from './utils/ErrorHandling';
 import cors from '@fastify/cors';
 
 async function buildServer() {
-    const app = Fastify({ logger: true });
+  // Configure Fastify to trust proxy headers only from trusted sources
+  const trustProxy = process.env.TRUSTED_PROXY_IPS 
+    ? process.env.TRUSTED_PROXY_IPS.split(',').map(ip => ip.trim())
+    : false; // Don't trust any proxy by default
+    
+  const app = Fastify({ 
+      logger: true,
+      trustProxy: trustProxy // Only trust headers from these IPs
+  });
 
 	//only for dev 
 	await app.register(cors,{

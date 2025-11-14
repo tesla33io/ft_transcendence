@@ -3,6 +3,16 @@ import QRCode from 'qrcode';
 import crypto from 'crypto';
 import argon2 from 'argon2';
 
+/**
+ * TOTP verification window in time steps.
+ * Each time step is 30 seconds, so window: 2 allows ±60 seconds of clock drift.
+ * This accounts for:
+ * - Clock synchronization differences between server and authenticator app
+ * - Network latency
+ * - User input delay
+ */
+const TOTP_VERIFICATION_WINDOW = 2;
+
 export class TwoFactorService {
     // Generate TOTP secret for authenticator apps
     static async generateTOTPSecret(username: string, issuer: string = 'Pong Game'): Promise<{
@@ -30,7 +40,7 @@ export class TwoFactorService {
             secret: secret,
             encoding: 'base32',
             token: token,
-            window: 2 // Allow 2 time steps (60 seconds) of drift
+            window: TOTP_VERIFICATION_WINDOW
         });
     }
 
@@ -54,28 +64,47 @@ export class TwoFactorService {
         const hashedCodes = await Promise.all(
             codes.map(code => argon2.hash(code))
         );
-        return JSON.stringify(hashedCodes); // In production, hash these with argon2
+        return JSON.stringify(hashedCodes);
     }
 
     // Verify backup code
-    static async verifyBackupCode(code: string, hashedCodes: string): Promise<boolean> {
+    static async verifyBackupCode(code: string, hashedCodes: string): Promise<{ valid: boolean; matchedIndex: number }> {
         try {
             const storedHashes: string[] = JSON.parse(hashedCodes);
+
+            if (!Array.isArray(storedHashes)) {
+                console.error('Backup codes data is not an array');
+                return { valid: false, matchedIndex: -1 };
+            }
             
             // Hash the input code and compare with stored hashes
-            for (const storedHash of storedHashes) {
+            for (let i = 0; i < storedHashes.length; i++) {
+                const storedHash = storedHashes[i];
                 try {
                     if (await argon2.verify(storedHash, code)) {
-                        return true;
+                        return { valid: true, matchedIndex: i };
                     }
-                } catch {
-                    // If verification fails, continue to next hash
+                    // If verification returns false, continue to next hash (expected behavior)
+                } catch (error: any) {
+                    // argon2.verify can throw for corrupted hashes or system errors
+                    // Log unexpected errors but don't expose details to caller
+                    const errorMessage = error?.message || String(error);
+                    
+                    // Argon2 verification failures are expected for invalid codes
+                    // Only log unexpected errors (corrupted hashes, system issues)
+                    if (!errorMessage.includes('Argon2') && !errorMessage.includes('verification')) {
+                        console.error('Unexpected error during backup code verification:', errorMessage);
+                    }
+                    // Continue to next hash
                     continue;
                 }
             }
-            return false;
-        } catch {
-            return false;
+            return { valid: false, matchedIndex: -1 };
+        } catch (error: any) {
+            // JSON.parse failed - corrupted data structure
+            const errorMessage = error?.message || String(error);
+            console.error('Failed to parse backup codes JSON:', errorMessage);
+            return { valid: false, matchedIndex: -1 };
         }
     }
 }

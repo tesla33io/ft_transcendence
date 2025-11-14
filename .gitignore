@@ -181,3 +181,6 @@ build/
 .vscode/
 
 *.cookies.txt
+# Cookie files from curl/testing (contain session IDs)
+cookies*.txt
+test_cookies*.txt

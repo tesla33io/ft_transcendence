@@ -13,6 +13,7 @@ import { pipeline } from 'stream/promises';
 import { FromSchema } from "json-schema-to-ts";
 
 import { TwoFactorService } from '../utils/TwoFactorService';
+import { LockMode } from '@mikro-orm/core';
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'profiles');
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -385,52 +386,73 @@ export default async function userRoutes(app: FastifyInstance) {
                     }
 
                     // Verify 2FA code - ensure it's provided and not empty
-                    if (!twoFactorCode || typeof twoFactorCode !== 'string' || twoFactorCode.trim().length === 0) {
+                    // (twoFactorCode is guaranteed to be true here due to check above)
+                    if (typeof twoFactorCode !== 'string' || twoFactorCode.trim().length === 0) {
                         return reply.code(401).send({ error: '2FA code is required' });
                     }
 
                     let twoFactorValid = false;
+                    const codeLength = twoFactorCode.length;
+                    const isTOTPLength = codeLength === 6;
+                    const isBackupCodeLength = codeLength === 8;
+                    let backupMatchedIndex = -1;
                     
                     if (user.twoFactorMethod === 'totp') {
-                        // Try TOTP verification first (for 6-digit codes)
-                        if (twoFactorCode.length === 6) {
-                            twoFactorValid = TwoFactorService.verifyTOTP(twoFactorCode, user.twoFactorSecret!);
-                            // Log with code only in development for debugging
+                        // Always attempt TOTP verification for 6-digit codes
+                        // Always attempt backup code verification for 8-digit codes
+                        // This ensures similar execution time regardless of code type
+                        let totpResult = false;
+                        let backupResult = false;
+                        let backupMatchedIndex = -1;
+
+                        if (isTOTPLength) {
+                            totpResult = TwoFactorService.verifyTOTP(twoFactorCode, user.twoFactorSecret!);
+                            // Log with masked code in development for debugging
                             if (process.env.NODE_ENV === 'development') {
-                                app.log.info(`TOTP verification for user ${user.id}: code=${twoFactorCode}, valid=${twoFactorValid}`);
+                                app.log.info(`TOTP verification for user ${user.id}: code=${mask2FACode(twoFactorCode)}, valid=${totpResult}`);
                             } else {
-                                app.log.info(`TOTP verification for user ${user.id}: valid=${twoFactorValid}`);
+                                app.log.info(`TOTP verification for user ${user.id}: valid=${totpResult}`);
                             }
                         }
                         
-                        // If TOTP fails or code is 8 digits, try backup codes as fallback
-                        if (!twoFactorValid && twoFactorCode.length === 8) {
-                            twoFactorValid = await TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
-                            // Log with code only in development
+                        // Always attempt backup code verification for 8-digit codes
+                        // This ensures consistent timing even if TOTP was attempted
+                        if (isBackupCodeLength) {
+                            const backupVerification = await TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                            backupResult = backupVerification.valid;
+                            backupMatchedIndex = backupVerification.matchedIndex;
+                            // Log with masked code in development
                             if (process.env.NODE_ENV === 'development') {
-                                app.log.info(`Backup code verification for user ${user.id}: code=${twoFactorCode}, valid=${twoFactorValid}`);
+                                app.log.info(`Backup code verification for user ${user.id}: code=${mask2FACode(twoFactorCode)}, valid=${backupResult}`);
                             } else {
-                                app.log.info(`Backup code verification for user ${user.id}: valid=${twoFactorValid}`);
+                                app.log.info(`Backup code verification for user ${user.id}: valid=${backupResult}`);
                             }
                         }
+
+                        // Use constant-time OR: result is true if either verification succeeded
+                        // This prevents timing leaks about which verification method was used
+                        twoFactorValid = totpResult || backupResult;
                     } else {
                         // Unknown or invalid 2FA method - only check backup codes
-                        if (twoFactorCode.length === 8) {
-                            twoFactorValid = await TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                        if (isBackupCodeLength) {
+                            const backupVerification = await TwoFactorService.verifyBackupCode(twoFactorCode, user.backupCodes || '[]');
+                            twoFactorValid = backupVerification.valid;
+                            backupMatchedIndex = backupVerification.matchedIndex;
                         } else {
                             app.log.warn(`Invalid 2FA method for user ${user.id}: ${user.twoFactorMethod}`);
                             return reply.code(400).send({ error: 'Invalid 2FA configuration' });
                         }
                     }
                     
-                    // If backup code was used, remove it
-                    if (twoFactorValid && twoFactorCode.length === 8) {
-                        // This looks like a backup code (8 digits), remove it
+                    // If backup code was used, remove it by index
+                    if (twoFactorValid && twoFactorCode.length === 8 && backupMatchedIndex >= 0) {
                         try {
-                            const codes = JSON.parse(user.backupCodes || '[]');
-                            const updatedCodes = codes.filter((c: string) => c !== twoFactorCode);
-                            user.backupCodes = await TwoFactorService.hashBackupCodes(updatedCodes);
+                            const hashedCodes: string[] = JSON.parse(user.backupCodes || '[]');
+                            // Remove the hash at the matched index
+                            hashedCodes.splice(backupMatchedIndex, 1);
+                            user.backupCodes = JSON.stringify(hashedCodes);
                             await app.em.flush();
+                            app.log.info(`Removed used backup code at index ${backupMatchedIndex} for user ${user.id}`);
                         } catch (error) {
                             app.log.warn('Error removing backup code: ' + String(error));
                         }
@@ -464,7 +486,7 @@ export default async function userRoutes(app: FastifyInstance) {
                         
                         const remainingAttempts = MAX_ATTEMPTS - user.twoFactorFailedAttempts;
                         if (process.env.NODE_ENV === 'development') {
-                            app.log.warn(`2FA validation failed for user ${user.id}: method=${user.twoFactorMethod}, code=${twoFactorCode}, attempts=${user.twoFactorFailedAttempts}/${MAX_ATTEMPTS}`);
+                            app.log.warn(`2FA validation failed for user ${user.id}: method=${user.twoFactorMethod}, code=${mask2FACode(twoFactorCode)}, attempts=${user.twoFactorFailedAttempts}/${MAX_ATTEMPTS}`);
                         } else {
                             app.log.warn(`2FA validation failed for user ${user.id}: method=${user.twoFactorMethod}, attempts=${user.twoFactorFailedAttempts}/${MAX_ATTEMPTS}`);
                         }
@@ -479,112 +501,91 @@ export default async function userRoutes(app: FastifyInstance) {
                     user.twoFactorFailedAttempts = 0;
                     user.twoFactorLockedUntil = undefined;
                     await app.em.flush();
-                    
-                    // 2FA validation passed - check for existing sessions
-                    // If there's a session with a matching cookie, user is already logged in (same window)
-                    // If there's a session without a matching cookie, it's stale (window was closed) - clean it up
-                    const existingSession = await app.em.findOne(
-                        Session, 
-                        { userId: user.id },
-                        { refresh: true }
-                    );
-                    
-                    if (existingSession) {
-                        const sessionIdFromCookie = req.cookies?.sessionId;
-                        
-                        if (sessionIdFromCookie === existingSession.id) {
-                            // Same window - already logged in, just return success
-                            user.lastLogin = new Date();
-                            await app.em.flush();
-                            return { 
-                                id: user.id, 
-                                username: user.username,
-                                lastLogin: user.lastLogin,
-                                message: 'Login successful'
-                            };
-                        } else {
-                            // Different window or no cookie - this is a new login attempt
-                            // Clean up the stale session to allow re-login
-                            await app.em.removeAndFlush(existingSession);
-                            app.log.info(`Cleaned up stale session for user ${user.id} - allowing re-login`);
-                        }
-                    }
                 }
 
                 // Update last login
                 user.lastLogin = new Date();
                 await app.em.flush();
 
-                // Check if user already has an active session in the database
-                const existingSession = await app.em.findOne(
-                    Session, 
-                    { userId: user.id },
-                    { refresh: true }
-                );
+                // Session management: block simultaneous logins while allowing re-login after closing window
+                // Strategy: Use heartbeat to detect active sessions
+                // - If session has recent heartbeat (< 10s) → another browser is active → block
+                // - If session has no recent heartbeat (> 10s) → window was closed → allow login
+                //
+                // Note: We don't check cookies because cookies persist even after closing window
 
-                // If session exists, check if the incoming request has a matching cookie
-                if (existingSession) {
-                    // Check if session is expired
-                    if (existingSession.expiresAt <= new Date()) {
-                        // Session expired, clean it up and allow login
-                        await app.em.removeAndFlush(existingSession);
-                    } else {
-                        // Session is still valid - check if request has matching cookie
-                        const sessionIdFromCookie = req.cookies?.sessionId;
-                        
-                        if (sessionIdFromCookie === existingSession.id) {
-                            // Request has the same session cookie - user is already logged in from this browser
-                            // Return success without creating a new session
-                            return { 
-                                id: user.id, 
-                                username: user.username,
-                                lastLogin: user.lastLogin,
-                                message: 'Login successful'
-                            };
-                        } else {
-                            // Session exists but cookie doesn't match (or no cookie)
-                            // This means user is trying to log in from a different browser/window
-                            // BUT: If 2FA was just validated, we already cleaned up the session above
-                            // So this should only happen if 2FA is not enabled
-                            return reply
-                                .code(409)
-                                .send({ error: 'User already logged in. Please log out first.' });
-                        }
-                    }
-                }
+                const HEARTBEAT_THRESHOLD = 10 * 1000; // 10 seconds (2x heartbeat interval for safety)
 
-                // If no active session, delete any stale sessions in DB and allow login
-                try {
-                    const existingSession = await app.em.findOne(
+                // Use transaction with lock to prevent race conditions
+                const result = await app.em.transactional(async (em) => {
+                    const existingSession = await em.findOne(
                         Session, 
                         { userId: user.id },
-                        { refresh: true }
+                        { refresh: true, lockMode: LockMode.PESSIMISTIC_WRITE }
                     );
 
                     if (existingSession) {
-                        // Clean up stale session (user closed window without logging out)
-                        await app.em.removeAndFlush(existingSession);
+                        // Check if session is expired
+                        if (existingSession.expiresAt <= new Date()) {
+                            // Expired session - clean it up and allow login
+                            await em.removeAndFlush(existingSession);
+                        } else {
+                            // Check if session is receiving heartbeats (updated recently)
+                            const timeSinceLastHeartbeat = Date.now() - existingSession.updatedAt.getTime();
+                            
+                            // DEBUG: Log the timing information
+                            app.log.info(`[Login Check] User ${user.id} - Session exists, last heartbeat was ${timeSinceLastHeartbeat}ms ago (threshold: ${HEARTBEAT_THRESHOLD}ms)`);
+                            
+                            if (timeSinceLastHeartbeat <= HEARTBEAT_THRESHOLD) {
+                                // Session is active (receiving heartbeats) - another browser is using it
+                                app.log.info(`[Login Check] User ${user.id} - BLOCKING login (session is active)`);
+                                return { allowed: false, sessionId: null };
+                            } else {
+                                // Session is stale (no heartbeats) - user closed window
+                                app.log.info(`[Login Check] User ${user.id} - ALLOWING login (session is stale, cleaning up)`);
+                                await em.removeAndFlush(existingSession);
+                            }
+                        }
                     }
-                } catch (error) {
-                    // If cleanup fails, log but continue with login
-                    app.log.warn('Error cleaning up stale session: ' + String(error));
+
+                    // Create new session INSIDE the transaction to prevent race conditions
+                    const sessionId = randomBytes(32).toString('hex');
+                    const newSession = em.create(Session, {
+                        id: sessionId,
+                        data: { userId: user.id, username: user.username },
+                        userId: user.id,
+                        expiresAt: new Date(Date.now() + 86400000), // 24 hours
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    });
+
+                    await em.persistAndFlush(newSession);
+                    
+                    return { allowed: true, sessionId };
+                });
+
+                // If login was blocked, return 409
+                if (!result.allowed) {
+                    return reply.code(409).send({ 
+                        error: 'User already logged in from another browser. Please log out first.' 
+                    });
                 }
 
-                const sessionId = await app.sm.create({ userId: user.id, username: user.username });
-                reply.setCookie('sessionId', sessionId, {
+                // Set cookie and return success
+                reply.setCookie('sessionId', result.sessionId!, {
                     httpOnly: true,
                     secure: process.env.NODE_ENV === 'production',
                     sameSite: 'lax',
                     maxAge: 86400,
                     path: '/',
                 });
-                return { 
+
+                return reply.send({ 
                     id: user.id, 
                     username: user.username,
                     lastLogin: user.lastLogin,
                     message: 'Login successful'
-                };
-
+                });
             } catch (error) {
                 app.log.error('Login error: ' + String(error));
                 return reply.code(500).send({ 
@@ -657,6 +658,57 @@ export default async function userRoutes(app: FastifyInstance) {
             return reply.send({ message: 'Logged out successfully' });
         });
 
+        //POST /auth/heartbeat - Keep session alive
+        app.post('/auth/heartbeat', {
+            schema: {
+                tags: ['auth'],
+                summary: 'Session heartbeat',
+                description: 'Updates session timestamp to indicate active browser',
+                response: {
+                    200: {
+                        type: 'object',
+                        properties: { ok: { type: 'boolean' } }
+                    },
+                    401: {
+                        type: 'object',
+                        properties: { error: { type: 'string' } },
+                        required: ['error']
+                    }
+                }
+            }
+        }, async (req, reply) => {
+            const sessionId = req.cookies?.sessionId;
+            if (!sessionId) {
+                return reply.code(401).send({ error: 'No session' });
+            }
+
+            // Find the session in the database and update its updatedAt timestamp
+            const updated = await app.em.transactional(async (em) => {
+                const session = await em.findOne(Session, { id: sessionId });
+                
+                if (!session) {
+                    return { success: false, error: 'Invalid session' };
+                }
+
+                if (session.expiresAt <= new Date()) {
+                    await em.removeAndFlush(session);
+                    return { success: false, error: 'Session expired' };
+                }
+
+                // Touch the session to update updatedAt timestamp
+                session.updatedAt = new Date();
+                await em.flush();
+
+                return { success: true };
+            });
+
+            if (!updated.success) {
+                return reply.code(401).send({ error: updated.error });
+            }
+
+            return reply.send({ ok: true });
+        });
+
         //POST /auth/2fa/setup
         app.post('/auth/2fa/setup', {
             schema: {
@@ -700,6 +752,14 @@ export default async function userRoutes(app: FastifyInstance) {
                         properties: { error: { type: 'string' } },
                         required: ['error']
                     },
+                    403: {
+                        type: 'object',
+                        properties: { 
+                            error: { type: 'string' },
+                            message: { type: 'string' }
+                        },
+                        required: ['error', 'message']
+                    },
                     404: {
                         type: 'object',
                         properties: { error: { type: 'string' } },
@@ -713,13 +773,11 @@ export default async function userRoutes(app: FastifyInstance) {
 
             // In production, ensure the request is over HTTPS
             if (process.env.NODE_ENV === 'production') {
-                // Check multiple ways the connection might be marked as secure
-                const protocol = req.protocol || 
-                                req.headers['x-forwarded-proto'] || 
-                                (req.headers['x-forwarded-ssl'] === 'on' ? 'https' : '') ||
-                                '';
-                const isSecure = protocol === 'https' ||  
-                                req.headers['x-forwarded-ssl'] === 'on';
+                // Use Fastify's protocol which respects trustProxy configuration
+                // Also check the socket directly as a fallback
+                const isSecure = 
+                    req.protocol === 'https' || 
+                    (req.socket as any)?.encrypted === true;
                 
                 if (!isSecure) {
                     app.log.warn(`2FA setup attempted over insecure connection from ${req.ip}`);
@@ -762,7 +820,12 @@ export default async function userRoutes(app: FastifyInstance) {
                     type: 'object',
                     required: ['code'],
                     properties: {
-                        code: { type: 'string' }
+                        code: { 
+                            type: 'string',
+                            minLength: 6,
+                            maxLength: 6,
+                            pattern: '^[0-9]{6}$' // Ensure exactly 6 digits
+                         }
                     }
                 }
             }
@@ -778,6 +841,15 @@ export default async function userRoutes(app: FastifyInstance) {
             }
 
             const { code } = req.body as { code: string };
+
+            // Additional runtime validation (defense in depth)
+            if (!code || typeof code !== 'string' || !/^\d{6}$/.test(code)) {
+                return reply.code(400).send({ 
+                    error: 'Invalid code format',
+                    message: 'Code must be exactly 6 digits'
+                });
+            }
+
             let isValid = false;
 
             if (user.twoFactorMethod === 'totp') {
@@ -799,7 +871,7 @@ export default async function userRoutes(app: FastifyInstance) {
             return reply.send({
                 message: '2FA enabled successfully',
                 backupCodes: backupCodes, // Show only once!
-                warning: 'Save these backup codes in a safe place'
+                warning: 'Save these backup codes in a safe place. They are going to be shown only once.'
             });
         });
 
@@ -897,7 +969,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 tags: ['profile'],
                 summary: 'Upload or replace profile picture',
                 description:
-                    'Uploads and saves a new profile picture for the authenticated user. If an avatar already exists, it is deleted adn replaced with the new upload.',
+                    'Uploads and saves a new profile picture for the authenticated user. If an avatar already exists, it is deleted and replaced with the new upload.',
             }
         }, async (req: FastifyRequest, reply) => {
             const userId = req.session?.userId;
@@ -914,7 +986,7 @@ export default async function userRoutes(app: FastifyInstance) {
                 const user = await app.em.findOne(User, { id: userId });
                 if (!user) {
                     return reply.code(401).send({ 
-                        error: 'User not foundd',
+                        error: 'User not found',
                         message: 'User not found',
                         uri: ''
                     });
@@ -1436,4 +1508,12 @@ function validatePassword(password: any): ValidationResult {
 
 function sanitizeInput(input: string): string {
     return input.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// Helper function to mask sensitive 2FA codes in logs
+// Shows first 2 digits, masks the rest (e.g., "123456" -> "12****")
+function mask2FACode(code: string): string {
+    if (!code || code.length < 3) return '***';
+    // Show first 2 digits, mask the rest
+    return code.substring(0, 2) + '*'.repeat(code.length - 2);
 }

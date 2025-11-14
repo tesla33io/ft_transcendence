@@ -10,7 +10,6 @@ export function setupGlobalErrorHandling(app: FastifyInstance) {
         const isValidationError = 
             error.validation || 
             error.code === 'FST_ERR_VALIDATION' ||
-            error.code === 'FST_ERR_VALIDATION' ||
             (error.statusCode === 400 && (
                 error.message?.includes('must be equal to one of the allowed values') ||
                 error.message?.includes('must match') ||
