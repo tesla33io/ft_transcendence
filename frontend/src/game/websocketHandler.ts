@@ -80,7 +80,7 @@ export class WebSocketHandler {
     }
 
     public sendTournamentReady(): void {
-        console.log('send Tournament ready message with tournament id',this.tournamentId, 'and player id', this.playerId);
+        // console.log('send Tournament ready message with tournament id',this.tournamentId, 'and player id', this.playerId);
 		if (!this.tournamentId) {
             // console.error("No tournamentId set for ready message!");
             return;

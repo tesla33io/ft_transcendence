@@ -244,7 +244,7 @@ export class PongGame {
     }
 
     private handleTournamentNotification(data: any): void {
-        console.log('Tournament notification received...');
+        // console.log('Tournament notification received...');
         this.gameId = data.id || '';
         if (this.wsHandler) {
             this.wsHandler.setTournamentId(data.id);
