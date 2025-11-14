@@ -3,11 +3,11 @@ import { GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH, PLAYER_OFFSET } f
 import { Game, Player} from "../types/interfaces"
 
 export class ClassicPong extends GameEngine {
-	private maxBallSpeed = 18
+	private maxBallSpeed = 18 
 
 	public initializeGameState(game: Game){
 		game.player1.Y = GAME_HEIGHT / 2
-		game.player1.X = PLAYER_OFFSET + PLAYER_OFFSET
+		game.player1.X = PLAYER_OFFSET + (PLAYER_OFFSET / 2) 
 		game.player1.score = 0
 
 		game.player2.Y = GAME_HEIGHT / 2
