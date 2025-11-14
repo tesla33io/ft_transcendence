@@ -47,12 +47,14 @@ export class ClassicPong extends GameEngine {
 	}
 
 	private updatePlayerScore(game: Game){
-		if (game.ball.x < PLAYER_OFFSET - PADDLE_WIDTH){
+		if (game.ball.x < PLAYER_OFFSET - PADDLE_WIDTH &&
+				game.ball.vx < 0){
 			game.player2.score++
 			this.ballReset(game)
 			console.log(`Player 2 (${game.player2.name}) score!`)
 		}
-		else if (game.ball.x > GAME_WIDTH - PLAYER_OFFSET + PADDLE_WIDTH){
+		else if (game.ball.x > GAME_WIDTH - PLAYER_OFFSET + PADDLE_WIDTH &&
+				game.ball.vx > 0){
 			game.player1.score++
 			this.ballReset(game)
 			console.log(`Player 1 (${game.player1.name}) score!`)
@@ -87,11 +89,11 @@ export class ClassicPong extends GameEngine {
 	}
 
 	protected paddleCollisionCheck(game: Game): void {
-		if (game.ball.x < game.player1.X + PADDLE_WIDTH){
+		if (game.ball.x < game.player1.X + PADDLE_WIDTH && game.ball.vx < 0){
 			this.paddleCollision(game, game.player1)
 		}
 
-		else if (game.ball.x > game.player2.X - PADDLE_WIDTH) {
+		else if (game.ball.x > game.player2.X - PADDLE_WIDTH && game.ball.vx > 0) {
 			this.paddleCollision(game, game.player2)
 		}
 	}
@@ -101,6 +103,7 @@ export class ClassicPong extends GameEngine {
 			game.ball.y <= player.Y + 2 )){
 			game.ball.vx = game.ball.vx < 0 ? -2 : 2
 			game.ball.vx *= -1
+			// console.log(`ball colided with paddle player ${player.name} ball: ${game.ball.x} paddle ${game.player1.X} `)
 		}
 
 		else if ((game.ball.y === player.Y - PADDLE_HEIGHT / 2 - this.K ||
@@ -110,6 +113,7 @@ export class ClassicPong extends GameEngine {
 				game.ball.vx = game.ball.vx < 0 ? -this.BALL_MAX_SPEED : this.BALL_MAX_SPEED
 			game.ball.vx *= -1
 			game.ball.vy *= -1
+			// console.log(`ball colided with paddle player ${player.name} ball: ${game.ball.x} paddle ${game.player1.X} `)
 		}
 
 		else if ((game.ball.y >= player.Y - PADDLE_HEIGHT / 2 &&
@@ -118,6 +122,7 @@ export class ClassicPong extends GameEngine {
 			if (Math.abs(game.ball.vx) > this.BALL_MAX_SPEED)
 				game.ball.vx = game.ball.vx < 0 ? -this.BALL_MAX_SPEED : this.BALL_MAX_SPEED
 			game.ball.vx *= -1
+			// console.log(`ball colided with paddle player ${player.name} ball: ${game.ball.x} paddle ${game.player1.X} `)
 		}
 	}
 }
