@@ -20,13 +20,24 @@ export function aiGameSetupView(router: Router) {
 	const playerVsAIContainer = document.createElement('div');
     playerVsAIContainer.className = "col-span-1 bg-gray-200";
 
-	 const playerVsAIComponent = createPlayerVsAIStatsComponent({
-        container: playerVsAIContainer,
-
-        width: '100%',
-        height: '140px',
-        showTitle: true
-    });
+    const infoSection = document.createElement("div");
+    infoSection.className = "field-row-stacked mb-4 p-4";
+    infoSection.innerHTML = `
+        <div style="text-align: center; margin-bottom: 16px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 16px; font-weight: bold;">
+                Man vs Machine
+            </h3>
+            <h2> Challenge the AI</h2>
+			
+			<p style="margin: 0 0 8px 0; line-height: 1.5; color: #000;">
+                Test your skills against our intelligent AI opponent!
+            </p>
+            <p style="margin: 0; line-height: 1.5; color: #000; font-size: 13px;"> 
+                Perfect for practice or casual games when no human opponents are available.
+            </p>
+        </div>
+		`;
+	content.appendChild(infoSection)
 
 	content.appendChild( playerVsAIContainer );
 

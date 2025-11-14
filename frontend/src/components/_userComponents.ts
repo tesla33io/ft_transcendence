@@ -470,14 +470,6 @@ export class SimpleFriendsActionsComponent {
                         onClose: () => this.onRefreshFriends?.()
                     }));
                     break;
-                case 'invite':
-                    document.body.appendChild(createIncomingRequestsWindow({
-                        onAccept: async (username) => {
-                            await UserService.acceptFriendRequest(username);
-                            this.onRefreshFriends?.();
-                        }
-                    }));
-                    break;
                 case 'refresh_friends_list':
                     this.onRefreshFriends?.();
                     break;

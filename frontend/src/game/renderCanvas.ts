@@ -97,8 +97,8 @@ export class Renderer {
     	this.ctx.fillRect(
         gameState.opponent.X,
         gameState.opponent.Y - (GAME_CONFIG.PADDLE.HEIGHT / 2), // Subtract half height to center
-        GAME_CONFIG.PADDLE.WIDTH,
-        GAME_CONFIG.PADDLE.HEIGHT
+        - GAME_CONFIG.PADDLE.WIDTH,
+          GAME_CONFIG.PADDLE.HEIGHT
     	);
 	}
     private drawBall(ball: Ball): void {
