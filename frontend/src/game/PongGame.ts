@@ -269,6 +269,7 @@ export class PongGame {
 	private stopGameLoop(): void{
 		if (this.gameLoopId) {
             cancelAnimationFrame(this.gameLoopId);
+			this.renderer?.clear();
             this.gameLoopId = undefined;
         }
 	}
