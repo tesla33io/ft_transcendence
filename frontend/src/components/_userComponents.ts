@@ -2,7 +2,7 @@
 
 import { UserService } from '../game/userService';
 import { createWindow } from '../components/_components';
-import type { Friend, FriendRequest } from '../game/userService';
+import type { Friend } from '../game/userService';
 import type { 
     OneVOneStatistics, 
     PlayerVsAIStatistics, 
