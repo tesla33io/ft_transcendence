@@ -18,6 +18,63 @@ import {settingsView} from './views/settingsPage'
 import { notFoundView } from './views/notFoundPage'
 import { localModeSelectionView } from './views/localGameModeSelection.ts'
 
+// ===== SESSION HEARTBEAT =====
+// Send periodic heartbeat to keep session alive while browser is open
+// This allows the backend to distinguish between:
+// - Active session (another browser open) → block login
+// - Stale session (window closed, no heartbeat) → allow re-login
+
+let heartbeatInterval: number | null = null;
+
+function startHeartbeat() {
+    // Send heartbeat every 5 seconds
+    heartbeatInterval = window.setInterval(async () => {
+        try {
+            // Check if we have a session cookie
+            const sessionId = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('sessionId='))
+                ?.split('=')[1];
+            
+            if (sessionId) {
+                // Send heartbeat to keep session alive
+                await fetch('http://localhost:3000/users/auth/heartbeat', {
+                    method: 'POST',
+                    credentials: 'include', // Include cookies
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } else {
+                // No session cookie, stop heartbeat
+                stopHeartbeat();
+            }
+        } catch (error) {
+            console.error('[Heartbeat] Error:', error);
+        }
+    }, 5000); // Every 5 seconds
+    
+    console.log('[Heartbeat] Started');
+}
+
+function stopHeartbeat() {
+    if (heartbeatInterval !== null) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+        console.log('[Heartbeat] Stopped');
+    }
+}
+
+// Start heartbeat when authenticated
+export function enableHeartbeat() {
+    startHeartbeat();
+}
+
+// Stop heartbeat on logout
+export function disableHeartbeat() {
+    stopHeartbeat();
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
     const router = new Router("app");
 
@@ -49,10 +106,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const isAuthenticated = await AuthService.checkAuth(router);
     if (isAuthenticated) {
-        //console.log('[App] User is authenticated');
-
+        // Start heartbeat for authenticated users
+        startHeartbeat();  // ADD THIS LINE
+        
         //user is on login/register page, redirect to their desktop
-        if (currentPath === '/login' || currentPath === '/register' || currentPath === '/') {
+        // But allow staying on '/' (root) even when authenticated
+        if (currentPath === '/login' || currentPath === '/register') {
             //console.log('[App] Already logged in - redirecting to desktop');
             const landingPage = await AuthService.getLandingPage();
             router.navigate(landingPage);
