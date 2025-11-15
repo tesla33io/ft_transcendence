@@ -66,7 +66,7 @@ export function loginView(router: Router) {
     const loginBtn = document.createElement("button");
     loginBtn.id = "loginBtn";
     loginBtn.textContent = "Login";
-    
+
 
     const registerBtn = document.createElement("button");
     registerBtn.id = "registerBtn";
@@ -101,7 +101,7 @@ export function loginView(router: Router) {
     loginBtn.addEventListener("click", async () => {
         const username = usernameInput.value.trim();
         const password = passwordInput.value.trim();
-        
+
         // Basic validation
         if (!username || !password) {
             showError("Please enter both username and password");
@@ -155,7 +155,7 @@ export function loginView(router: Router) {
             const credentials: LoginRequest = {
                 username: username,
                 password: password
-                // add later twoFactorCode 
+                // add later twoFactorCode
             };
 
             console.log('login request:', credentials);
@@ -197,7 +197,7 @@ export function loginView(router: Router) {
         try {
             console.log('🎮 Guest login request');
 
-            const response = await fetch('http://localhost:3000/api/v1/auth/guest', {
+            const response = await fetch(`http://${window.location.hostname}:3000/api/v1/auth/guest`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -224,7 +224,7 @@ export function loginView(router: Router) {
             localStorage.setItem('userId', data.id.toString());
             localStorage.setItem('username', data.username);
 
-            
+
             router.navigate("/guest");
 
         } catch (error) {

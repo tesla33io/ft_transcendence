@@ -2,6 +2,7 @@ import '../types/fastify';
 import { FastifyInstance } from 'fastify';
 import argon2 from 'argon2';
 import { User } from '../entities/User';
+import { Session } from '../entities/Session';
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { mkdir, unlink } from 'fs/promises'; // adjust import line at top of users.ts
 
@@ -308,6 +309,23 @@ export default async function userRoutes(app: FastifyInstance) {
                     // Generate tokens
                     // const deviceInfo = extractDeviceInfo(req);
 
+                    // Check if user is already logged in
+                   /* const existingSession = await app.em.findOne(
+                        Session, 
+                        { userId: user.id },
+                        { refresh: true } // <-- force DB fetch, bypass cached entity
+                    );
+
+                    if (existingSession) {
+                        if (existingSession.expiresAt <= new Date()) {
+                            await app.em.removeAndFlush(existingSession);
+                        } else {
+                            return reply
+                                .code(409)
+                                .send({ error: 'User already logged in. Please log out first.' });
+                        }
+                    }*/
+
                     const sessionId = await app.sm.create({ userId: user.id, username: user.username });
                     reply.setCookie('sessionId', sessionId, {
                         httpOnly: true,
@@ -330,6 +348,34 @@ export default async function userRoutes(app: FastifyInstance) {
                         details: 'Unable to process login at this time'
                     });
                 }
+            });
+
+            // POST users/auth/logout
+            app.post('/auth/logout', {
+                schema: {
+                    tags: ['auth'],
+                    summary: 'Logout current user',
+                    description: 'Destroys the active session and clears session cookies.',
+                    response: {
+                        200: {
+                            type: 'object',
+                            properties: { message: { type: 'string' } },
+                            required: ['message'],
+                        },
+                        401: ErrorSchema,
+                    },
+                },
+            }, async (req, reply) => {
+                const sessionId = req.cookies.sessionId;
+                if (!sessionId) {
+                    reply.clearCookie('sessionId');
+                    return reply.send({ message: 'Already logged out' });
+                }
+
+                await app.sm.destroy(sessionId);
+                req.session = {};
+                reply.clearCookie('sessionId');
+                return reply.send({ message: 'Logged out successfully' });
             });
 
             // GET users/me

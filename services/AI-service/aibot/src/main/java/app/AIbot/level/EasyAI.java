@@ -8,20 +8,39 @@ public class EasyAI implements AIbot {
 	private static final long COOLDOWN_MS = 1000;
 	private int paddleY = -1;
 	private int desireY = -1;
+	private String player_offset_str = System.getenv("PLAYER_OFFSET") != null ? System.getenv("PLAYER_OFFSET") : "20";
+	private int PLAYER_OFFSET = Integer.parseInt(player_offset_str);
 
 	@Override
 	public BotAction decideAction(GameState gameState, boolean update){
 		int ballY = gameState.getBallY();
 		int ballX = gameState.getBallX();
+		int ballVx = gameState.getBallVx();
 
 		if (update){
 			this.paddleY = gameState.getY();
-			int frame_to_reach = gameState.getBallVx() != 0 ? (gameState.getX() - ballX) / gameState.getBallVx() : 0;
-			this.desireY = ballY + gameState.getBallVy() * frame_to_reach;
+			if ((gameState.getX() == PLAYER_OFFSET && ballVx > 0) ||
+				(gameState.getX() == 900 - PLAYER_OFFSET && ballVx < 0) ){
+
+			}
+			else{
+				int frame_to_reach = gameState.getBallVx() != 0 ? (gameState.getX() - ballX) / gameState.getBallVx() : 0;
+				int Y = ballY + gameState.getBallVy() * frame_to_reach;
+
+				if (Y < 0){
+					Y *= -1;
+				}
+				else if (Y > 550){
+					Y = 550 - (Y - 550);
+					System.out.println("over reach" + Y);
+				}
+
+				this.desireY = Y;
+			}
 		}
 
-		if ((gameState.getX() == 20 && ballX > 650) ||
-			(gameState.getX() == 880 && ballX < 250) )
+		if ((gameState.getX() == 20 && ballVx > 0) ||
+			(gameState.getX() == 880 && ballVx < 0) )
 			this.desireY = 550 / 2;
 
 

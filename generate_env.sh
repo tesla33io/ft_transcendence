@@ -25,6 +25,35 @@ fi
 # Generate JWT secret (64 bytes = 128 hex characters)
 echo -e "${GREEN} Generating JWT secret...${NC}"
 JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+MATCH_HISTORY_SERVICE_TOKEN=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+
+# Prompt for SMTP configuration (optional)
+echo -e "${YELLOW} Configure email service for 2FA? (y/n)${NC}"
+read -p "" -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    read -p "SMTP Host (default: smtp.gmail.com): " SMTP_HOST
+    SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+
+    read -p "SMTP Port (default: 587): " SMTP_PORT
+    SMTP_PORT=${SMTP_PORT:-587}
+
+    read -p "SMTP User (your email): " SMTP_USER
+    SMTP_USER=${SMTP_USER:-your-email@gmail.com}
+
+    read -p "SMTP Password (app password): " SMTP_PASSWORD
+    SMTP_PASSWORD=${SMTP_PASSWORD:-your-app-password}
+
+    read -p "From Email (default: noreply@ponggame.com): " SMTP_FROM
+    SMTP_FROM=${SMTP_FROM:-noreply@ponggame.com}
+else
+    # Use placeholder values
+    SMTP_HOST="smtp.gmail.com"
+    SMTP_PORT="587"
+    SMTP_USER="your-email@gmail.com"
+    SMTP_PASSWORD="your-app-password"
+    SMTP_FROM="noreply@ponggame.com"
+fi
 
 # Create .env file
 cat > "$ENV_FILE" << EOF
@@ -36,6 +65,16 @@ NODE_ENV=development
 # Generated on: $(date)
 JWT_SECRET=$JWT_SECRET
 
+# ===== SERVICE TOKENS (Auto-generated) =====
+MATCH_HISTORY_SERVICE_TOKEN=$MATCH_HISTORY_SERVICE_TOKEN
+
+# ===== EMAIL / SMTP CONFIGURATION (For 2FA) =====
+SMTP_HOST=$SMTP_HOST
+SMTP_PORT=$SMTP_PORT
+SMTP_USER=$SMTP_USER
+SMTP_PASSWORD=$SMTP_PASSWORD
+SMTP_FROM=$SMTP_FROM
+
 # ===== GAME CONSTANTS =====
 GAME_HEIGHT=550
 GAME_WIDTH=900
@@ -43,6 +82,7 @@ PADDLE_HEIGHT=50
 PADDLE_WIDTH=10
 FPS=60
 PLAYER_OFFSET=20
+GAME_SCORE=3
 
 # ===== DATABASE =====
 DATABASE_URL=postgresql://postgres:password@localhost:5432/pongdb
@@ -64,6 +104,7 @@ EOF
 
 echo -e "${GREEN} .env file created successfully${NC}"
 echo -e "${YELLOW}JWT_SECRET (first 32 chars): ${JWT_SECRET:0:32}...${NC}"
+echo -e "${YELLOW}MATCH_HISTORY_SERVICE_TOKEN (first 32 chars): ${MATCH_HISTORY_SERVICE_TOKEN:0:32}...${NC}"
 echo ""
 echo -e "${GREEN} Setup complete! You can now run:${NC}"
 echo -e "   make up    - Start services"

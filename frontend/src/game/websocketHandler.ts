@@ -95,7 +95,7 @@ export class WebSocketHandler {
 
     private handleInitialGameState(data: GameData): void {
         //console.log('=== INITIAL GAME STATE ===');
-		console.log(data)
+		// console.log(data)
         this.gameId = data.id || '';
         this.onGameStart(data);
     }
@@ -144,10 +144,10 @@ export class WebSocketHandler {
 			else{
 				data = rawData;
 			}
-            if (data && data.type === 'classic_notification')
-                console.log("Data from server: ", data)
+            // if (data && data.type === 'classic_notification')
+            //     console.log("Data from server: ", data)
             if (this.isTournamentNotification(data)){
-                console.log("tournament Notification", data);
+                // console.log("tournament Notification", data);
                 if (this.onTournamentNotification) {
                     this.onTournamentNotification(data);
                 }

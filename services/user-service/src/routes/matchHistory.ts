@@ -2,33 +2,79 @@ import '../types/fastify';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { MatchHistory, MatchResult as MatchResultEnum } from '../entities/MatchHistory';
 import { User, UserRole } from '../entities/User';
+import { UserStatistics } from '../entities/UserStatistics';
 
 type MatchResultValue = typeof MatchResultEnum[keyof typeof MatchResultEnum];
 
-const authenticateToken = (app: FastifyInstance) => async (request: FastifyRequest, reply: FastifyReply) => {
-	const authHeader = request.headers['authorization'];
-	const token = authHeader && authHeader.split(' ')[1];
+const SERVICE_TOKEN = process.env.MATCH_HISTORY_SERVICE_TOKEN ?? '';
 
-	if (!token) {
-		return reply.code(401).send({ error: 'Access token required' });
-	}
+const ErrorSchema = {
+	type: 'object',
+	properties: {
+		error: { type: 'string' },
+		details: { type: ['string', 'array', 'object', 'null'] },
+	},
+	required: ['error'],
+} as const;
 
-	const userId = Number(token);
-	if (!Number.isInteger(userId) || userId <= 0) {
-		return reply.code(403).send({ error: 'Invalid token supplied' });
-	}
+const userSummarySchema = {
+	type: 'object',
+	properties: {
+		id: { type: 'integer' },
+		username: { type: 'string' },
+	},
+	required: ['id', 'username'],
+} as const;
 
-	try {
-		const user = await app.em.findOne(User, { id: userId });
-		if (!user) {
-			return reply.code(403).send({ error: 'User not found' });
-		}
-		request.user = user;
-	} catch (error) {
-		request.log.error({ err: error }, 'Error during token authentication');
-		return reply.code(403).send({ error: 'Invalid or expired token' });
-	}
-};
+const matchHistoryResponseSchema = {
+	type: 'object',
+	properties: {
+		matchId: { type: 'integer' },
+		user: userSummarySchema,
+		opponent: userSummarySchema,
+		tournamentId: { type: ['integer', 'null'] },
+		tournamentWon: { type: ['boolean', 'null'] },
+		result: { type: 'string' },
+		userScore: { type: 'integer' },
+		opponentScore: { type: 'integer' },
+		startTime: { type: ['string', 'null'], format: 'date-time' },
+		endTime: { type: ['string', 'null'], format: 'date-time' },
+		playedAt: { type: 'string', format: 'date-time' },
+		isWin: { type: 'boolean' },
+		isLoss: { type: 'boolean' },
+		isDraw: { type: 'boolean' },
+		isForfeit: { type: 'boolean' },
+		scoreDifference: { type: 'integer' },
+		isCloseGame: { type: 'boolean' },
+		isBlowout: { type: 'boolean' },
+	},
+	required: [
+		'matchId',
+		'user',
+		'opponent',
+		'result',
+		'userScore',
+		'opponentScore',
+		'playedAt',
+		'isWin',
+		'isLoss',
+		'isDraw',
+		'isForfeit',
+		'scoreDifference',
+		'isCloseGame',
+		'isBlowout',
+	],
+} as const;
+
+const MATCH_RESULT_VALUES = new Set<MatchResultValue>(Object.values(MatchResultEnum));
+
+const RESULT_ALIASES = new Map<string, MatchResultValue>([
+	['lose', MatchResultEnum.LOSS],
+	['lost', MatchResultEnum.LOSS],
+	['won', MatchResultEnum.WIN],
+	['tie', MatchResultEnum.DRAW],
+	['timeout', MatchResultEnum.TIMEOUT],
+]);
 
 interface MatchHistoryParams {
 	userId: string;
@@ -36,24 +82,22 @@ interface MatchHistoryParams {
 }
 
 interface MatchHistoryCreatePayload {
-	userId: number;
-	opponentId: number;
-	tournamentId?: number | null;
+	userId: number | string;
+	opponentId: number | string;
+	tournamentId?: number | string | null;
 	tournamentWon?: boolean | null;
-	result: MatchResultValue;
-	userScore: number;
-	opponentScore: number;
+	result: MatchResultValue | string;
+	userScore: number | string;
+	opponentScore: number | string;
 	startTime?: string | null;
 	endTime?: string | null;
 	playedAt: string;
 }
 
-type MatchHistoryUpdatePayload = Partial<Omit<MatchHistoryCreatePayload, 'userId' | 'opponentId'>> & {
-	opponentId?: number;
-};
+type MatchHistoryUpdatePayload = Partial<Omit<MatchHistoryCreatePayload, 'userId'>>;
 
 interface MatchHistoryResponse {
-	id: number;
+	matchId: number;
 	user: { id: number; username: string };
 	opponent: { id: number; username: string };
 	tournamentId: number | null;
@@ -73,13 +117,35 @@ interface MatchHistoryResponse {
 	isBlowout: boolean;
 }
 
-const MATCH_RESULT_VALUES = new Set<MatchResultValue>(Object.values(MatchResultEnum));
+function isServiceRequest(request: FastifyRequest): boolean {
+	const token = request.headers['x-service-token'];
+	return Boolean(SERVICE_TOKEN) && typeof token === 'string' && token === SERVICE_TOKEN;
+}
+
+async function requireSessionUser(app: FastifyInstance, request: FastifyRequest, reply: FastifyReply): Promise<User | undefined> {
+	const sessionUserId = request.session?.userId;
+	if (!sessionUserId) {
+		await reply.code(401).send({ error: 'Not authenticated' });
+		return undefined;
+}
+	const sessionUser = await app.em.findOne(User, { id: sessionUserId });
+	if (!sessionUser) {
+		await reply.code(401).send({ error: 'Session user not found' });
+		return undefined;
+}
+	return sessionUser;
+}
+
+const attachSessionUser = (app: FastifyInstance) => async (request: FastifyRequest, reply: FastifyReply) => {
+	const sessionUser = await requireSessionUser(app, request, reply);
+	if (!sessionUser) return;
+	request.user = sessionUser;
+};
+
+const MATCH_DURATION_THRESHOLD = 0;
 
 function formatUserSummary(user: User) {
-	return {
-		id: user.id,
-		username: user.username,
-	};
+	return { id: user.id, username: user.username };
 }
 
 function formatMatchHistoryResponse(match: MatchHistory): MatchHistoryResponse {
@@ -87,7 +153,7 @@ function formatMatchHistoryResponse(match: MatchHistory): MatchHistoryResponse {
 	const endTime = match.endTime instanceof Date ? match.endTime.toISOString() : null;
 
 	return {
-		id: match.id,
+		matchId: match.id,
 		user: formatUserSummary(match.user),
 		opponent: formatUserSummary(match.opponent),
 		tournamentId: match.tournamentId ?? null,
@@ -108,257 +174,453 @@ function formatMatchHistoryResponse(match: MatchHistory): MatchHistoryResponse {
 	};
 }
 
-function parseDateField(value: string | null | undefined, field: string, errors: string[], allowNull = true): Date | undefined | null {
-	if (value === undefined) {
-		return undefined;
-	}
+function coercePositiveInt(value: unknown, field: string, errors: string[]): number | undefined {
+    const parsed = typeof value === 'string' ? Number(value) : value;
+    if (typeof parsed !== 'number' || !Number.isFinite(parsed)) {
+      errors.push(`Field ${field} must be a positive integer`);
+      return undefined;
+    }
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      errors.push(`Field ${field} must be a positive integer`);
+      return undefined;
+    }
+    return parsed;
+  }
 
-	if (value === null) {
-		if (!allowNull) {
-			errors.push(`Field ${field} cannot be null`);
-		}
-		return allowNull ? null : undefined;
-	}
+function coerceOptionalPositiveInt(value: unknown, field: string, errors: string[]): number | undefined | null {
+	if (value === undefined || value === null) return null;
+	return coercePositiveInt(value, field, errors);
+}
 
+function normalizeResult(value: unknown, errors: string[]): MatchResultValue | undefined {
 	if (typeof value !== 'string') {
-		errors.push(`Field ${field} must be an ISO 8601 string or null`);
+		errors.push('Field result must be a string');
 		return undefined;
-	}
+}
+	const lowered = value.toLowerCase();
+	if (RESULT_ALIASES.has(lowered)) return RESULT_ALIASES.get(lowered);
+	if (MATCH_RESULT_VALUES.has(lowered as MatchResultValue)) return lowered as MatchResultValue;
+	errors.push(`Field result must be one of: ${Array.from(MATCH_RESULT_VALUES).join(', ')}`);
+	return undefined;
+}
 
-	const parsed = new Date(value);
-	if (Number.isNaN(parsed.getTime())) {
-		errors.push(`Field ${field} must be a valid ISO 8601 string`);
-		return undefined;
+function invertResult(result: MatchResultValue): MatchResultValue {
+	switch (result) {
+		case MatchResultEnum.WIN:
+			return MatchResultEnum.LOSS;
+		case MatchResultEnum.LOSS:
+			return MatchResultEnum.WIN;
+		case MatchResultEnum.DRAW:
+			return MatchResultEnum.DRAW;
+		case MatchResultEnum.FORFEIT:
+		case MatchResultEnum.TIMEOUT:
+			return MatchResultEnum.WIN;
+		default:
+			return MatchResultEnum.LOSS;
 	}
+}
+
+function parseDateField(
+    value: unknown,
+    field: string,
+    errors: string[],
+    required = false,
+  ): Date | undefined {
+    if (value === undefined) {
+      if (required) errors.push(`Field ${field} is required`);
+      return undefined;
+    }
+
+    if (value === null) {
+        errors.push(`Field ${field} cannot be null`);
+        return undefined;
+    }
+  
+    if (typeof value !== 'string') {
+      errors.push(`Field ${field} must be an ISO 8601 string`);
+      return undefined;
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      errors.push(`Field ${field} must be a valid ISO 8601 string`);
+      return undefined;
+    }
+  
+    return parsed;
+}
+
+function validateScore(value: unknown, field: string, errors: string[], required = true): number | undefined {
+	if (value === undefined) {
+		if (required) errors.push(`Field ${field} is required`);
+		return undefined;
+    }
+
+    if (value === null) {
+        errors.push(`Field ${field} cannot be null`);
+        return undefined;
+    }
+
+	const parsed = typeof value === 'string' ? Number(value) : value;
+	if (typeof parsed !== 'number' || !Number.isFinite(parsed)) {
+        errors.push(`Field ${field} must be a number`);
+        return undefined;
+    }
+
+    if (!Number.isInteger(parsed) || parsed < 0) {
+        errors.push(`Field ${field} must be a non-negative integer`);
+        return undefined;
+    }
 
 	return parsed;
 }
 
-async function resolveTargetUser(app: FastifyInstance, rawUserId: string, request: FastifyRequest, reply: FastifyReply) {
-	const userId = Number(rawUserId);
-	if (!Number.isInteger(userId) || userId <= 0) {
-		await reply.code(400).send({ error: 'Invalid user id' });
-		return undefined;
+async function loadOrCreateStats(app: FastifyInstance, user: User): Promise<UserStatistics> {
+	let stats = await app.em.findOne(UserStatistics, { user }, { populate: ['user'] });
+	if (!stats) {
+		stats = new UserStatistics();
+		stats.user = user;
+		stats.createdAt = new Date();
+		stats.updatedAt = new Date();
+		await app.em.persist(stats);
+	}
+	return stats;
+}
+
+function applyMatchToStats(
+	stats: UserStatistics,
+	result: MatchResultValue,
+	playedAt: Date,
+	durationSeconds?: number,
+	tournamentId?: number | null,
+	tournamentWon?: boolean | null,
+) {
+	stats.totalGames += 1;
+	stats.lastGameAt = playedAt;
+	stats.updatedAt = new Date();
+
+	switch (result) {
+		case MatchResultEnum.WIN:
+			stats.wins += 1;
+			break;
+		case MatchResultEnum.DRAW:
+			stats.draws += 1;
+			break;
+		default:
+			stats.losses += 1;
+			break;
 	}
 
+	if (typeof durationSeconds === 'number' && durationSeconds > MATCH_DURATION_THRESHOLD) {
+		if (stats.averageGameDuration === 0) {
+			stats.averageGameDuration = durationSeconds;
+		} else {
+			stats.averageGameDuration = Math.round((stats.averageGameDuration + durationSeconds) / 2);
+		}
+		if (durationSeconds > stats.longestGame) {
+			stats.longestGame = durationSeconds;
+		}
+	}
+
+	if (tournamentId) {
+		stats.tournamentsParticipated += 1;
+		if (tournamentWon === true) {
+			stats.overallTournamentWon += 1;
+		}
+	}
+}
+
+async function resolveTargetUser(app: FastifyInstance, rawUserId: string, request: FastifyRequest, reply: FastifyReply): Promise<User | undefined> {
+	const errors: string[] = [];
+	const userId = coercePositiveInt(rawUserId, 'userId', errors);
+	if (!userId) {
+		await reply.code(400).send({ error: 'Validation failed', details: errors });
+		return undefined;
+}
 	const targetUser = await app.em.findOne(User, { id: userId });
 	if (!targetUser) {
 		await reply.code(404).send({ error: 'User not found' });
 		return undefined;
-	}
-
-	if (request.user!.id !== targetUser.id && request.user!.role !== UserRole.ADMIN) {
+}
+	const requester = request.user as User | undefined;
+	if (requester && requester.id !== targetUser.id && requester.role !== UserRole.ADMIN) {
 		await reply.code(403).send({ error: 'Forbidden' });
 		return undefined;
-	}
-
+}
 	return targetUser;
 }
 
 async function loadMatch(app: FastifyInstance, user: User, rawMatchId: string, reply: FastifyReply) {
-	const matchId = Number(rawMatchId);
-	if (!Number.isInteger(matchId) || matchId <= 0) {
-		await reply.code(400).send({ error: 'Invalid match id' });
+	const errors: string[] = [];
+	const matchId = coercePositiveInt(rawMatchId, 'matchId', errors);
+	if (!matchId) {
+		await reply.code(400).send({ error: 'Validation failed', details: errors });
 		return undefined;
-	}
-
+}
 	const match = await app.em.findOne(MatchHistory, { id: matchId, user }, { populate: ['user', 'opponent'] });
 	if (!match) {
 		await reply.code(404).send({ error: 'Match not found' });
 		return undefined;
-	}
-
+}
 	return match;
 }
 
 async function resolveOpponent(app: FastifyInstance, opponentId: number, errors: string[]) {
-	if (!Number.isInteger(opponentId) || opponentId <= 0) {
-		errors.push('Field opponentId must be a positive integer');
-		return undefined;
-	}
-
 	const opponent = await app.em.findOne(User, { id: opponentId });
-	if (!opponent) {
-		errors.push('Opponent user not found');
-		return undefined;
-	}
-
+	if (!opponent) errors.push('Opponent user not found');
 	return opponent;
 }
 
-function validateScores(score: unknown, field: string, errors: string[]) {
-	if (score === undefined) {
-		errors.push(`Field ${field} is required`);
-		return undefined;
-	}
-
-	if (typeof score !== 'number' || Number.isNaN(score)) {
-		errors.push(`Field ${field} must be a finite number`);
-		return undefined;
-	}
-
-	if (!Number.isInteger(score) || score < 0) {
-		errors.push(`Field ${field} must be a non-negative integer`);
-		return undefined;
-	}
-
-	return score;
-}
-
-function validateOptionalScore(score: unknown, field: string, errors: string[]) {
-	if (score === undefined) {
-		return undefined;
-	}
-
-	if (typeof score !== 'number' || Number.isNaN(score)) {
-		errors.push(`Field ${field} must be a finite number`);
-		return undefined;
-	}
-
-	if (!Number.isInteger(score) || score < 0) {
-		errors.push(`Field ${field} must be a non-negative integer`);
-		return undefined;
-	}
-
-	return score;
-}
-
 export default async function matchHistoryRoutes(app: FastifyInstance) {
-	app.get<{ Params: MatchHistoryParams }>('/:userId', { preHandler: authenticateToken(app) }, async (request, reply) => {
+	app.get<{ Params: MatchHistoryParams }>('/:userId', {
+		preHandler: attachSessionUser(app),
+		schema: {
+			tags: ['match-history'],
+			summary: 'Get match history for a user',
+			params: {
+				type: 'object',
+				required: ['userId'],
+				properties: { userId: { type: 'integer', minimum: 1 } },
+			},
+			response: {
+				200: { type: 'array', items: matchHistoryResponseSchema },
+				401: ErrorSchema,
+				403: ErrorSchema,
+				404: ErrorSchema,
+			},
+		},
+	}, async (request: FastifyRequest<{ Params: MatchHistoryParams }>, reply: FastifyReply) => {
+		if (!request.user) return;
+
 		const targetUser = await resolveTargetUser(app, request.params.userId, request, reply);
-		if (!targetUser) {
-			return;
-		}
+		if (!targetUser) return;
 
 		const matches = await app.em.find(
 			MatchHistory,
 			{ user: targetUser },
-			{ orderBy: { playedAt: 'DESC' }, populate: ['user', 'opponent'] }
+			{ orderBy: { playedAt: 'DESC' }, populate: ['user', 'opponent'] },
 		);
 
 		return reply.send(matches.map(formatMatchHistoryResponse));
 	});
 
-	app.get<{ Params: Required<MatchHistoryParams> }>('/:userId/:matchId', { preHandler: authenticateToken(app) }, async (request, reply) => {
+	app.get<{ Params: Required<MatchHistoryParams> }>('/:userId/:matchId', {
+		preHandler: attachSessionUser(app),
+		schema: {
+			tags: ['match-history'],
+			summary: 'Get a specific match entry',
+			params: {
+				type: 'object',
+				required: ['userId', 'matchId'],
+				properties: {
+					userId: { type: 'integer', minimum: 1 },
+					matchId: { type: 'integer', minimum: 1 },
+				},
+			},
+			response: {
+				200: matchHistoryResponseSchema,
+				401: ErrorSchema,
+				403: ErrorSchema,
+				404: ErrorSchema,
+			},
+		},
+	}, async (request, reply) => {
+		if (!request.user) return;
+
 		const targetUser = await resolveTargetUser(app, request.params.userId, request, reply);
-		if (!targetUser) {
-			return;
-		}
+		if (!targetUser) return;
 
-		const match = await loadMatch(app, targetUser, request.params.matchId, reply);
-		if (!match) {
-			return;
-		}
+	const match = await loadMatch(app, targetUser, request.params.matchId, reply);
+	if (!match) return;
 
-		return reply.send(formatMatchHistoryResponse(match));
-	});
+	return reply.send(formatMatchHistoryResponse(match));
+});
 
-	app.post<{ Body: MatchHistoryCreatePayload }>('/', { preHandler: authenticateToken(app) }, async (request, reply) => {
-		const { body } = request;
-		if (!body || typeof body !== 'object') {
-			return reply.code(400).send({ error: 'Request body must be an object' });
-		}
-
+	app.post<{ Body: MatchHistoryCreatePayload }>('/', {
+		schema: {
+			tags: ['match-history'],
+			summary: 'Record a new match',
+			body: {
+				type: 'object',
+				required: ['userId', 'opponentId', 'result', 'userScore', 'opponentScore', 'playedAt'],
+				properties: {
+					userId: { type: ['integer', 'string'] },
+					opponentId: { type: ['integer', 'string'] },
+					tournamentId: { type: ['integer', 'string', 'null'] },
+					tournamentWon: { type: ['boolean', 'null'] },
+					result: { type: 'string' },
+					userScore: { type: ['integer', 'string'] },
+					opponentScore: { type: ['integer', 'string'] },
+					startTime: { type: ['string', 'null'], format: 'date-time' },
+					endTime: { type: ['string', 'null'], format: 'date-time' },
+					playedAt: { type: 'string', format: 'date-time' },
+				},
+				additionalProperties: false,
+			},
+			response: {
+				201: matchHistoryResponseSchema,
+				400: ErrorSchema,
+				401: ErrorSchema,
+				403: ErrorSchema,
+				404: ErrorSchema,
+			},
+		},
+	}, async (request: FastifyRequest<{ Body: MatchHistoryCreatePayload }>, reply: FastifyReply) => {
 		const errors: string[] = [];
 
-		if (!Number.isInteger(body.userId) || body.userId <= 0) {
-			errors.push('Field userId must be a positive integer');
-		}
-
-		if (body.opponentId === undefined) {
-			errors.push('Field opponentId is required');
-		}
-
-		if (body.userId === body.opponentId) {
+		const userId = coercePositiveInt(request.body.userId, 'userId', errors);
+		const opponentId = coercePositiveInt(request.body.opponentId, 'opponentId', errors);
+		if (userId && opponentId && userId === opponentId) {
 			errors.push('Field opponentId must reference a different user than userId');
 		}
 
-		if (!MATCH_RESULT_VALUES.has(body.result)) {
-			errors.push(`Field result must be one of: ${Array.from(MATCH_RESULT_VALUES).join(', ')}`);
-		}
+		const result = normalizeResult(request.body.result, errors);
+		const userScore = validateScore(request.body.userScore, 'userScore', errors);
+		const opponentScore = validateScore(request.body.opponentScore, 'opponentScore', errors);
 
-			if (body.playedAt === undefined || body.playedAt === null) {
-				errors.push('Field playedAt is required');
-			}
+		const playedAt = parseDateField(request.body.playedAt, 'playedAt', errors, true);
+		const startTime = parseDateField(request.body.startTime === null ? undefined : request.body.startTime, 'startTime', errors);
+		const endTime = parseDateField(request.body.endTime === null ? undefined : request.body.endTime, 'endTime', errors);
 
-			const playedAt = parseDateField(body.playedAt, 'playedAt', errors, false);
+		const tournamentId = coerceOptionalPositiveInt(request.body.tournamentId, 'tournamentId', errors);
+		const tournamentWon = request.body.tournamentWon ?? null;
 
-		const startTime = parseDateField(body.startTime, 'startTime', errors);
-		const endTime = parseDateField(body.endTime, 'endTime', errors);
-
-		const userScore = validateScores(body.userScore, 'userScore', errors);
-		const opponentScore = validateScores(body.opponentScore, 'opponentScore', errors);
-
-		if (errors.length > 0) {
+		if (errors.length > 0 || !userId || !opponentId || !result || !userScore || !opponentScore || !playedAt) {
 			return reply.code(400).send({ error: 'Validation failed', details: errors });
 		}
 
-		const user = await app.em.findOne(User, { id: body.userId });
-		if (!user) {
-			return reply.code(404).send({ error: 'User not found' });
+		const isService = isServiceRequest(request);
+		let requester: User | undefined;
+
+		if (!isService) {
+			requester = await requireSessionUser(app, request, reply);
+			if (!requester) return;
 		}
 
-		if (request.user!.id !== user.id && request.user!.role !== UserRole.ADMIN) {
+		const user = await app.em.findOne(User, { id: userId });
+		if (!user) return reply.code(404).send({ error: 'User not found' });
+
+		if (!isService && requester && requester.id !== user.id && requester.role !== UserRole.ADMIN) {
 			return reply.code(403).send({ error: 'Forbidden' });
 		}
 
-		const opponent = await resolveOpponent(app, body.opponentId, errors);
+		const opponentErrors: string[] = [];
+		const opponent = await resolveOpponent(app, opponentId, opponentErrors);
 		if (!opponent) {
-			return reply.code(400).send({ error: 'Validation failed', details: errors });
+			return reply.code(404).send({ error: 'Validation failed', details: opponentErrors });
 		}
 
-		const match = new MatchHistory();
-		match.user = user;
-		match.opponent = opponent;
-		match.tournamentId = body.tournamentId ?? undefined;
-		match.tournamentWon = body.tournamentWon ?? undefined;
-		match.result = body.result;
-		match.userScore = userScore!;
-		match.opponentScore = opponentScore!;
-		match.startTime = startTime === null ? undefined : startTime;
-		match.endTime = endTime === null ? undefined : endTime;
-		match.playedAt = playedAt!;
+		const durationSeconds =
+            startTime  && endTime
+                ? Math.max(0, Math.round((endTime.getTime() - startTime.getTime()) / 1000))
+                : undefined;
 
-		await app.em.persist(match);
+		const primary = new MatchHistory();
+		primary.user = user;
+		primary.opponent = opponent;
+		primary.tournamentId = tournamentId ?? undefined;
+		primary.tournamentWon = tournamentWon ?? undefined;
+		primary.result = result;
+		primary.userScore = userScore;
+		primary.opponentScore = opponentScore;
+		primary.startTime = startTime === null ? undefined : startTime ?? undefined;
+		primary.endTime = endTime === null ? undefined : endTime ?? undefined;
+		primary.playedAt = playedAt;
+
+		const mirrored = new MatchHistory();
+		mirrored.user = opponent;
+		mirrored.opponent = user;
+		mirrored.tournamentId = tournamentId ?? undefined;
+		mirrored.tournamentWon = tournamentWon === true ? false : tournamentWon === false ? true : undefined;
+		mirrored.result = invertResult(result);
+		mirrored.userScore = opponentScore;
+		mirrored.opponentScore = userScore;
+		mirrored.startTime = primary.startTime;
+		mirrored.endTime = primary.endTime;
+		mirrored.playedAt = playedAt;
+
+		await app.em.persist([primary, mirrored]);
+
+		const userStats = await loadOrCreateStats(app, user);
+		const opponentStats = await loadOrCreateStats(app, opponent);
+
+		applyMatchToStats(userStats, result, playedAt, durationSeconds, tournamentId ?? undefined, tournamentWon);
+		applyMatchToStats(opponentStats, mirrored.result, playedAt, durationSeconds, tournamentId ?? undefined, mirrored.tournamentWon ?? null);
+
 		await app.em.flush();
-		await app.em.populate(match, ['user', 'opponent']);
+		await app.em.populate(primary, ['user', 'opponent']);
 
-		return reply.code(201).send(formatMatchHistoryResponse(match));
+		return reply.code(201).send(formatMatchHistoryResponse(primary));
 	});
 
 	app.patch<{ Params: Required<MatchHistoryParams>; Body: MatchHistoryUpdatePayload }>(
 		'/:userId/:matchId',
-		{ preHandler: authenticateToken(app) },
+		{
+			preHandler: attachSessionUser(app),
+			schema: {
+				tags: ['match-history'],
+				summary: 'Update a match entry',
+				params: {
+					type: 'object',
+					required: ['userId', 'matchId'],
+					properties: {
+						userId: { type: 'integer', minimum: 1 },
+						matchId: { type: 'integer', minimum: 1 },
+					},
+				},
+				body: {
+					type: 'object',
+					additionalProperties: false,
+					properties: {
+						opponentId: { type: ['integer', 'string'] },
+						tournamentId: { type: ['integer', 'string', 'null'] },
+						tournamentWon: { type: ['boolean', 'null'] },
+						result: { type: 'string' },
+						userScore: { type: ['integer', 'string'] },
+						opponentScore: { type: ['integer', 'string'] },
+						startTime: { type: ['string', 'null'], format: 'date-time' },
+						endTime: { type: ['string', 'null'], format: 'date-time' },
+						playedAt: { type: ['string', 'null'], format: 'date-time' },
+					},
+				},
+				response: {
+					200: matchHistoryResponseSchema,
+					400: ErrorSchema,
+					401: ErrorSchema,
+					403: ErrorSchema,
+					404: ErrorSchema,
+				},
+			},
+		},
 		async (request, reply) => {
+			if (!request.user) return;
+
 			if (!request.body || typeof request.body !== 'object') {
 				return reply.code(400).send({ error: 'Request body must be an object' });
 			}
 
 			const targetUser = await resolveTargetUser(app, request.params.userId, request, reply);
-			if (!targetUser) {
-				return;
-			}
+			if (!targetUser) return;
 
 			const match = await loadMatch(app, targetUser, request.params.matchId, reply);
-			if (!match) {
-				return;
-			}
+			if (!match) return;
 
 			const errors: string[] = [];
 
-			if (request.body.result !== undefined && !MATCH_RESULT_VALUES.has(request.body.result)) {
-				errors.push(`Field result must be one of: ${Array.from(MATCH_RESULT_VALUES).join(', ')}`);
+			if (request.body.result !== undefined) {
+				const normalized = normalizeResult(request.body.result, errors);
+				if (normalized) match.result = normalized;
 			}
 
-			let opponent = match.opponent;
 			if (request.body.opponentId !== undefined) {
-				const resolvedOpponent = await resolveOpponent(app, request.body.opponentId, errors);
-				if (resolvedOpponent) {
-					if (resolvedOpponent.id === targetUser.id) {
-						errors.push('Field opponentId must reference a different user than userId');
-					} else {
-						opponent = resolvedOpponent;
+				const opponentId = coercePositiveInt(request.body.opponentId, 'opponentId', errors);
+				if (opponentId && opponentId !== targetUser.id) {
+					const resolvedOpponent = await resolveOpponent(app, opponentId, errors);
+					if (resolvedOpponent) {
+						match.opponent = resolvedOpponent;
 					}
+				} else if (opponentId === targetUser.id) {
+					errors.push('Field opponentId must reference a different user than userId');
 				}
 			}
 
@@ -366,64 +628,66 @@ export default async function matchHistoryRoutes(app: FastifyInstance) {
 			const endTime = parseDateField(request.body.endTime ?? undefined, 'endTime', errors);
 			const playedAt = parseDateField(request.body.playedAt ?? undefined, 'playedAt', errors, false);
 
-			const userScore = validateOptionalScore(request.body.userScore, 'userScore', errors);
-			const opponentScore = validateOptionalScore(request.body.opponentScore, 'opponentScore', errors);
+			const userScore = validateScore(request.body.userScore ?? undefined, 'userScore', errors, false);
+			const opponentScore = validateScore(request.body.opponentScore ?? undefined, 'opponentScore', errors, false);
 
 			if (errors.length > 0) {
 				return reply.code(400).send({ error: 'Validation failed', details: errors });
 			}
 
-			match.opponent = opponent;
-
 			if (request.body.tournamentId !== undefined) {
-				match.tournamentId = request.body.tournamentId ?? undefined;
+				const newTournamentId = coerceOptionalPositiveInt(request.body.tournamentId, 'tournamentId', errors);
+				if (errors.length > 0) {
+					return reply.code(400).send({ error: 'Validation failed', details: errors });
+				}
+				match.tournamentId = newTournamentId ?? undefined;
 			}
 
 			if (request.body.tournamentWon !== undefined) {
 				match.tournamentWon = request.body.tournamentWon ?? undefined;
 			}
 
-			if (request.body.result !== undefined) {
-				match.result = request.body.result;
-			}
-
-			if (userScore !== undefined) {
-				match.userScore = userScore;
-			}
-
-			if (opponentScore !== undefined) {
-				match.opponentScore = opponentScore;
-			}
-
-			if (startTime !== undefined) {
-				match.startTime = startTime === null ? undefined : startTime;
-			}
-
-			if (endTime !== undefined) {
-				match.endTime = endTime === null ? undefined : endTime;
-			}
-
-			if (playedAt !== undefined) {
-				match.playedAt = playedAt!;
-			}
+			if (userScore !== undefined) match.userScore = userScore;
+			if (opponentScore !== undefined) match.opponentScore = opponentScore;
+			if (startTime !== undefined) match.startTime = startTime === null ? undefined : startTime;
+			if (endTime !== undefined) match.endTime = endTime === null ? undefined : endTime;
+			if (playedAt !== undefined && playedAt) match.playedAt = playedAt;
 
 			await app.em.flush();
 			await app.em.populate(match, ['user', 'opponent']);
 
 			return reply.send(formatMatchHistoryResponse(match));
-		}
+		},
 	);
 
-	app.delete<{ Params: Required<MatchHistoryParams> }>('/:userId/:matchId', { preHandler: authenticateToken(app) }, async (request, reply) => {
+	app.delete<{ Params: Required<MatchHistoryParams> }>('/:userId/:matchId', {
+		preHandler: attachSessionUser(app),
+		schema: {
+			tags: ['match-history'],
+			summary: 'Delete a match entry',
+			params: {
+				type: 'object',
+				required: ['userId', 'matchId'],
+				properties: {
+					userId: { type: 'integer', minimum: 1 },
+					matchId: { type: 'integer', minimum: 1 },
+				},
+			},
+			response: {
+				204: { type: 'null' },
+				401: ErrorSchema,
+				403: ErrorSchema,
+				404: ErrorSchema,
+			},
+		},
+	}, async (request, reply) => {
+		if (!request.user) return;
+
 		const targetUser = await resolveTargetUser(app, request.params.userId, request, reply);
-		if (!targetUser) {
-			return;
-		}
+		if (!targetUser) return;
 
 		const match = await loadMatch(app, targetUser, request.params.matchId, reply);
-		if (!match) {
-			return;
-		}
+		if (!match) return;
 
 		await app.em.removeAndFlush(match);
 		return reply.code(204).send();
