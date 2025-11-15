@@ -20,7 +20,7 @@ export async function joinGame(mode: string): Promise<JoinGameResponse> {
 	}
 
 	const joinReq = {
-		playerId: config?.id,
+		playerId: config?.id.toString(),
 		playerName: config?.name,
 		gameMode: mode,
 		timestamp: new Date().toISOString()

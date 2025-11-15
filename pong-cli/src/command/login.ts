@@ -26,7 +26,7 @@ export async function login(): Promise<boolean> {
 	}
 
 	saveConfig({
-		id: data.id,
+		id: data.id.toString(),
 		name: data.username,
 		jwt: data.refreshToken,
 		sessionId: data.accessToken,
