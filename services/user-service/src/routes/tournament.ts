@@ -4,6 +4,7 @@ import { User } from '../entities/User';
 import { ethers } from 'ethers';
 import { IBlockchainService, BlockchainError } from '../interfaces/blockchain';
 import { FromSchema } from 'json-schema-to-ts';
+import { mockBlockchainService } from '../services/mockBlockchainService';
 
 //Schema
 const finalizeParamsSchema = {
