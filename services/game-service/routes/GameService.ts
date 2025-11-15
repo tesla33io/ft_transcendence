@@ -28,9 +28,22 @@ export class GameService{
 		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnounce(game, playerId)
 			//place holder for sending match result to user management
-			//this.sendDataToUMS(game, playerId)
 			if (this.gameMode === 'tournament'){
-				this.tournamentHandling(game, playerId)
+				// For tournament matches, get tournament info
+				if (this.gameEngine instanceof TournamentPong) {
+					// tournament logic (updates tournament status)
+					this.tournamentHandling(game, playerId)
+					//check if this is the final winner (after tournamentHandling updates status)
+					const tournament = this.gameEngine.getTournament(game.id)
+					const isFinalWinner = tournament?.status === 'finished' && tournament?.winner?.id === playerId
+					this.sendDataToUMS(game, playerId, tournament?.id, isFinalWinner)
+				} else {
+					this.sendDataToUMS(game, playerId)
+				}
+				
+			} else {
+				// For classic matches
+				this.sendDataToUMS(game, playerId)
 			}
 		}
 
@@ -145,32 +158,88 @@ export class GameService{
 		}
 	}
 
-	//Updatd so the payload matches the API contract.
-	private async sendDataToUMS(game: Game, winnerId: string){
-		const playedAt = new Date().toISOString();
-
-		const payloads = [
-			{
-				userId: Number(game.player1.id),
-				opponentId:  Number(game.player2.id),
-				result: game.player1.id == winnerId ? "win" : "loss",
-				userScore: game.player1.score,
-				opponentScore: game.player2.score,
-				playedAt,
-			},
-			{
-				userId: Number(game.player2.id),
-				opponentId:  Number(game.player1.id),
-				result: game.player2.id == winnerId ? "win" : "loss",
-				userScore: game.player2.score,
-				opponentScore: game.player1.score,
-				playedAt,
-			},
-		];
-
-		for (const body of payloads) {
-			await this.postToUMS(body);
+	// Helper method to convert tournament ID string to integer
+	private convertTournamentIdToInt(tournamentId: string): number {
+		// If it's already numeric, use it
+		if (/^\d+$/.test(tournamentId)) {
+			return parseInt(tournamentId);
 		}
+		// Otherwise, create a hash from the string
+		let hash = 0;
+		for (let i = 0; i < tournamentId.length; i++) {
+			const char = tournamentId.charCodeAt(i);
+			hash = ((hash << 5) - hash) + char;
+			hash = hash & hash; // Convert to 32-bit integer
+		}
+		return Math.abs(hash);
+	}
+
+	private async sendDataToUMS(game: Game, winnerId: string, tournamentId?: string, isTournamentWinner?: boolean){
+
+		const data1: {
+			userId: number;
+			opponentId: number;
+			result: string;
+			userScore: number;
+			opponentScore: number;
+			playedAt: string;
+			tournamentId?: number;
+			tournamentWon?: boolean;
+		} = {
+			userId: parseInt(game.player1.id),
+			opponentId:  parseInt(game.player2.id),
+			result: game.player1.id == winnerId ? "win" : "loss",
+			userScore: game.player1.score,
+			opponentScore: game.player2.score,
+			playedAt: new Date().toISOString()
+		}
+
+		// Only include tournamentId if it exists
+		if (tournamentId) {
+			data1.tournamentId = this.convertTournamentIdToInt(tournamentId);
+		}
+		
+		// Only include tournamentWon if it's explicitly true
+		if (isTournamentWinner && game.player1.id === winnerId) {
+			data1.tournamentWon = true;
+		}
+
+		console.log("data1",data1)
+		const response1 = await this.postToUMS(data1)
+		console.log(response1)
+
+		const data2: {
+			userId: number;
+			opponentId: number;
+			result: string;
+			userScore: number;
+			opponentScore: number;
+			playedAt: string;
+			tournamentId?: number;
+			tournamentWon?: boolean;
+		} = {
+			userId: parseInt(game.player2.id),
+			opponentId: parseInt(game.player1.id),
+			result: game.player2.id == winnerId ? "win" : "loss",
+			userScore: game.player2.score,
+			opponentScore: game.player1.score,
+			playedAt: new Date().toISOString()
+		}
+
+		// Only include tournamentId if it exists
+		if (tournamentId) {
+			data2.tournamentId = this.convertTournamentIdToInt(tournamentId);
+		}
+		
+		// Only include tournamentWon if it's explicitly true
+		if (isTournamentWinner && game.player2.id === winnerId) {
+			data2.tournamentWon = true;
+		}
+
+		console.log("data2", data2)
+		const response2 = await this.postToUMS(data2)
+		console.log("response2", response2)
+		
 	}
 
 
@@ -185,27 +254,60 @@ export class GameService{
 				body: JSON.stringify(data)
 			})
 			if (!response1.ok) {
-				console.error('match history failed', response1.status, await response1.text());
-       		} else {
-				console.log("Match history sent:", response1.status);
+				const errorText = await response1.text();
+				console.error('match history failed', response1.status, errorText);
+				// Try to parse as JSON to see the actual error details
+				try {
+					const errorJson = JSON.parse(errorText);
+					console.error('Error details:', JSON.stringify(errorJson, null, 2));
+				} catch (e) {
+					console.error('Error text (not JSON):', errorText);
+				}
+			} else {
+				const responseData = await response1.json();
+				console.log("Match history sent successfully:", response1.status, responseData);
 			}
+			return response1;
 		} catch (error) {
 			console.log("Error sending match history:", error)
+			throw error;
 		}
 	}
 
 
 	private async postHash(tournament: Tournament){
 
+		if (!tournament.winner) {
+			console.error('Cannot post hash: tournament has no winner');
+			return;
+		}
+	
+		// Get all participant IDs from tournament players
+		const participantIds = tournament.players.map(player => parseInt(player.id));
+		
+		// Get final score from the winner's final match
+		// We need to find the final match - it should be the last match in the bracket
+		const finalMatch = tournament.bracket
+			.filter(match => match.status === 'finished')
+			.sort((a, b) => {
+				// Sort by match ID to get the last one (assuming IDs are sequential)
+				return a.id.localeCompare(b.id);
+			})
+			.pop();
+		
+		const finalScore = finalMatch?.winner?.score || 0;
+
+		// Convert tournament ID using the same method
+		const tournamentIdInt = this.convertTournamentIdToInt(tournament.id);
+
 		const data = {
-			"winnerId": 1,
-			"finalScore": 0,
-			"participantIds": [
-				1
-			]
+			winnerId: parseInt(tournament.winner.id),
+			finalScore: finalScore,
+			participantIds: participantIds
 		}
 
-		this.postToBlockChain(data, "123")
+		console.log(`Posting tournament ${tournament.id} (as ${tournamentIdInt}) to blockchain:`, data);
+		await this.postToBlockChain(data, tournamentIdInt.toString());
 	}
 
 	private async postToBlockChain(data: any, tournamentId: string){
@@ -218,7 +320,16 @@ export class GameService{
 			},
 			body: JSON.stringify(data)
 		})
-		console.log("Tournamnet history sent:", response1);
+
+		if (!response1.ok) {
+            const errorText = await response1.text();
+            console.error(`Failed to finalize tournament ${tournamentId}:`, response1.status, errorText);
+            return;
+        }
+
+		const responseData = await response1.json();
+        console.log("Tournament finalized on blockchain:", responseData);
+        console.log("Blockchain TX Hash:", responseData.blockchainTxHash);
 	}
 	catch (error) {
 		console.log("Error sending tournamnet history:", error)

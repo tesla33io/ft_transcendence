@@ -4,6 +4,7 @@ import { User } from '../entities/User';
 import { ethers } from 'ethers';
 import { IBlockchainService, BlockchainError } from '../interfaces/blockchain';
 import { FromSchema } from 'json-schema-to-ts';
+import { mockBlockchainService } from '../services/mockBlockchainService';
 
 //Schema
 const finalizeParamsSchema = {
@@ -86,6 +87,40 @@ const finalizeParamsSchema = {
     },
     required: ['verified', 'message'],
   } as const;
+
+  const getTxHashParamsSchema = {
+    type: 'object',
+    required: ['id'],
+    properties: {
+      id: { type: 'integer', minimum: 1 },
+    },
+  } as const;
+
+  type GetTxHashParams = FromSchema<typeof getTxHashParamsSchema>;
+
+  const getTxHashSuccessSchema = {
+    type: 'object',
+    properties: {
+      tournamentId: { type: 'integer' },
+      blockchainTxHash: { type: 'string' },
+      status: { type: 'string', enum: ['pending', 'confirmed'] },
+      createdAt: { type: 'number' },
+      confirmedAt: { type: ['number', 'null'] },
+      message: { type: 'string' },
+    },
+    required: ['tournamentId', 'blockchainTxHash', 'status', 'message'],
+  } as const;
+
+  const getTxHashNotFoundSchema = {
+    type: 'object',
+    properties: {
+      error: { type: 'string' },
+      tournamentId: { type: 'integer' },
+      message: { type: 'string' },
+    },
+    required: ['error', 'tournamentId', 'message'],
+  } as const;
+
 
 // Dependency injection - blockchain service should be injected
 // This makes the service more testable and decoupled
@@ -257,5 +292,91 @@ export default async function tournamentRoutes(app: FastifyInstance) {
             app.log.error('Error verifying tournament: ' + String(error));
             return reply.code(500).send({ error: 'Internal server error' });
         }
+    });
+
+    // GET /tournaments/:id/blockchain-tx-hash - Get blockchain transaction hash for tournament
+    app.get<{ Params: GetTxHashParams }>('/:id/blockchain-tx-hash', {
+      schema: {
+        tags: ['tournaments'],
+        summary: 'Get blockchain transaction hash and status for a finalized tournament',
+        description: 'Retrieves the blockchain transaction hash and its status (pending/confirmed) that was saved after tournament results were recorded on the blockchain',
+        params: getTxHashParamsSchema,
+        response: {
+          200: getTxHashSuccessSchema,
+          404: getTxHashNotFoundSchema,
+          400: finalizeErrorSchema,
+          500: finalizeErrorSchema,
+        },
+      },
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
+      try {
+        const { id } = request.params as GetTxHashParams;
+        const tournamentId = Number(id);
+
+        if (!Number.isInteger(tournamentId) || tournamentId <= 0) {
+          return reply.code(400).send({ 
+            error: 'Invalid tournament id',
+            details: 'Tournament ID must be a positive integer'
+          });
+        }
+
+        // Find the final match (where tournamentWon === true) for this tournament
+        const finalMatch = await app.em.findOne(MatchHistory, {
+          tournamentId: tournamentId,
+          tournamentWon: true,
+        });
+
+        if (!finalMatch) {
+          return reply.code(404).send({
+            error: 'Tournament not found or not finalized',
+            tournamentId: tournamentId,
+            message: 'Tournament does not exist or has not been finalized yet'
+          });
+        }
+
+        // Check if blockchain transaction hash exists
+        if (!finalMatch.blockchainTxHash) {
+          return reply.code(404).send({
+            error: 'Blockchain transaction hash not found',
+            tournamentId: tournamentId,
+            message: 'Tournament has been finalized but not yet recorded on blockchain'
+          });
+        }
+
+        // Get transaction status from mock blockchain service
+        let status: 'pending' | 'confirmed' = 'pending';
+        let createdAt: number | null = null;
+        let confirmedAt: number | null = null;
+
+        try {
+          const tx = mockBlockchainService.getTransaction(finalMatch.blockchainTxHash);
+          if (tx) {
+            status = mockBlockchainService.getTransactionStatus(finalMatch.blockchainTxHash);
+            createdAt = tx.createdAt;
+            const CONFIRMATION_TIME = 3000;
+            confirmedAt = status === 'confirmed' ? tx.createdAt + CONFIRMATION_TIME : null;
+          }
+        } catch (error) {
+          // If transaction not found in mock service, still return the hash
+          // but with default status (this handles cases where mock service wasn't used)
+          app.log.warn(`Transaction ${finalMatch.blockchainTxHash} not found in mock service: ${error}`);
+        }
+
+        return reply.send({
+          tournamentId: tournamentId,
+          blockchainTxHash: finalMatch.blockchainTxHash,
+          status: status,
+          createdAt: createdAt,
+          confirmedAt: confirmedAt,
+          message: 'Blockchain transaction hash retrieved successfully'
+        });
+
+      } catch (error) {
+        app.log.error('Error retrieving blockchain transaction hash: ' + String(error));
+        return reply.code(500).send({ 
+          error: 'Internal server error',
+          details: String(error)
+        });
+      }
     });
 }
