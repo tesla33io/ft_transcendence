@@ -468,6 +468,16 @@ export default async function matchHistoryRoutes(app: FastifyInstance) {
 	}, async (request: FastifyRequest<{ Body: MatchHistoryCreatePayload }>, reply: FastifyReply) => {
 		const errors: string[] = [];
 
+		// Log the incoming request for debugging
+		app.log.info({
+			msg: 'Match history POST request',
+			body: request.body,
+			headers: {
+				'x-service-token': request.headers['x-service-token'] ? 'present' : 'missing',
+				'authorization': request.headers['authorization'] ? 'present' : 'missing'
+			}
+		});
+
 		const userId = coercePositiveInt(request.body.userId, 'userId', errors);
 		const opponentId = coercePositiveInt(request.body.opponentId, 'opponentId', errors);
 		if (userId && opponentId && userId === opponentId) {
@@ -485,11 +495,41 @@ export default async function matchHistoryRoutes(app: FastifyInstance) {
 		const tournamentId = coerceOptionalPositiveInt(request.body.tournamentId, 'tournamentId', errors);
 		const tournamentWon = request.body.tournamentWon ?? null;
 
-		if (errors.length > 0 || !userId || !opponentId || !result || !userScore || !opponentScore || !playedAt) {
-			return reply.code(400).send({ error: 'Validation failed', details: errors });
-		}
+		// Log validation state before checking
+	app.log.info({
+		msg: 'Validation state',
+		errors: errors,
+		userId: userId,
+		opponentId: opponentId,
+		result: result,
+		userScore: userScore,
+		opponentScore: opponentScore,
+		playedAt: playedAt,
+		tournamentId: tournamentId
+	});
 
-		const isService = isServiceRequest(request);
+	if (errors.length > 0 || !userId || !opponentId || !result || userScore === undefined || opponentScore === undefined || !playedAt) {
+		app.log.error({
+			msg: 'Validation failed',
+			errors: errors,
+			missingFields: {
+				userId: !userId,
+				opponentId: !opponentId,
+				result: !result,
+				userScore: userScore === undefined,
+				opponentScore: opponentScore === undefined,
+				playedAt: !playedAt
+			}
+		});
+		return reply.code(400).send({ error: 'Validation failed', details: errors.length > 0 ? errors : ['One or more required fields are missing or invalid'] });
+	}
+
+	const isService = isServiceRequest(request);
+	app.log.info({ 
+		msg: 'Service request check', 
+		isService, 
+		hasToken: !!request.headers['x-service-token'] 
+	});
 		let requester: User | undefined;
 
 		if (!isService) {
