@@ -8,14 +8,15 @@ export interface JoinGameResponse {
 export async function joinGame(mode: string): Promise<JoinGameResponse> {
 	const config = loadConfig();
 	let apiEndpoint: string
-
-	switch (mode){
-		case 'tournament':
-			apiEndpoint = '/api/v1/game/join-tournament'
-		case 'ai':
-			apiEndpoint = '/api/v1/game/bot-classic'
-		default:
-			apiEndpoint = '/api/v1/game/join-classic'
+	console.log("Mode: ", mode)
+	if(mode === "tournament"){
+		apiEndpoint = '/api/v1/game/join-tournament'
+	}
+	else if (mode === "ai"){
+		apiEndpoint = '/api/v1/game/bot-classic'
+	}
+	else{
+		apiEndpoint = '/api/v1/game/join-classic'
 	}
 
 	const joinReq = {

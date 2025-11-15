@@ -72,7 +72,7 @@ async function handleGameMenu(){
 		}
 
 		else if (mode === "bot-classic"){
-			startGameFlow("classic")
+			startGameFlow("ai")
 		}
 
 		else if (mode === "back"){
@@ -84,7 +84,9 @@ async function handleGameMenu(){
 async function startGameFlow(mode: string){
 	const config = loadConfig()
 
-	let route: string
+	let route: string = mode
+	if (mode === "ai" )
+		route = "classic"
 
 	if (!config)
 		return false
@@ -92,7 +94,7 @@ async function startGameFlow(mode: string){
 	try {
 		const join = await joinGame(mode);
 		console.log("Match ID:", join.matchId, join)
-		await connectToGame(`ws://localhost:3000/ws/${mode}?playerId=${config?.id}`)
+		await connectToGame(`ws://localhost:3000/ws/${route}?playerId=${config?.id}`)
 
 		console.log("Press any key to return...");
 		// await waitForKey();
