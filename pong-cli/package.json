@@ -1,0 +1,23 @@
+{
+  "name": "pong-cli",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cli.js",
+  "scripts": {
+    "start": "npx ts-node src/cli.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/blessed": "^0.1.25",
+    "@types/ws": "^8.18.1",
+    "blessed": "^0.1.81",
+    "ts-node": "^10.9.2",
+    "typecript": "^0.0.1-security",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
