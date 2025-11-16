@@ -5,7 +5,7 @@ import { MainMenu } from "./ui/mainMenu"
 import { clearConfig, loadConfig } from "./core/config"
 import { GameMenu } from "./ui/gameMenu"
 import { joinGame } from "./command/JoinGame"
-import { GameWebsocket } from "./network/gameSocket"
+import { GameWebsocket } from "./network/GameWebSocket"
 
 async function start() {
 
@@ -40,25 +40,22 @@ async function handleMainMenu() {
 	while (true) {
 		const mode = await mainMenu.show();
 
-		mainMenu.destroy()
 		if (mode === "game") {
 			await handleGameMenu()
-			continue
 		}
-
 		else if (mode === "profile") {
 			console.log("Profile (placeholder)...");
 		}
-
 		else if (mode === "setting") {
 			console.log("Setting (placeholder)...");
 		}
-
 		else if (mode === "logout") {
 			await logout()
 			clearConfig()
+			mainMenu.destroy()
 			break
 		}
+
 	}
 }
 
@@ -68,11 +65,9 @@ async function handleGameMenu(){
 	while (true){
 		const mode = await gameMenu.show()
 
-		// gameMenu.destroy()
 		if (mode === "classic"){
 			startGameFlow("classic")
 		}
-
 		else if (mode === "tournament"){
 			console.log("Tournament mode (placeholder)...");
 		}
@@ -83,6 +78,7 @@ async function handleGameMenu(){
 		}
 
 		else if (mode === "back"){
+			gameMenu.destroy()
 			break
 		}
 	}
@@ -100,7 +96,6 @@ async function startGameFlow(mode: string){
 
 	try {
 		const join = await joinGame(mode);
-		console.log("Match ID:", join.gameId, join)
 		await GameWebsocket.connectToGame(route, join.gameId, config?.id)
 
 		console.log("Press any key to return...");

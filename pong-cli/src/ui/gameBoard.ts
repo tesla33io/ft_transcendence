@@ -36,7 +36,9 @@ export class GameBoard {
     this.screen.append(this.gameBoard);
 
     // Exit on 'q' or 'Ctrl-C'
-    this.screen.key(['q', 'C-c'], () => process.exit(0));
+    this.screen.key(['q', 'C-c'], () =>{
+        this.screen.destroy()
+    });
     this.gameBoard.focus
     this.screen.on('resize', () => {
       this.screen.render();

@@ -4,6 +4,7 @@ import { clearConfig } from "../core/config";
 export class MainMenu{
 	private screen: blessed.Widgets.Screen
 	private menu: blessed.Widgets.ListElement
+	private box: blessed.Widgets.BoxElement
 
 	constructor(){
 			this.screen = blessed.screen({
@@ -11,7 +12,7 @@ export class MainMenu{
 				title: "Select Game Mode"
 			});
 
-			const box = blessed.box({
+			this.box = blessed.box({
 			top: "center",
 			left: "center",
 			width: "60%",
@@ -25,7 +26,7 @@ export class MainMenu{
 			});
 
 			this.menu = blessed.list({
-			parent: box,
+			parent: this.box,
 			top: 3,
 			left: 2,
 			width: "90%",
@@ -38,7 +39,7 @@ export class MainMenu{
 			}
 			});
 
-			this.screen.append(box);
+			this.screen.append(this.box);
 			this.menu.focus();
 			this.screen.render();
 
@@ -47,7 +48,6 @@ export class MainMenu{
 		public show(): Promise<"game" | "profile" | "setting" | "logout">{
 			return new Promise((resolve) => {
 				this.menu.on("select", (_, index) => {
-				this.screen.destroy()
 				if (index === 0){;
 					resolve("game");
 				}
@@ -61,7 +61,6 @@ export class MainMenu{
 			});
 
 			this.screen.key(["escape", "q", "C-c"], () => {
-				this.screen.destroy();
 				resolve("logout");
 			});
 			})
@@ -69,5 +68,9 @@ export class MainMenu{
 
 	public destroy(){
 		this.screen.destroy()
+	}
+
+	public rerender(){
+		this.screen.render()
 	}
 }

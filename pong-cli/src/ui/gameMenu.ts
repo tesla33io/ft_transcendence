@@ -46,7 +46,6 @@ export class GameMenu {
 	public show(): Promise<"classic" | "tournament" | "bot-classic" | "back">{
 		return new Promise((resolve) => {
 			this.menu.on("select", (_, index) => {
-			this.screen.destroy()
 			if (index === 0){;
 				resolve("classic");
 			}
@@ -56,13 +55,18 @@ export class GameMenu {
 			else if (index === 2){
 				resolve("bot-classic");
 			}
-			else resolve("back");
+			else{
+				resolve("back");
+			}
 		});
 
 		this.screen.key(["escape", "q", "C-c"], () => {
-			this.screen.destroy();
 			resolve("back");
 		});
 		})
+	}
+
+	public destroy(){
+		this.screen.destroy()
 	}
 }
