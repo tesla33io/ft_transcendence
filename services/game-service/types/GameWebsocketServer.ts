@@ -213,6 +213,9 @@ export class GameWebSocketServer{
 
 		this.sendToPlayer(game.player1.id, gameResult)
 		this.sendToPlayer(game.player2.id, gameResult)
+
+		this.disconnectClient(game.player1.id)
+		this.disconnectClient(game.player2.id)
 	}
 
 	public disconnectClient(playerId: string){
