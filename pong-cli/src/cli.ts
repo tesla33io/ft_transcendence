@@ -6,7 +6,7 @@ import { mainMenu } from "./ui/mainMenu"
 import { clearConfig, loadConfig } from "./core/config"
 import { gameMenu } from "./ui/gameMenu"
 import { joinGame } from "./command/JoinGame"
-import { connectToGame } from "./network/gameSocket"
+import { GameWebsocket } from "./network/gameSocket"
 
 async function start() {
 
@@ -41,6 +41,7 @@ async function handleMainMenu() {
 
 		if (mode === "game") {
 			await handleGameMenu()
+			break
 		}
 
 		else if (mode === "profile") {
@@ -73,6 +74,7 @@ async function handleGameMenu(){
 
 		else if (mode === "bot-classic"){
 			startGameFlow("ai")
+
 		}
 
 		else if (mode === "back"){
@@ -93,16 +95,16 @@ async function startGameFlow(mode: string){
 
 	try {
 		const join = await joinGame(mode);
-		console.log("Match ID:", join.matchId, join)
-		await connectToGame(`ws://localhost:3000/ws/${route}?playerId=${config?.id}`)
+		console.log("Match ID:", join.gameId, join)
+		await GameWebsocket.connectToGame(route, join.gameId, config?.id)
 
 		console.log("Press any key to return...");
 		// await waitForKey();
 
-  } catch (err: any) {
-    console.log("Failed to start game:", err.message);
-	// await waitForKey();
-  }
+	} catch (err: any) {
+		console.log("Failed to start game:", err.message);
+		// await waitForKey();
+	}
 }
 
 start()

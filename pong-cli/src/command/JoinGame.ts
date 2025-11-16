@@ -1,14 +1,16 @@
 import { loadConfig } from "../core/config";
 
 export interface JoinGameResponse {
-	wsUrl: string;
-	matchId: string;
+	status: string;
+	gameId: string;
+	playerId: string;
+	message: string;
 }
 
 export async function joinGame(mode: string): Promise<JoinGameResponse> {
 	const config = loadConfig();
 	let apiEndpoint: string
-	console.log("Mode: ", mode)
+
 	if(mode === "tournament"){
 		apiEndpoint = '/api/v1/game/join-tournament'
 	}

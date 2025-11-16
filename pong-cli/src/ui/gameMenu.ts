@@ -40,12 +40,11 @@ return new Promise((resolve) => {
 	screen.render();
 
 	menu.on("select", (_, index) => {
-	screen.destroy();
-
-	if (index === 0) resolve("classic");
-	else if (index === 1) resolve("tournament");
-	else if (index === 2) resolve("bot-classic");
-	else resolve("back");
+		screen.destroy();
+		if (index === 0) resolve("classic");
+		else if (index === 1) resolve("tournament");
+		else if (index === 2) resolve("bot-classic");
+		else resolve("back");
 	});
 
 	screen.key(["escape", "q", "C-c"], () => {

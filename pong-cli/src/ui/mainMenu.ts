@@ -1,4 +1,5 @@
 import blessed from "blessed";
+import { clearConfig } from "../core/config";
 
 export function mainMenu(): Promise<"game" | "profile" | "setting" | "logout"> {
 return new Promise((resolve) => {
@@ -50,6 +51,7 @@ return new Promise((resolve) => {
 
 	screen.key(["escape", "q", "C-c"], () => {
 		screen.destroy();
+		clearConfig()
 		resolve("logout");
 	});
 });

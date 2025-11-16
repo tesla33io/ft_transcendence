@@ -19,32 +19,37 @@ export class GameWebSocketServer{
 	public clientDisconnect?: (playerId: string) => void
 
 	private setupWebsocketServer(){
-		this.wss.on('connection', (ws: WebSocket, req) =>{
-			const url = new URL(req.url!, 'http://localhost')
-			const playerId = url.searchParams.get('playerId')
+		try {
+			this.wss.on('connection', (ws: WebSocket, req) =>{
+				const url = new URL(req.url!, 'http://localhost')
+				const playerId = url.searchParams.get('playerId')
 
-			if (playerId) {
-				this.connectedClients.set(playerId, ws)
-				console.log(`Player ${playerId} connected via WebSocket [Port ${this.wss.options.port}]`)
+				if (playerId) {
+					this.connectedClients.set(playerId, ws)
+					console.log(`Player ${playerId} connected via WebSocket [Port ${this.wss.options.port}]`)
 
-				ws.on('message', (data:string) =>{
-					try {
-						const message = JSON.parse(data.toString())
-						this.handleClientMessage(playerId, message)
-					}
-					catch (err){
-						console.error('Invalid message from client:', err)
-					}
-				})
+					ws.on('message', (data:string) =>{
+						try {
+							const message = JSON.parse(data.toString())
+							this.handleClientMessage(playerId, message)
+						}
+						catch (err){
+							console.error('Invalid message from client:', err)
+						}
+					})
 
-				ws.on('close', () => {
-					this.connectedClients.delete(playerId)
-					console.log(`Player ${playerId} disconnected`)
-					if (this.clientDisconnect)
-						this.clientDisconnect(playerId)
-				})
-			}
-		})
+					ws.on('close', () => {
+						this.connectedClients.delete(playerId)
+						console.log(`Player ${playerId} disconnected`)
+						if (this.clientDisconnect)
+							this.clientDisconnect(playerId)
+					})
+				}
+			})
+		}
+		catch (err){
+			console.log(err)
+		}
 	}
 
 	private handleClientMessage(playerId: string, message: any){

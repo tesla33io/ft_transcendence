@@ -1,53 +1,97 @@
 import Websocket from 'ws'
+import { GameBoard } from '../ui/gameBoard'
 
-export async function connectToGame(wsUrl: string) {
-	return new Promise<void>((resolve, reject) => {
-		const ws = new Websocket(wsUrl);
+export class GameWebsocket{
+	private static gameId: string
+	private static playerId: string
+	private static wsUrl: string
+	private static ws: Websocket
+	private static gameBoard = new GameBoard()
 
-		ws.onopen = () => {
-			console.log("Connected to game server!");
-			resolve();
-		};
+	public static async connectToGame(route: string, gameId: string, playerId: string) {
+		return new Promise<void>((resolve, reject) => {
+			this.gameId = gameId
+			this.playerId = playerId
+			this.wsUrl = `ws://localhost:3000/ws/${route}?playerId=${playerId}`
+			this.ws = new Websocket(this.wsUrl)
 
-		ws.onerror = (err) => {
-			console.log("WebSocket error", err);
-			reject(err);
-		};
-
-		ws.onclose = () => {
-			console.log("Game connection closed.");
-		};
-
-		ws.onmessage = (msg) => {
-			try {
-				const data = JSON.parse(msg.data.toString());
-				handleGameEvent(data);
-			} catch (err) {
-				console.log("Invalid WS message:", msg.data);
+			this.ws.onopen = () => {
+				console.log("Connected to game server!")
+				resolve()
 			}
-		};
-	});
-}
 
-function handleGameEvent(event: any) {
-	switch (event.type) {
-		case "GAME_STATE":
-		console.log("Game state:", event.state);
-		break;
+			this.ws.onerror = (err) => {
+				console.log("WebSocket error", err)
+				reject(err)
+			}
 
-		case "PADDLE_UPDATE":
-		console.log("Paddle update:", event);
-		break;
+			this.ws.onclose = () => {
+				console.log("Game connection closed.")
+			}
 
-		case "SCORE":
-		console.log(`Score: ${event.left} - ${event.right}`);
-		break;
+			this.ws.onmessage = (msg) => {
+				try {
+					const data = JSON.parse(msg.data.toString())
+					this.handleGameEvent(data)
+				} catch (err) {
+					// console.log("Invalid WS message:", msg.data)
+				}
+			}
+		})
+	}
 
-		case "MATCH_END":
-		console.log("Match ended:", event.result);
-		break;
+	private static handleGameEvent(event: any) {
+		switch (event.type) {
+			case "classic_notification":
+				if (event.status === 'connected'){
+					console.log("Game Connected")
+					const readyMsg = this.readyMessage('ready', this.playerId, this.gameId)
+					console.log("ready MSg:", readyMsg)
+					this.ws.send(JSON.stringify(readyMsg))
+				}
+				else if (event.status === 'finished'){
+					console.log("Game Finished")
+				}
+			break;
 
-		default:
-		console.log("Unknown event:", event);
+			case "game_state":
+				if (event.status === 'playing'){
+					this.gameBoard.renderGameState(event);
+				}
+				else if (event.status === 'finished'){
+
+				}
+			break;
+
+
+			case "MATCH_END":
+				console.log("Match ended:", event.result);
+			break;
+
+			// default:
+			// 	console.log("Unknown event:", event);
+		}
+	}
+
+	private static readyMessage(type: string, playerId: string, gameId: string){
+		const readyMsg = {
+			type: 'ready',
+			playerId: playerId,
+			gameId: gameId
+		}
+		return readyMsg
+	}
+
+	private static movementMessage(keyName: string){
+		let dir = ''
+
+		if (keyName === 'up'){
+			dir = 'up'
+		}
+		else if (keyName === 'down'){
+			dir = 'down'
+		}
+
+
 	}
 }

@@ -26,6 +26,9 @@ build: setup
 
 red: down build upd
 
+cli:
+	cd ./pong-cli && npm run start
+
 db:
 	docker compose exec user-service sqlite3 /user-service/data/user-service.db
 

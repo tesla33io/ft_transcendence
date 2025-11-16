@@ -1,9 +1,9 @@
 import { messageBox } from "../ui/messageBox";
-import { loadConfig } from "../core/config";
+import { clearConfig, loadConfig } from "../core/config";
 
 export async function logout() {
 	const config = loadConfig()
-	console.log(`Logout: `, config)
+
 	const res = await fetch("http://localhost:3000/api/v1/auth/logout", {
 		method: 'POST',
 		headers: {
@@ -15,11 +15,11 @@ export async function logout() {
 	});
 
 	if (!res.ok){
-		await messageBox("❌ Logout failed!", "red");
+		await messageBox("❌ Logout failed!", "red")
 		console.log("Logout failed", res)
 		return false
 	}
-
-	await messageBox("✔ Logout successful!", "green");
+	clearConfig()
+	await messageBox("✔ Logout successful!", "green")
 	return true
 }

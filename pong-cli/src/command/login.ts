@@ -19,7 +19,7 @@ export async function login(): Promise<boolean> {
 	}
 
 	const data = await res.json();
-	console.log("Login data", data)
+
 	if (!data.accessToken || !data.refreshToken) {
 		await messageBox(`❌ ${data.message}.`, "red");
 		return false
