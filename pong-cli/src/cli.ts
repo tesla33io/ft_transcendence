@@ -1,10 +1,9 @@
 import { login } from "./command/login"
 import { logout } from "./command/logout"
-import { inputPrompt } from "./ui/inputPromt"
 import { entryMenu } from "./ui/entryMenu"
-import { mainMenu } from "./ui/mainMenu"
+import { MainMenu } from "./ui/mainMenu"
 import { clearConfig, loadConfig } from "./core/config"
-import { gameMenu } from "./ui/gameMenu"
+import { GameMenu } from "./ui/gameMenu"
 import { joinGame } from "./command/JoinGame"
 import { GameWebsocket } from "./network/gameSocket"
 
@@ -36,12 +35,15 @@ async function start() {
 }
 
 async function handleMainMenu() {
-	while (true) {
-		const mode = await mainMenu();
+	const mainMenu = new MainMenu()
 
+	while (true) {
+		const mode = await mainMenu.show();
+
+		mainMenu.destroy()
 		if (mode === "game") {
 			await handleGameMenu()
-			break
+			continue
 		}
 
 		else if (mode === "profile") {
@@ -61,9 +63,12 @@ async function handleMainMenu() {
 }
 
 async function handleGameMenu(){
-	while (true){
-		const mode = await gameMenu()
+	const gameMenu = new GameMenu()
 
+	while (true){
+		const mode = await gameMenu.show()
+
+		// gameMenu.destroy()
 		if (mode === "classic"){
 			startGameFlow("classic")
 		}
@@ -74,7 +79,7 @@ async function handleGameMenu(){
 
 		else if (mode === "bot-classic"){
 			startGameFlow("ai")
-
+			continue
 		}
 
 		else if (mode === "back"){

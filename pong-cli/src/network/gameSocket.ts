@@ -6,10 +6,13 @@ export class GameWebsocket{
 	private static playerId: string
 	private static wsUrl: string
 	private static ws: Websocket
-	private static gameBoard = new GameBoard()
+	private static gameBoard: GameBoard | null = null
 
 	public static async connectToGame(route: string, gameId: string, playerId: string) {
 		return new Promise<void>((resolve, reject) => {
+			// Create the game board when connecting
+			this.gameBoard = new GameBoard()
+
 			this.gameId = gameId
 			this.playerId = playerId
 			this.wsUrl = `ws://localhost:3000/ws/${route}?playerId=${playerId}`
@@ -27,6 +30,11 @@ export class GameWebsocket{
 
 			this.ws.onclose = () => {
 				console.log("Game connection closed.")
+				// Destroy the game board when connection closes
+				if (this.gameBoard) {
+					this.gameBoard.destroy()
+					this.gameBoard = null
+				}
 			}
 
 			this.ws.onmessage = (msg) => {
@@ -56,10 +64,16 @@ export class GameWebsocket{
 
 			case "game_state":
 				if (event.status === 'playing'){
-					this.gameBoard.renderGameState(event);
+					if (this.gameBoard) {
+						this.gameBoard.renderGameState(event);
+					}
 				}
 				else if (event.status === 'finished'){
-
+					// Clean up game board on finish
+					if (this.gameBoard) {
+						this.gameBoard.destroy()
+						this.gameBoard = null
+					}
 				}
 			break;
 
@@ -82,16 +96,4 @@ export class GameWebsocket{
 		return readyMsg
 	}
 
-	private static movementMessage(keyName: string){
-		let dir = ''
-
-		if (keyName === 'up'){
-			dir = 'up'
-		}
-		else if (keyName === 'down'){
-			dir = 'down'
-		}
-
-
-	}
 }
