@@ -14,6 +14,7 @@ import { FromSchema } from "json-schema-to-ts";
 
 import { TwoFactorService } from '../utils/TwoFactorService';
 import { LockMode } from '@mikro-orm/core';
+import { pendingRegistrationStore } from '../utils/PendingRegistrationStore';
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'profiles');
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -144,12 +145,14 @@ export default async function userRoutes(app: FastifyInstance) {
                         id: { type: 'number' },
                         username: { type: 'string' },
                         message: { type: 'string' },
+                        nextStep: { type: 'string' },
                         // Optional 2FA setup data
                         twoFactorSetup: {
                             type: 'object',
                             properties: {
                                 secret: { type: 'string' },
                                 qrCodeUrl: { type: 'string' },
+                                registrationToken: { type: 'string' },
                                 message: { type: 'string' }
                             }
                         }
@@ -213,8 +216,47 @@ export default async function userRoutes(app: FastifyInstance) {
                 });
             }
 
-            // Hash password and create user
+            // Hash password
             const hash = await argon2.hash(password);
+
+            // If 2FA is requested during registration, DON'T create user yet
+            if (enable2FA === true) {
+                try {
+                    // Generate TOTP secret and QR code
+                    const { secret, qrCodeUrl } = await TwoFactorService.generateTOTPSecret(username);
+                    
+                    // Store registration data temporarily (NOT in database)
+                    const registrationToken = pendingRegistrationStore.store(
+                        username,
+                        hash,
+                        secret,
+                        'totp'
+                    );
+
+                    const twoFactorSetup = {
+                        secret: secret,
+                        qrCodeUrl: qrCodeUrl,
+                        registrationToken: registrationToken, // Include token for verification
+                        message: 'Scan QR code with authenticator app. You must verify the code to complete registration.'
+                    };
+
+                    app.log.info(`Pending registration created for ${username} with 2FA (token: ${registrationToken.substring(0, 8)}...)`);
+
+                    return reply.send({
+                        message: 'Registration pending 2FA verification',
+                        twoFactorSetup: twoFactorSetup,
+                        nextStep: 'POST /users/auth/2fa/verify-registration with registrationToken and code'
+                    });
+                } catch (error) {
+                    app.log.error(`Failed to set up 2FA during registration for ${username}: ${String(error)}`);
+                    return reply.code(500).send({ 
+                        error: 'Failed to initiate 2FA setup',
+                        details: 'Unable to generate 2FA credentials'
+                    });
+                }
+            }
+
+            // If 2FA is NOT requested, create user immediately (existing flow)
             const user = new User();
             user.username = username;
             user.passwordHash = hash;
@@ -231,43 +273,11 @@ export default async function userRoutes(app: FastifyInstance) {
                 path: '/',
             });
 
-            // If 2FA is requested during registration, set it up automatically
-            let twoFactorSetup = undefined;
-            if (enable2FA === true) {
-                try {
-                    // Generate TOTP secret and QR code (same logic as /auth/2fa/setup)
-                    const { secret, qrCodeUrl } = await TwoFactorService.generateTOTPSecret(user.username);
-                    
-                    // Store temporarily (don't enable yet - user needs to verify first)
-                    user.twoFactorSecret = secret;
-                    user.twoFactorMethod = 'totp';
-                    await app.em.flush();
-
-                    twoFactorSetup = {
-                        secret: secret,
-                        qrCodeUrl: qrCodeUrl,
-                        message: 'Scan QR code with authenticator app. You will need to verify the code to enable 2FA.'
-                    };
-
-                    app.log.info(`2FA setup initiated for new user ${user.id} during registration`);
-                } catch (error) {
-                    app.log.error(`Failed to set up 2FA during registration for user ${user.id}: ${String(error)}`);
-                    // Don't fail registration if 2FA setup fails, just log it
-                }
-            }
-
-            const response: any = { 
-                id: user.id, 
+            return reply.send({
+                id: user.id,
                 username: user.username,
                 message: 'User registered successfully'
-            };
-
-            // Include 2FA setup data if it was requested
-            if (twoFactorSetup) {
-                response.twoFactorSetup = twoFactorSetup;
-            }
-
-            return reply.send(response);
+            });
 
         } catch (error) {
             console.error('🔴 [REGISTER] Error:', error);
@@ -809,6 +819,165 @@ export default async function userRoutes(app: FastifyInstance) {
             }
 
             return reply.code(400).send({ error: 'Invalid method. Only TOTP is supported.' });
+        });
+
+        // POST /auth/2fa/verify-registration - Complete registration after 2FA verification
+        app.post('/auth/2fa/verify-registration', {
+            config: { skipSession: true }, // No authentication required
+            schema: {
+                tags: ['auth'],
+                summary: 'Verify 2FA and complete registration',
+                description: 'Completes user registration after 2FA verification. Only for users who registered with enable2FA=true.',
+                body: {
+                    type: 'object',
+                    required: ['registrationToken', 'code'],
+                    properties: {
+                        registrationToken: {
+                            type: 'string',
+                            description: 'Token received during registration'
+                        },
+                        code: {
+                            type: 'string',
+                            minLength: 6,
+                            maxLength: 6,
+                            pattern: '^[0-9]{6}$'
+                        }
+                    }
+                },
+                response: {
+                    200: {
+                        type: 'object',
+                        properties: {
+                            id: { type: 'number' },
+                            username: { type: 'string' },
+                            message: { type: 'string' },
+                            backupCodes: {
+                                type: 'array',
+                                items: { type: 'string' }
+                            },
+                            warning: { type: 'string' }
+                        }
+                    },
+                    400: {
+                        type: 'object',
+                        properties: {
+                            error: { type: 'string' },
+                            details: { type: 'string' }
+                        }
+                    },
+                    401: {
+                        type: 'object',
+                        properties: {
+                            error: { type: 'string' }
+                        }
+                    },
+                    404: {
+                        type: 'object',
+                        properties: {
+                            error: { type: 'string' }
+                        }
+                    },
+                    409: {
+                        type: 'object',
+                        properties: {
+                            error: { type: 'string' },
+                            details: { type: 'string' }
+                        }
+                    }
+                }
+            }
+        }, async (req, reply) => {
+            const { registrationToken, code } = req.body as { registrationToken: string; code: string };
+
+            // Validate inputs
+            if (!registrationToken || typeof registrationToken !== 'string') {
+                return reply.code(400).send({
+                    error: 'Invalid registration token',
+                    details: 'Registration token is required'
+                });
+            }
+
+            if (!code || typeof code !== 'string' || !/^\d{6}$/.test(code)) {
+                return reply.code(400).send({
+                    error: 'Invalid code format',
+                    details: 'Code must be exactly 6 digits'
+                });
+            }
+
+            // Get pending registration
+            const pendingRegistration = pendingRegistrationStore.get(registrationToken);
+            
+            if (!pendingRegistration) {
+                return reply.code(404).send({
+                    error: 'Registration not found or expired',
+                    details: 'The registration token is invalid or has expired. Please register again.'
+                });
+            }
+
+            // Verify 2FA code
+            let isValid = false;
+            if (pendingRegistration.twoFactorMethod === 'totp') {
+                isValid = TwoFactorService.verifyTOTP(code, pendingRegistration.twoFactorSecret);
+            } else {
+                return reply.code(400).send({
+                    error: 'Invalid 2FA method',
+                    details: 'Only TOTP is supported'
+                });
+            }
+
+            if (!isValid) {
+                return reply.code(401).send({
+                    error: 'Invalid verification code',
+                    details: 'The code you entered is incorrect. Please try again.'
+                });
+            }
+
+            // Check if username is still available (race condition protection)
+            const existing = await app.em.findOne(User, { username: pendingRegistration.username });
+            if (existing) {
+                pendingRegistrationStore.remove(registrationToken);
+                return reply.code(409).send({
+                    error: 'Username already taken',
+                    details: 'This username was registered by another user. Please register with a different username.'
+                });
+            }
+
+            // Create user NOW (after successful 2FA verification)
+            const user = new User();
+            user.username = pendingRegistration.username;
+            user.passwordHash = pendingRegistration.passwordHash;
+            user.twoFactorSecret = pendingRegistration.twoFactorSecret;
+            user.twoFactorMethod = pendingRegistration.twoFactorMethod;
+            user.twoFactorEnabled = true; // Enable immediately since verification passed
+
+            // Generate backup codes
+            const backupCodes = TwoFactorService.generateBackupCodes();
+            user.backupCodes = await TwoFactorService.hashBackupCodes(backupCodes);
+
+            await app.em.persistAndFlush(user);
+
+            // Remove pending registration
+            pendingRegistrationStore.remove(registrationToken);
+
+            // Create session
+            const sessionId = await app.sm.create({ userId: user.id, username: user.username });
+            reply.setCookie('sessionId', sessionId, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 86400,
+                path: '/',
+            });
+
+            app.log.info(`User ${user.id} (${user.username}) registered successfully with 2FA enabled`);
+
+            return reply.send({
+                id: user.id,
+                username: user.username,
+                message: 'Registration completed successfully. 2FA is now enabled.',
+                backupCodes: backupCodes,
+                warning: 'Save these backup codes in a safe place. They are shown only once.'
+            });
         });
 
         // POST /auth/2fa/verify-setup

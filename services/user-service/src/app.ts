@@ -15,6 +15,7 @@ import { SessionManager, setupSessionMiddleware } from './utils/SessionManager';
 import { setupGlobalErrorHandling } from './utils/ErrorHandling';
 
 import cors from '@fastify/cors';
+import { pendingRegistrationStore } from './utils/PendingRegistrationStore';
 
 async function buildServer() {
   // Configure Fastify to trust proxy headers only from trusted sources
@@ -81,6 +82,11 @@ async function buildServer() {
     console.log('✅ Tournament routes registered');
     await app.register(userStatisticsRoutes, { prefix: '/user-stats' });
     await app.register(matchHistoryRoutes, { prefix: '/match-history' });
+
+    // Cleanup expired pending registrations every 5 minutes
+    setInterval(() => {
+        pendingRegistrationStore.cleanup();
+    }, 5 * 60 * 1000);
 
     return app;
 }
