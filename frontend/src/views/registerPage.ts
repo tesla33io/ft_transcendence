@@ -290,72 +290,112 @@ export function registerView(router: Router) {
             <div id="2fa-error" style="color: red; margin-top: 10px; display: none; text-align: center;"></div>
             <div id="2fa-loading" style="margin-top: 10px; display: none; text-align: center;">Verifying...</div>
             <div class="field-row" style="margin-top: 15px; gap: 10px;">
-                <button id="verify-2fa-btn" style="flex: 1;">Verify & Complete Registration</button>
-                <button id="cancel-2fa-btn">Cancel</button>
+                <button id="verify-2fa-btn" type="button" style="flex: 1;">Verify & Complete Registration</button>
+                <button id="cancel-2fa-btn" type="button">Cancel</button>
             </div>
         `;
 
-        const verifyBtn = content.querySelector<HTMLButtonElement>('#verify-2fa-btn')!;
-        const cancelBtn = content.querySelector<HTMLButtonElement>('#cancel-2fa-btn')!;
-        const codeInput = content.querySelector<HTMLInputElement>('#2fa-code')!;
-        const errorDiv = content.querySelector<HTMLDivElement>('#2fa-error')!;
-        const loadingDiv = content.querySelector<HTMLDivElement>('#2fa-loading')!;
+        // Use event delegation on content element
+        const handleContentClick = async (e: MouseEvent) => {
+            const target = e.target as HTMLElement;
+            
+            if (target.id === 'verify-2fa-btn' || target.closest('#verify-2fa-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Use getElementById instead of querySelector for IDs starting with numbers
+                const codeInput = document.getElementById('2fa-code') as HTMLInputElement;
+                const errorDiv = document.getElementById('2fa-error') as HTMLDivElement;
+                const loadingDiv = document.getElementById('2fa-loading') as HTMLDivElement;
+                const verifyBtn = document.getElementById('verify-2fa-btn') as HTMLButtonElement;
+                
+                if (!codeInput || !errorDiv || !loadingDiv || !verifyBtn) {
+                    console.error('Failed to find 2FA elements');
+                    return;
+                }
+                
+                const code = codeInput.value.trim();
+                console.log('Verify clicked! Code:', code);
+                
+                if (!/^\d{6}$/.test(code)) {
+                    errorDiv.textContent = 'Please enter a valid 6-digit code';
+                    errorDiv.style.display = 'block';
+                    return;
+                }
 
-        // Auto-focus code input
-        setTimeout(() => codeInput.focus(), 100);
+                verifyBtn.disabled = true;
+                errorDiv.style.display = 'none';
+                loadingDiv.style.display = 'block';
+
+                try {
+                    console.log('🔵 [2FA] Calling verification endpoint...');
+                    console.log('🔵 [2FA] Registration token:', setup.registrationToken.substring(0, 8) + '...');
+                    console.log('🔵 [2FA] Code:', code);
+                    
+                    const verificationResponse = await ApiService.post<RegistrationResponse>('/users/auth/2fa/verify-registration', {
+                        registrationToken: setup.registrationToken,
+                        code: code
+                    });
+
+                    console.log('✅ [2FA] Verification successful!', verificationResponse);
+                    console.log('✅ [2FA] User ID:', verificationResponse.id);
+                    console.log('✅ [2FA] Username:', verificationResponse.username);
+
+                    if (verificationResponse.id) {
+                        localStorage.setItem('userId', verificationResponse.id.toString());
+                        localStorage.setItem('username', verificationResponse.username);
+                    }
+
+                    if (verificationResponse.backupCodes && verificationResponse.backupCodes.length > 0) {
+                        console.log('✅ [2FA] Showing backup codes');
+                        showBackupCodes(verificationResponse.backupCodes, router);
+                    } else {
+                        console.log('✅ [2FA] No backup codes, navigating to desktop');
+                        router.navigate("/desktop");
+                    }
+                } catch (error: any) {
+                    console.error('❌ [2FA] Verification error:', error);
+                    console.error('❌ [2FA] Error details:', error?.details);
+                    console.error('❌ [2FA] Error message:', error?.message);
+                    console.error('❌ [2FA] Full error:', JSON.stringify(error, null, 2));
+                    
+                    verifyBtn.disabled = false;
+                    loadingDiv.style.display = 'none';
+                    
+                    const errorMessage = error?.details?.error || error?.details?.details || error?.message || 'Verification failed. Please try again.';
+                    errorDiv.textContent = errorMessage;
+                    errorDiv.style.display = 'block';
+                    codeInput.value = '';
+                    codeInput.focus();
+                }
+            } else if (target.id === 'cancel-2fa-btn' || target.closest('#cancel-2fa-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Cancel clicked!');
+                router.navigate("/login");
+            }
+        };
+
+        // Remove any existing listener and add new one
+        content.removeEventListener('click', handleContentClick);
+        content.addEventListener('click', handleContentClick, true); // Use capture phase
 
         // Handle Enter key
-        codeInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                verifyBtn.click();
-            }
-        });
-
-        // Verify button handler
-        verifyBtn.addEventListener('click', async () => {
-            const code = codeInput.value.trim();
-            
-            if (!/^\d{6}$/.test(code)) {
-                errorDiv.textContent = 'Please enter a valid 6-digit code';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            verifyBtn.disabled = true;
-            errorDiv.style.display = 'none';
-            loadingDiv.style.display = 'block';
-
-            try {
-                const authResponse = await UserService.verifyRegistration2FA(
-                    setup.registrationToken,
-                    code
-                );
-
-                // Check if backup codes are in the response
-                const verificationResponse = await ApiService.post<RegistrationResponse>('/users/auth/2fa/verify-registration', {
-                    registrationToken: setup.registrationToken,
-                    code: code
-                });
-
-                if (verificationResponse.backupCodes && verificationResponse.backupCodes.length > 0) {
-                    showBackupCodes(verificationResponse.backupCodes, router);
-                } else {
-                    router.navigate("/desktop");
-                }
-            } catch (error) {
-                verifyBtn.disabled = false;
-                loadingDiv.style.display = 'none';
-                errorDiv.textContent = error instanceof Error ? error.message : 'Verification failed. Please try again.';
-                errorDiv.style.display = 'block';
-                codeInput.value = '';
+        setTimeout(() => {
+            const codeInput = document.getElementById('2fa-code') as HTMLInputElement;
+            if (codeInput) {
                 codeInput.focus();
+                codeInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const verifyBtn = document.getElementById('verify-2fa-btn') as HTMLButtonElement;
+                        if (verifyBtn) {
+                            verifyBtn.click();
+                        }
+                    }
+                });
             }
-        });
-
-        // Cancel button handler - go back to login
-        cancelBtn.addEventListener('click', () => {
-            router.navigate("/login");
-        });
+        }, 50);
     }
 
     // New function to show backup codes

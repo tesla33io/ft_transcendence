@@ -324,7 +324,8 @@ server.addHook('onRequest', async (request: AuthRequest, reply) => {
     const publicAuthRoutes = [
         '/users/auth/login',
         '/users/auth/register',
-        '/users/auth/refresh'
+        '/users/auth/refresh',
+        '/users/auth/2fa/verify-registration'  // Add this line
     ];
 
     if (publicAuthRoutes.some(route => request.url.includes(route))) {

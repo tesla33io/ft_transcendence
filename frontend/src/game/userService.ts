@@ -120,38 +120,50 @@ export class UserService {
         method?: 'totp';
     }>('/users/auth/login', credentials);
     
-    // Check if 2FA is required
-    if (response.requires2FA) {
+    console.log('🔵 [LOGIN] Full response:', response);
+    console.log('🔵 [LOGIN] requires2FA:', response.requires2FA);
+    console.log('🔵 [LOGIN] message:', response.message);
+    
+    // Check if 2FA is required - check both requires2FA flag and message content
+    if (response.requires2FA === true || 
+        (response.message && response.message.toLowerCase().includes('authenticator'))) {
+        console.log('🔵 [LOGIN] 2FA required, returning challenge');
         return {
             requires2FA: true,
             method: response.method || 'totp',
-            message: 'Enter code from authenticator app'
+            message: response.message || 'Enter code from authenticator app'
         };
     }
     
     // Normal login successful
-    console.log('Login successful!');
-    console.log('User ID:', response.id);
-    console.log('Username:', response.username);
-    console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
+    console.log('✅ [LOGIN] Login successful!');
+    console.log('✅ [LOGIN] User ID:', response.id);
+    console.log('✅ [LOGIN] Username:', response.username);
+    console.log('✅ [LOGIN] Access Token:', response.accessToken?.substring(0, 20) + '...');
+    
+    // Validate response has required fields
+    if (!response.id || !response.username) {
+        console.error('❌ [LOGIN] Login response missing required fields:', response);
+        throw new Error('Invalid login response: missing user information');
+    }
     
     // Store tokens and user data
-    localStorage.setItem('authToken', response.accessToken!);
-    localStorage.setItem('userId', response.id!.toString());
-    localStorage.setItem('username', response.username!);
+    localStorage.setItem('authToken', response.accessToken || '');
+    localStorage.setItem('userId', response.id.toString());
+    localStorage.setItem('username', response.username);
     
     // Create AuthResponse with real data from gateway
     const authData: AuthResponse = {
         user: {
-            id: response.id!,
-            username: response.username!,
+            id: response.id,
+            username: response.username,
             avatarUrl: '/images/default-avatar.png',
             onlineStatus: OnlineStatus.ONLINE,
             activityType: 'browsing',
             role: response.role || UserRole.USER,
             lastLogin: new Date().toISOString()
         },
-        token: response.accessToken!,
+        token: response.accessToken || '',
     };
     
     return authData;

@@ -53,14 +53,14 @@ export function loginView(router: Router) {
 
     const twoFactorLabel = document.createElement("label");
     twoFactorLabel.htmlFor = "2fa-code-input";
-    twoFactorLabel.textContent = "2FA Code";
+    twoFactorLabel.textContent = "2FA Code or Backup Code";
 
     const twoFactorInput = document.createElement("input");
     twoFactorInput.id = "2fa-code-input";
     twoFactorInput.type = "text";
-    twoFactorInput.maxLength = 6;
-    twoFactorInput.pattern = "[0-9]{6}";
-    twoFactorInput.placeholder = "000000";
+    twoFactorInput.maxLength = 8; // Changed from 6 to 8 to allow backup codes
+    twoFactorInput.pattern = "[0-9]{6,8}"; // Changed to allow 6-8 digits
+    twoFactorInput.placeholder = "000000 or backup code";
     twoFactorInput.style.textAlign = "center";
     twoFactorInput.style.letterSpacing = "4px";
     twoFactorInput.style.fontSize = "18px";
