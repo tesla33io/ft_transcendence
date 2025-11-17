@@ -667,6 +667,17 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
         return mockStats;
     }
 
+    static async getTournamentBlockchainHash(tournamentId: number): Promise<{
+        tournamentId: number;
+        blockchainTxHash: string;
+        status: 'pending' | 'confirmed';
+        createdAt: number | null;
+        confirmedAt: number | null;
+        message: string;
+    }> {
+        return ApiService.get(`/tournaments/${tournamentId}/blockchain-tx-hash`);
+    }
+
 
     // Get match history
 	// Get match history

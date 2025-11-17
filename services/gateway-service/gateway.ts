@@ -368,6 +368,14 @@ server.register(require('@fastify/http-proxy'), {
     http2: false
 })
 
+// ===== TOURNAMENT SERVICE PROXY =====
+server.register(require('@fastify/http-proxy'), {
+    upstream: 'http://user-service:8000',
+    prefix: '/tournaments',
+    rewritePrefix: '/tournaments',
+    http2: false
+})
+
 // ===== INTERCEPT AUTH RESPONSES WITH JWT =====
 server.addHook('onSend', async (request: any, reply: any, payload: any) => {
     try {
