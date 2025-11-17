@@ -21,8 +21,8 @@ services:
       dockerfile: Dockerfile
     container_name: gateway-service
     environment:
-      - NODE_ENV=${NODE_ENV:-development}  
-      - JWT_SECRET=${JWT_SECRET:-} 
+      - NODE_ENV=${NODE_ENV:-development}
+      - JWT_SECRET=${JWT_SECRET:-}
     ports:
       - "3000:3000"
     depends_on:
@@ -110,6 +110,8 @@ services:
     container_name: AI-service
     ports:
       - "5100"
+    env_file:
+      - .env
     networks:
       - pong-network
     healthcheck:

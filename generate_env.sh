@@ -48,6 +48,7 @@ PADDLE_HEIGHT=50
 PADDLE_WIDTH=10
 FPS=60
 PLAYER_OFFSET=20
+GAME_SCORE=3
 
 # ===== DATABASE =====
 DATABASE_URL=postgresql://postgres:password@localhost:5432/pongdb

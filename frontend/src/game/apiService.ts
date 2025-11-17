@@ -18,19 +18,19 @@ export class ApiService {
                 credentials: 'include'
             });
 
-            console.log(`[API] GET ${endpoint} - Status: ${response.status}`);
+            //console.log(`[API] GET ${endpoint} - Status: ${response.status}`);
 
             if (response.status === 401) {
                 // Token expired, trigger refresh
                 const { UserService } = await import('./userService');
-                console.log('[API] 401 Unauthorized - Attempting refresh...');
+                //console.log('[API] 401 Unauthorized - Attempting refresh...');
 
                 try {
                     await UserService.refreshToken();
                     // Retry with new token
                     return this.get<T>(endpoint);
                 } catch (refreshError) {
-                    console.error('[API] Refresh failed, logging out');
+                    //console.error('[API] Refresh failed, logging out');
                     localStorage.clear();
                     window.location.href = '/login';
                     throw refreshError;
@@ -42,7 +42,7 @@ export class ApiService {
             let details: any;
             try { details = text ? JSON.parse(text) : null; } catch (_) {}
             const message = details?.error ?? details?.message ?? text ?? response.statusText;
-            const error: any = new Error(`API Error ${response.status}: ${message}`);
+            const error: any = new Error(`${response.status}: ${message}`);
             error.status = response.status;
             error.details = details;
             throw error;
@@ -50,7 +50,7 @@ export class ApiService {
 
             return response.json();
         } catch (error) {
-            console.error('[API] GET error:', error);
+            //console.error('[API] GET error:', error);
             throw error;
         }
     }
@@ -65,19 +65,19 @@ export class ApiService {
 				body: JSON.stringify(data)
 			});
 
-			console.log(`[API] PATCH ${endpoint} - Status: ${response.status}`);
+			//console.log(`[API] PATCH ${endpoint} - Status: ${response.status}`);
 
 			if (response.status === 401) {
 				// Token expired, trigger refresh
 				const { UserService } = await import('./userService');
-				console.log('[API] 401 Unauthorized - Attempting refresh...');
+				//console.log('[API] 401 Unauthorized - Attempting refresh...');
 
 				try {
 					await UserService.refreshToken();
 					// Retry with new token
 					return this.patch<T>(endpoint, data);
 				} catch (refreshError) {
-					console.error('[API] Refresh failed, logging out');
+					//console.error('[API] Refresh failed, logging out');
 					localStorage.clear();
 					window.location.href = '/login';
 					throw refreshError;
@@ -85,14 +85,14 @@ export class ApiService {
 			}
 
 			if (!response.ok) {
-				const error: any = new Error(`API Error: ${response.status}`);
+				const error: any = new Error(`${response.status}`);
 				error.status = response.status;
 				throw error;
 			}
 
 			return response.json();
 		} catch (error) {
-			console.error('[API] PATCH error:', error);
+			//console.error('[API] PATCH error:', error);
 			throw error;
 		}
 	}
@@ -107,7 +107,7 @@ export class ApiService {
                 body: JSON.stringify(data)
             });
 
-            // console.log(`📨 [API] POST ${endpoint} - Status: ${response.status}`);
+            //console.log(`[API] POST ${endpoint} - Status: ${response.status}`);
 
             if (response.status === 401) {
                 // Token expired, trigger refresh
@@ -117,14 +117,14 @@ export class ApiService {
                     throw error;
                 }
                 const { UserService } = await import('./userService');
-                console.log('[API] 401 Unauthorized - Attempting refresh...');
+                //console.log('[API] 401 Unauthorized - Attempting refresh...');
 
                 try {
                     await UserService.refreshToken();
                     // Retry with new token
                     return this.post<T>(endpoint, data);
                 } catch (refreshError) {
-                    console.error('[API] Refresh failed, logging out');
+                    //console.error('[API] Refresh failed, logging out');
                     localStorage.clear();
                     window.location.href = '/login';
                     throw refreshError;
@@ -136,7 +136,7 @@ export class ApiService {
                 let details: any;
                 try { details = text ? JSON.parse(text) : null; } catch (_) {}
                 const message = details?.error ?? details?.message ?? text ?? response.statusText;
-                const error: any = new Error(`API Error ${response.status}: ${message}`);
+                const error: any = new Error(`${response.status}: ${message}`);
                 error.status = response.status;
                 error.details = details;
                 throw error;
@@ -144,7 +144,7 @@ export class ApiService {
 
             return response.json();
         } catch (error) {
-            console.error('[API] POST error:', error);
+            //console.error('[API] POST error:', error);
             throw error;
         }
     }
