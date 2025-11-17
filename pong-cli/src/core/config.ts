@@ -1,6 +1,5 @@
 import { existsSync, writeFileSync, readFileSync, mkdirSync } from "fs";
 import { join } from "path";
-import os from "os";
 
 const configDir = join(process.cwd(), ".pong-cli");
 const configPath = join(configDir, "config.json");

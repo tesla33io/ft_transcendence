@@ -87,6 +87,11 @@ export class GameWebsocket{
 		}
 	}
 
+	public static playerMoved(movement: string){
+		const msg = this.moveMessage(movement)
+		this.ws.send(JSON.stringify(msg))
+	}
+
 	private static readyMessage(type: string, playerId: string, gameId: string){
 		const readyMsg = {
 			type: 'ready',
@@ -94,6 +99,27 @@ export class GameWebsocket{
 			gameId: gameId
 		}
 		return readyMsg
+	}
+
+	private static moveMessage(movement: string){
+
+		let deltaY = 0
+		if (movement === "up")
+			deltaY = -10
+		else if (movement === "down")
+			deltaY = 10
+
+		const moveMsg = {
+			type: "paddle_move",
+			playerId: this.playerId,
+			gameId: this.gameId,
+			deltaY: deltaY
+		}
+		return moveMsg
+	}
+
+	public static disconnect(){
+		this.ws.close()
 	}
 
 }

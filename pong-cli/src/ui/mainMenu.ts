@@ -48,6 +48,7 @@ export class MainMenu{
 		public show(): Promise<"game" | "profile" | "setting" | "logout">{
 			return new Promise((resolve) => {
 				this.menu.on("select", (_, index) => {
+				this.screen.destroy()
 				if (index === 0){;
 					resolve("game");
 				}
@@ -73,4 +74,13 @@ export class MainMenu{
 	public rerender(){
 		this.screen.render()
 	}
+
+	public hide(){
+		this.menu.hide()
+	}
+
+	public focus(){
+		this.menu.focus()
+	}
+
 }

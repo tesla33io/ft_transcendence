@@ -37,35 +37,38 @@ async function start() {
 async function handleMainMenu() {
 	const mainMenu = new MainMenu()
 
-	while (true) {
+	while (1) {
 		const mode = await mainMenu.show();
 
 		if (mode === "game") {
-			await handleGameMenu()
+			console.log(`${mode} was choosed`)
+			handleGameMenu()
 		}
 		else if (mode === "profile") {
+			console.log(`${mode} was choosed`)
 			console.log("Profile (placeholder)...");
 		}
 		else if (mode === "setting") {
+			console.log(`${mode} was choosed`)
 			console.log("Setting (placeholder)...");
 		}
 		else if (mode === "logout") {
+			console.log(`${mode} was choosed`)
 			await logout()
 			clearConfig()
-			mainMenu.destroy()
 			break
 		}
-
 	}
 }
 
 async function handleGameMenu(){
 	const gameMenu = new GameMenu()
 
-	while (true){
+	while (1){
 		const mode = await gameMenu.show()
 
 		if (mode === "classic"){
+			console.log(`${mode} was choosed`)
 			startGameFlow("classic")
 		}
 		else if (mode === "tournament"){
@@ -73,12 +76,13 @@ async function handleGameMenu(){
 		}
 
 		else if (mode === "bot-classic"){
+			console.log(`${mode} was choosed`)
 			startGameFlow("ai")
 			continue
 		}
 
 		else if (mode === "back"){
-			gameMenu.destroy()
+			console.log(`${mode} was choosed`)
 			break
 		}
 	}

@@ -1,4 +1,5 @@
 import blessed from "blessed";
+import { GameWebsocket } from "../network/GameWebSocket";
 
 export class GameMenu {
 	private screen: blessed.Widgets.Screen
@@ -41,11 +42,16 @@ export class GameMenu {
 		this.menu.focus();
 		this.screen.render();
 
+		this.screen.key(['escape', 'q', 'C-c'], () =>{
+			GameWebsocket.disconnect()
+		});
+
 	}
 
 	public show(): Promise<"classic" | "tournament" | "bot-classic" | "back">{
 		return new Promise((resolve) => {
 			this.menu.on("select", (_, index) => {
+			this.screen.destroy()
 			if (index === 0){;
 				resolve("classic");
 			}
@@ -68,5 +74,13 @@ export class GameMenu {
 
 	public destroy(){
 		this.screen.destroy()
+	}
+
+	public hide(){
+		this.menu.hide()
+	}
+
+	public focus(){
+		this.menu.focus()
 	}
 }
