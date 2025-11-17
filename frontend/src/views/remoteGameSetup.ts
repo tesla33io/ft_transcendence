@@ -4,6 +4,8 @@ import { createTaskbar, createStaticDesktopBackground } from "../components/_com
 import { PongGame } from '../game/PongGame';
 //import { OneVOneStatsComponent } from '../components/_userComponents';
 
+let currentPongGame: PongGame | undefined = undefined;
+
 export function remoteGameSetupView(router: Router) {
     const root = document.getElementById("app")!;
     root.innerHTML = "";
@@ -37,7 +39,7 @@ export function remoteGameSetupView(router: Router) {
         <p style="margin: 0 0 8px 0; line-height: 1.5; font-size: 15px; color: #666">
             Play One vs One against Real Players
         </p>
-        <p style="margin: 0; line-height: 1.5; font-size: 15px; color: #666"> 
+        <p style="margin: 0; line-height: 1.5; font-size: 15px; color: #666">
             Challenge real players in competitive matches and prove you're the ultimate Pong champion.
         </p>
     `;
@@ -50,7 +52,7 @@ export function remoteGameSetupView(router: Router) {
     joinClassicBtn.type = "submit";
     joinClassicBtn.id = "joinBtn";
     joinClassicBtn.textContent = "Join Online Game";
-    
+
     joinClassicBtn.className = 'px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-bold';
 
     buttonContainer.appendChild(joinClassicBtn);
@@ -73,6 +75,7 @@ export function remoteGameSetupView(router: Router) {
             help: true,
             close: true,
             onClose: () => {
+                currentPongGame?.dispose();
                 router.navigateToDesktop();
             }
         }
@@ -89,14 +92,14 @@ export function remoteGameSetupView(router: Router) {
 
     joinClassicBtn.addEventListener("click", async (e: Event) => {
         e.preventDefault();
-        
+
         joinClassicBtn.disabled = true;
         joinClassicBtn.textContent = "Waiting for opponent...";
         joinClassicBtn.className = 'px-6 py-2 bg-gray-400 rounded-md font-bold cursor-not-allowed';
 
         const playerName = localStorage.getItem('username') || "Player";
 
-		const playerId = localStorage.getItem('userId'); 
+		const playerId = localStorage.getItem('userId');
 		if(!playerId) {
 			console.log('no userid found please login again');
 			return;
@@ -108,6 +111,7 @@ export function remoteGameSetupView(router: Router) {
                 'classic',
                 router
             );
+            currentPongGame = game
             await game.joinGame();
         } catch (error) {
             console.error("Failed to join game:", error);
