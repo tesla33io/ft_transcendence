@@ -2,7 +2,7 @@
 
 import { UserService } from '../game/userService';
 import { createWindow } from '../components/_components';
-import type { Friend, FriendRequest } from '../game/userService';
+import type { Friend } from '../game/userService';
 import type { 
     OneVOneStatistics, 
     PlayerVsAIStatistics, 
@@ -149,19 +149,31 @@ export class FriendsComponent {
             this.friends.forEach(friend => {
                 const row = document.createElement('tr');
                 row.style.cursor = 'pointer';
-                row.dataset.userId = friend.userId.toString();
+                
+                // ✅ Use 'id' and handle null safely
+                row.dataset.userId = friend.id || '0';
+                
+                // ✅ Check onlineStatus (handle null)
+                const isOnline = friend.onlineStatus === 'online';
+                const statusIcon = isOnline ? '🟢' : '🔴';
+                
+                // ✅ Handle null lastOnlineAt
+                const lastOnline = isOnline ? 'Now' : 
+                    (friend.lastOnlineAt ? formatTimeAgo(friend.lastOnlineAt) : 'Unknown');
+                
                 row.innerHTML = `
                     <td style="padding: 4px 6px; border-bottom: 1px solid #f0f0f0;">
                         <div style="display: flex; align-items: center; gap: 4px;">
-                            <img src="${friend.avatarUrl || '/images/default-avatar.png'}" width="16" height="16" style="border-radius: 2px;">
-                            <span>${friend.userName}</span>
+                            <img src="${friend.avatarUrl || '/images/default-avatar.png'}" 
+                                 width="16" height="16" style="border-radius: 2px;">
+                            <span>${friend.username}</span>
                         </div>
                     </td>
                     <td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center;">
-                        ${friend.isOnline ? '🟢' : '🔴'}
+                        ${statusIcon}
                     </td>
                     <td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center; font-size: 10px;">
-                        ${friend.isOnline ? 'Now' : formatTimeAgo(friend.lastOnlineAt)}
+                        ${lastOnline}
                     </td>
                 `;
                 tbody.appendChild(row);
@@ -172,7 +184,6 @@ export class FriendsComponent {
         tableContainer.appendChild(table);
         this.container.appendChild(tableContainer);
 
-        // Add click handler
         table.addEventListener('click', (e) => {
             const row = (e.target as Element).closest('tr');
             if (!row || !row.dataset.userId) return;
@@ -181,9 +192,10 @@ export class FriendsComponent {
             tbody.querySelectorAll('tr').forEach(r => r.classList.remove('highlighted'));
             row.classList.add('highlighted');
 
-            // Find and set selected friend
-            const userId = parseInt(row.dataset.userId);
-            this.selectedFriend = this.friends.find(f => f.userId === userId) || null;
+            // Find friend by 'id' (string comparison)
+            const friendId = row.dataset.userId;
+            this.selectedFriend = this.friends.find(f => f.id === friendId) || null;
+            
             if (this.selectedFriend && this.options.onFriendSelect) {
                 this.options.onFriendSelect(this.selectedFriend);
             }
@@ -431,7 +443,6 @@ export class SimpleFriendsActionsComponent {
         const buttons = [
             { text: 'View Profile', action: 'view_profile', requiresSelection: true },
             { text: 'Send Friend Request', action: 'send_friend_request', requiresSelection: false },
-            { text: 'incoming Friend Requests', action: 'invite', requiresSelection: false },
             { text: 'Refresh Friends List', action: 'refresh_friends_list', requiresSelection: false }
         ];
 
@@ -459,14 +470,6 @@ export class SimpleFriendsActionsComponent {
                         onClose: () => this.onRefreshFriends?.()
                     }));
                     break;
-                case 'invite':
-                    document.body.appendChild(createIncomingRequestsWindow({
-                        onAccept: async (username) => {
-                            await UserService.acceptFriendRequest(username);
-                            this.onRefreshFriends?.();
-                        }
-                    }));
-                    break;
                 case 'refresh_friends_list':
                     this.onRefreshFriends?.();
                     break;
@@ -481,13 +484,20 @@ export class SimpleFriendsActionsComponent {
         const buttons = this.container.querySelectorAll('button');
 
         if (this.selectedFriend) {
+            const isOnline = this.selectedFriend.onlineStatus === 'online';
+            const statusColor = isOnline ? '#006600' : '#666';
+            const statusText = isOnline ? '🟢 Online' : '🔴 Offline';
+            
             friendInfo.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <img src="${this.selectedFriend.avatarUrl || '/images/default-avatar.png'}" width="24" height="24" style="border-radius: 2px;">
+                    <img src="${this.selectedFriend.avatarUrl || '/images/default-avatar.png'}" 
+                         width="24" height="24" style="border-radius: 2px;">
                     <div style="flex: 1;">
-                        <div style="font-weight: bold; font-size: 12px;">${this.selectedFriend.userName}</div>
-                        <div style="font-size: 10px; color: ${this.selectedFriend.isOnline ? '#006600' : '#666'};">
-                            ${this.selectedFriend.isOnline ? '🟢 Online' : '🔴 Offline'}
+                        <div style="font-weight: bold; font-size: 12px;">
+                            ${this.selectedFriend.username}
+                        </div>
+                        <div style="font-size: 10px; color: ${statusColor};">
+                            ${statusText}
                         </div>
                     </div>
                 </div>
@@ -495,7 +505,8 @@ export class SimpleFriendsActionsComponent {
         } else {
             friendInfo.innerHTML = `
                 <div style="text-align: center; color: #666;">
-                    No friend selected<br><small style="font-size: 10px;">Click on a friend to see their info</small>
+                    No friend selected<br>
+                    <small style="font-size: 10px;">Click on a friend to see their info</small>
                 </div>
             `;
         }

@@ -16,7 +16,29 @@ set -e
 #   npm install
 # fi
 
+# Rebuild TypeScript on startup (for development with bind mounts)
+if [ "$NODE_ENV" = "development" ]; then
+  # Check if watch mode is enabled
+  if [ "$TS_WATCH" = "1" ]; then
+    echo "[user-service] TypeScript watch mode enabled - skipping build"
+    echo "[user-service] Note: Use 'npm run build' manually or set up a separate watch process"
+  else
+    echo "[user-service] Rebuilding TypeScript..."
+    if ! npm run build; then
+      echo "[user-service] ❌ TypeScript build failed!"
+      echo "[user-service] Check the error messages above for details"
+      exit 1
+    fi
+    echo "[user-service] ✅ TypeScript build successful"
+  fi
+fi
+
 echo "[user-service] Running database migrations..."
-npm run migration:up || { echo "[user-service] Migration failed"; exit 1; }
+if ! npm run migration:up; then
+  echo "[user-service] ❌ Migration failed!"
+  echo "[user-service] Check the error messages above for details"
+  exit 1
+fi
+echo "[user-service] ✅ Migrations completed"
 
 exec "$@"

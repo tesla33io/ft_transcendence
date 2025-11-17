@@ -2,7 +2,7 @@ import { Router } from '../router';
 import { createWindow } from '../components/_components';
 import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
 import { PongGame } from '../game/PongGame';
-import { OneVOneStatsComponent } from '../components/_userComponents';
+//import { OneVOneStatsComponent } from '../components/_userComponents';
 
 export function remoteGameSetupView(router: Router) {
     const root = document.getElementById("app")!;
@@ -12,21 +12,39 @@ export function remoteGameSetupView(router: Router) {
     staticBackground.attachToPage(root);
     const content = document.createElement("div");
 
-    const statsContainer = document.createElement("div");
-    statsContainer.className = "mb-4";
+    const titleSection = document.createElement("div");
+    titleSection.style.cssText = `
+        text-align: center;
+        margin: 0 0 12px 0;
+        padding: 12px 12px 0 12px;
+    `;
+    titleSection.innerHTML = `
+        <h3 style="margin: 0; font-size: 22px; font-weight: bold;">
+            Online Game
+        </h3>
+    `;
+    content.appendChild(titleSection);
 
-    const statsComponent = new OneVOneStatsComponent({
-        container: statsContainer,
-        userId: undefined, // Will use current user's stats
-        width: '100%',
-        height: '200px',
-        showTitle: false
-    });
-
-    content.appendChild(statsContainer);
+    const infoSection = document.createElement("div");
+    infoSection.className = "sunken-panel";
+    infoSection.style.cssText = `
+        padding: 12px;
+        margin: 0 12px 12px 12px;
+        background: #e0e0e0;
+        text-align: center;
+    `;
+    infoSection.innerHTML = `
+        <p style="margin: 0 0 8px 0; line-height: 1.5; font-size: 15px; color: #666">
+            Play One vs One against Real Players
+        </p>
+        <p style="margin: 0; line-height: 1.5; font-size: 15px; color: #666"> 
+            Challenge real players in competitive matches and prove you're the ultimate Pong champion.
+        </p>
+    `;
+    content.appendChild(infoSection);
 
     const buttonContainer = document.createElement("div");
-    buttonContainer.className = 'flex flex-col items-center gap-4 p-8 rounded-lg';
+    buttonContainer.className = 'flex flex-col items-center gap-4 p-4 rounded-lg';
 
     const joinClassicBtn = document.createElement("button");
     joinClassicBtn.type = "submit";

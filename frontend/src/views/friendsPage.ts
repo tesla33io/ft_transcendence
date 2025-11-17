@@ -32,15 +32,21 @@ export function friendsView(router: Router) {
     // Friends actions container
     const actionsContainer = document.createElement('div');
 
-    // ✅ Function to open friend profile
+    //Function to open friend profile
     const openFriendProfile = (friend: any) => {
         console.log('Opening profile for friend:', friend);
         
         // Close current friends window and open profile
         staticBackground.remove();
-        
-        // Use the profile builder to create a friend profile page
-        createFriendProfilePage(friend.id || friend.userId, router);
+		const friendUserId = parseInt(friend.id);
+		
+		if (isNaN(friendUserId)) {
+			console.error('Invalid friend ID:', friend.id);
+			return;
+		}
+		
+		// Use the profile builder to create a friend profile page
+		createFriendProfilePage(friendUserId, router);
     };
 
     // Create simplified friends actions component
