@@ -6,6 +6,8 @@ import type {
     AuthResponse,
     PublicUser,
     ProfileUpdateRequest,
+    RegistrationResponse, // Add this
+    Login2FAChallenge, // Add this
 } from '../types';
 
 
@@ -106,86 +108,129 @@ export class UserService {
 
     // ===== AUTHENTICATION (SENDERS) ====
     // Send login request
-    static async login(credentials: LoginRequest): Promise<AuthResponse> {
+    static async login(credentials: LoginRequest): Promise<AuthResponse | Login2FAChallenge> {
     const response = await ApiService.post<{
-        id: number;
-        username: string;
-        role: string;
-        message: string;
-        accessToken: string;
-        refreshToken: string;
+        id?: number;
+        username?: string;
+        role?: string;
+        message?: string;
+        accessToken?: string;
+        refreshToken?: string;
+        requires2FA?: boolean;
+        method?: 'totp';
     }>('/users/auth/login', credentials);
     
+    // Check if 2FA is required
+    if (response.requires2FA) {
+        return {
+            requires2FA: true,
+            method: response.method || 'totp',
+            message: 'Enter code from authenticator app'
+        };
+    }
+    
+    // Normal login successful
     console.log('Login successful!');
     console.log('User ID:', response.id);
     console.log('Username:', response.username);
     console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
     
     // Store tokens and user data
-    localStorage.setItem('authToken', response.accessToken);
-    localStorage.setItem('userId', response.id.toString());
-    localStorage.setItem('username', response.username);
+    localStorage.setItem('authToken', response.accessToken!);
+    localStorage.setItem('userId', response.id!.toString());
+    localStorage.setItem('username', response.username!);
     
     // Create AuthResponse with real data from gateway
     const authData: AuthResponse = {
         user: {
-            id: response.id,
-            username: response.username,
+            id: response.id!,
+            username: response.username!,
             avatarUrl: '/images/default-avatar.png',
             onlineStatus: OnlineStatus.ONLINE,
             activityType: 'browsing',
-            role: this.parseUserRole(response.role), // ✅ Use helper
+            role: response.role || UserRole.USER,
             lastLogin: new Date().toISOString()
         },
-        token: response.accessToken,
+        token: response.accessToken!,
     };
     
     return authData;
 }
 
    // Send registration request
-	static async register(userData: RegisterRequest): Promise<AuthResponse> {
-		const response = await ApiService.post<{
-			id: number;
-			username: string;
-			role: string;
-			message: string;
-			accessToken: string;
-			refreshToken: string;
-			avatarUrl?: string; 
-		}>('/users/auth/register', {
+	static async register(userData: RegisterRequest): Promise<AuthResponse | RegistrationResponse> {
+		const response = await ApiService.post<RegistrationResponse>('/users/auth/register', {
 			username: userData.username,
 			password: userData.password,
 			avatarUrl: userData.avatarUrl,           
-			twoFactorEnabled: userData.twoFactorEnabled 
+			enable2FA: userData.enable2FA || false 
 		});
 		
+		console.log('Registration response:', response);
+		
+		// If 2FA is required, return the setup response (user not created yet)
+		if (response.twoFactorSetup) {
+			return response; // Return RegistrationResponse with twoFactorSetup
+		}
+		
+		// Normal registration completed (no 2FA)
 		console.log('Registration successful!');
 		console.log('User ID:', response.id);
-		console.log('Username:', response.username);
-		console.log('Avatar:', response.avatarUrl || userData.avatarUrl || 'default');
-		console.log('2FA Enabled:', userData.twoFactorEnabled);
-		console.log('Access Token:', response.accessToken?.substring(0, 20) + '...');
 		
-		// Store tokens and user data
-		localStorage.setItem('authToken', response.accessToken);
-		localStorage.setItem('userId', response.id.toString());
-		localStorage.setItem('username', response.username);
+		// Store tokens and user data (if tokens exist - they might not for 2FA flow)
+		if ('accessToken' in response && response.accessToken) {
+			localStorage.setItem('authToken', response.accessToken);
+			localStorage.setItem('userId', response.id!.toString());
+			localStorage.setItem('username', response.username);
+		}
 		
+		// Create AuthResponse with real data from gateway
+		const authData: AuthResponse = {
+			user: {
+				id: response.id!,
+				username: response.username,
+				avatarUrl: '/images/default-avatar.png',
+				onlineStatus: OnlineStatus.ONLINE,
+				activityType: 'browsing',
+				role: UserRole.USER,
+				lastLogin: new Date().toISOString()
+			},
+			token: (response as any).accessToken || '',
+		};
+
+		return authData;
+	}
+
+	// Add new method for verifying 2FA registration
+	static async verifyRegistration2FA(registrationToken: string, code: string): Promise<AuthResponse> {
+		const response = await ApiService.post<RegistrationResponse>('/users/auth/2fa/verify-registration', {
+			registrationToken,
+			code
+		});
+		
+		console.log('2FA verification successful!');
+		console.log('User ID:', response.id);
+		console.log('Backup codes:', response.backupCodes);
+		
+		// User is now created and session is set via cookie
+		// We still need to get the access token - but since session is set, 
+		// we can call /me or login endpoint to get token
+		// Actually, the backend sets session cookie, so we might need to get token separately
+		// For now, let's assume we need to login after verification
 		
 		const authData: AuthResponse = {
 			user: {
-				id: response.id,
+				id: response.id!,
 				username: response.username,
-				avatarUrl: response.avatarUrl || userData.avatarUrl || 'agent',
+				avatarUrl: '/images/default-avatar.png',
 				onlineStatus: OnlineStatus.ONLINE,
 				activityType: 'browsing',
-				role: this.parseUserRole(response.role),
+				role: UserRole.USER,
 				lastLogin: new Date().toISOString()
 			},
-			token: response.accessToken,
+			token: '', // Will be set after we get it from /me or login
 		};
-
+		
 		return authData;
 	}
 

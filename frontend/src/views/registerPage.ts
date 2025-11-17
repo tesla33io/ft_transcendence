@@ -2,8 +2,9 @@ import { Router } from "../router";
 import { createWindow } from "../components/_components";
 import { createTaskbar } from "../components/_components";
 import { UserService } from "../game/userService";
-import type { RegisterRequest } from "../types";
+import type { RegisterRequest, RegistrationResponse } from "../types";
 import { AVATAR_PRESETS, DEFAULT_AVATAR_ID } from "../game/avatarConstants"; 
+import { ApiService } from "../game/apiService";
 // ----------------------------
 // Registration Page View
 // ----------------------------
@@ -238,19 +239,27 @@ export function registerView(router: Router) {
                 username: data.username,
                 password: data.password,
                 avatarUrl: data.avatarId, 
-                twoFactorEnabled: data.twoFactor
+                enable2FA: data.twoFactor
             };
 
             console.log(" Sending registration request:", {
                 username: registerData.username,
-                twoFactorEnabled: registerData.twoFactorEnabled,
+                enable2FA: registerData.enable2FA,
                 avatarId: registerData.avatarUrl
             });
 
-            const authResponse = await UserService.register(registerData);
+            const response = await UserService.register(registerData);
 
-            console.log('Registered New User:', authResponse.user.username);
-            console.log('User ID:', authResponse.user.id);
+            // Check if 2FA setup is required
+            if ('twoFactorSetup' in response && response.twoFactorSetup) {
+                hideLoading();
+                // Show 2FA verification modal
+                show2FAVerificationModal(response as RegistrationResponse, router);
+                return;
+            }
+
+            console.log('Registered New User:', (response as any).username);
+            console.log('User ID:', (response as any).id);
 
             router.navigate("/desktop");
 
@@ -259,6 +268,129 @@ export function registerView(router: Router) {
             hideLoading();
             showError(error instanceof Error ? error.message : 'Registration failed. Please try again.');
         }
+    }
+
+    // New function to show 2FA verification modal
+    function show2FAVerificationModal(registrationResponse: RegistrationResponse, router: Router) {
+        const setup = registrationResponse.twoFactorSetup!;
+        
+        // Replace window content with 2FA verification form
+        content.innerHTML = `
+            <h2 style="margin-top: 0; text-align: center;">Complete 2FA Setup</h2>
+            <p style="text-align: center;">Scan this QR code with your authenticator app:</p>
+            <div style="text-align: center; margin: 20px 0;">
+                <img src="${setup.qrCodeUrl}" alt="QR Code" style="max-width: 200px; border: 1px solid #ccc;" />
+            </div>
+            <p style="font-size: 12px; color: #666; text-align: center;">${setup.message}</p>
+            <div class="field-row-stacked" style="width: 100%; margin-top: 15px;">
+                <label for="2fa-code">Enter 6-digit code:</label>
+                <input id="2fa-code" type="text" maxlength="6" pattern="[0-9]{6}" 
+                       style="width: 100%; padding: 8px; font-size: 18px; letter-spacing: 4px; text-align: center;" />
+            </div>
+            <div id="2fa-error" style="color: red; margin-top: 10px; display: none; text-align: center;"></div>
+            <div id="2fa-loading" style="margin-top: 10px; display: none; text-align: center;">Verifying...</div>
+            <div class="field-row" style="margin-top: 15px; gap: 10px;">
+                <button id="verify-2fa-btn" style="flex: 1;">Verify & Complete Registration</button>
+                <button id="cancel-2fa-btn">Cancel</button>
+            </div>
+        `;
+
+        const verifyBtn = content.querySelector<HTMLButtonElement>('#verify-2fa-btn')!;
+        const cancelBtn = content.querySelector<HTMLButtonElement>('#cancel-2fa-btn')!;
+        const codeInput = content.querySelector<HTMLInputElement>('#2fa-code')!;
+        const errorDiv = content.querySelector<HTMLDivElement>('#2fa-error')!;
+        const loadingDiv = content.querySelector<HTMLDivElement>('#2fa-loading')!;
+
+        // Auto-focus code input
+        setTimeout(() => codeInput.focus(), 100);
+
+        // Handle Enter key
+        codeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                verifyBtn.click();
+            }
+        });
+
+        // Verify button handler
+        verifyBtn.addEventListener('click', async () => {
+            const code = codeInput.value.trim();
+            
+            if (!/^\d{6}$/.test(code)) {
+                errorDiv.textContent = 'Please enter a valid 6-digit code';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            verifyBtn.disabled = true;
+            errorDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+
+            try {
+                const authResponse = await UserService.verifyRegistration2FA(
+                    setup.registrationToken,
+                    code
+                );
+
+                // Check if backup codes are in the response
+                const verificationResponse = await ApiService.post<RegistrationResponse>('/users/auth/2fa/verify-registration', {
+                    registrationToken: setup.registrationToken,
+                    code: code
+                });
+
+                if (verificationResponse.backupCodes && verificationResponse.backupCodes.length > 0) {
+                    showBackupCodes(verificationResponse.backupCodes, router);
+                } else {
+                    router.navigate("/desktop");
+                }
+            } catch (error) {
+                verifyBtn.disabled = false;
+                loadingDiv.style.display = 'none';
+                errorDiv.textContent = error instanceof Error ? error.message : 'Verification failed. Please try again.';
+                errorDiv.style.display = 'block';
+                codeInput.value = '';
+                codeInput.focus();
+            }
+        });
+
+        // Cancel button handler - go back to login
+        cancelBtn.addEventListener('click', () => {
+            router.navigate("/login");
+        });
+    }
+
+    // New function to show backup codes
+    function showBackupCodes(backupCodes: string[], router: Router) {
+        const modal = document.createElement("div");
+        modal.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #000;
+            padding: 20px;
+            z-index: 10001;
+            max-width: 400px;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+        `;
+
+        modal.innerHTML = `
+            <h2 style="margin-top: 0;">Save Your Backup Codes</h2>
+            <p style="color: red; font-weight: bold;">⚠️ These codes are shown only once!</p>
+            <p>Save these backup codes in a safe place. You can use them to log in if you lose access to your authenticator app.</p>
+            <div style="background: #f5f5f5; padding: 15px; margin: 15px 0; font-family: monospace; text-align: center;">
+                ${backupCodes.map(code => `<div style="padding: 5px;">${code}</div>`).join('')}
+            </div>
+            <button id="backup-codes-ok" style="width: 100%;">I've Saved These Codes</button>
+        `;
+
+        const okBtn = modal.querySelector<HTMLButtonElement>('#backup-codes-ok')!;
+        okBtn.addEventListener('click', () => {
+            document.body.removeChild(modal);
+            router.navigate("/desktop");
+        });
+
+        document.body.appendChild(modal);
     }
 
     // Event listeners
