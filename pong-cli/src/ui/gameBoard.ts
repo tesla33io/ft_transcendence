@@ -9,9 +9,12 @@ export class GameBoard {
 	private gameHeight: number = 550;
 	private collum: number = 90;
 	private row: number = 25;
+    private lastActionTime = 0;
+    private cooldown = 1000/60;
 
 	constructor() {
 	// Initialize the screen and game board UI
+
 		this.screen = blessed.screen({
 			smartCSR: true,
 			title: 'Pong Game',
@@ -48,7 +51,12 @@ export class GameBoard {
 		this.gameBoard.focus
 
 		this.screen.key(['up', 'down'], (ch, key) => {
-			GameWebsocket.playerMoved(key.name)
+            const now = Date.now()
+            // console.log(`${now - this.lastActionTime}`)
+            while (now - this.lastActionTime > this.cooldown){
+             GameWebsocket.playerMoved(key.name)
+             this.lastActionTime = now
+            }
 		})
 	}
 
