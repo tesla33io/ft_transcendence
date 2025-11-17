@@ -1,7 +1,7 @@
 import { Router } from "../router";
 import { createWindow } from "../components/_components";
 import { UserService } from "../game/userService";
-import type { LoginRequest } from "../types";
+import type { LoginRequest, AuthResponse } from "../types";
 
 
 export function loginView(router: Router) {
@@ -45,6 +45,32 @@ export function loginView(router: Router) {
     passwordField.appendChild(passwordLabel);
     passwordField.appendChild(passwordInput);
 
+    // Add 2FA code input field (initially hidden)
+    const twoFactorField = document.createElement("div");
+    twoFactorField.className = "field-row-stacked";
+    twoFactorField.style.width = "200px";
+    twoFactorField.style.display = "none"; // Hidden by default
+
+    const twoFactorLabel = document.createElement("label");
+    twoFactorLabel.htmlFor = "2fa-code-input";
+    twoFactorLabel.textContent = "2FA Code or Backup Code";
+
+    const twoFactorInput = document.createElement("input");
+    twoFactorInput.id = "2fa-code-input";
+    twoFactorInput.type = "text";
+    twoFactorInput.maxLength = 8; // Changed from 6 to 8 to allow backup codes
+    twoFactorInput.pattern = "[0-9]{6,8}"; // Changed to allow 6-8 digits
+    twoFactorInput.placeholder = "000000 or backup code";
+    twoFactorInput.style.textAlign = "center";
+    twoFactorInput.style.letterSpacing = "4px";
+    twoFactorInput.style.fontSize = "18px";
+
+    twoFactorField.appendChild(twoFactorLabel);
+    twoFactorField.appendChild(twoFactorInput);
+
+    // Store username/password for 2FA retry
+    let pendingCredentials: { username: string; password: string } | null = null;
+
     // --- Error message area ---
     const errorMessage = document.createElement("div");
     errorMessage.style.color = "red";
@@ -83,6 +109,7 @@ export function loginView(router: Router) {
     // --- Assemble content ---
     content.appendChild(usernameField);
     content.appendChild(passwordField);
+    content.appendChild(twoFactorField); // Add 2FA field
     content.appendChild(errorMessage);
     content.appendChild(loadingMessage);
     content.appendChild(buttonRow);
@@ -111,14 +138,23 @@ export function loginView(router: Router) {
         await handleLogin(username, password, router);
     });
 
-    // Allow Enter key to submit
+    // Allow Enter key to submit (including 2FA field)
     const handleEnterKey = (e: KeyboardEvent) => {
         if (e.key === 'Enter') {
-            loginBtn.click();
+            if (twoFactorField.style.display === "none") {
+                // Normal login
+                loginBtn.click();
+            } else {
+                // 2FA code entered, retry login
+                if (pendingCredentials) {
+                    handleLogin(pendingCredentials.username, pendingCredentials.password, router);
+                }
+            }
         }
     };
     usernameInput.addEventListener('keypress', handleEnterKey);
     passwordInput.addEventListener('keypress', handleEnterKey);
+    twoFactorInput.addEventListener('keypress', handleEnterKey); // Add for 2FA field
 
     registerBtn.addEventListener("click", () => router.navigate("/register"));
     guestBtn.addEventListener("click", async () => await handleGuestLogin(router));
@@ -154,23 +190,44 @@ export function loginView(router: Router) {
             // Create LoginRequest object
             const credentials: LoginRequest = {
                 username: username,
-                password: password
-                // add later twoFactorCode
+                password: password,
+                twoFactorCode: twoFactorInput.value.trim() || undefined // Include 2FA code if entered
             };
 
-            console.log('login request:', credentials);
+            console.log('login request:', {
+                ...credentials,
+                password: '***',
+                twoFactorCode: credentials.twoFactorCode ? '***' : undefined
+            });
 
             // Call UserService login method
-            const authResponse = await UserService.login(credentials);
+            const response = await UserService.login(credentials);
 
+            // Check if 2FA is required
+            if ('requires2FA' in response && response.requires2FA) {
+                hideLoading();
+                // Show 2FA input field
+                twoFactorField.style.display = "block";
+                twoFactorInput.focus();
+                pendingCredentials = { username, password };
+                showError(response.message || 'Enter code from authenticator app');
+                return;
+            }
+
+            // Normal login successful
+            const authResponse = response as AuthResponse;
             console.log('Login successful!', {
                 user: authResponse.user,
                 token: authResponse.token ? 'Token received' : 'No token',
-                expiresAt: authResponse.expiresAt
             });
 
-			//test me endpoint
-			try {
+            // Reset 2FA field for next login
+            twoFactorField.style.display = "none";
+            twoFactorInput.value = "";
+            pendingCredentials = null;
+
+            //test me endpoint
+            try {
                 console.log('📍 Calling /me endpoint to verify user...');
                 const meData = await UserService.getMe();
                 console.log('✅ /me endpoint verified:', {
@@ -184,10 +241,22 @@ export function loginView(router: Router) {
 
             router.navigate("/desktop");
 
-        } catch (error) {
+        } catch (error: any) {
             console.error('Login failed:', error);
             hideLoading();
-            showError(error instanceof Error ? error.message : 'Login failed. Please try again.');
+            
+            // If we have pending credentials and error is about 2FA, show the field
+            if (pendingCredentials && error.details?.requires2FA) {
+                twoFactorField.style.display = "block";
+                twoFactorInput.focus();
+                showError(error.details.message || 'Enter code from authenticator app');
+            } else {
+                // Clear 2FA field on other errors
+                twoFactorField.style.display = "none";
+                twoFactorInput.value = "";
+                pendingCredentials = null;
+                showError(error instanceof Error ? error.message : 'Login failed. Please try again.');
+            }
         }
     }
 

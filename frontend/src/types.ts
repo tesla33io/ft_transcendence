@@ -241,7 +241,32 @@ export interface RegisterRequest {
     username: string;
     password: string;
     avatarUrl?: string;
-	twoFactorEnabled?: boolean;
+    enable2FA?: boolean;
+}
+
+// Add new interface for 2FA registration response
+export interface TwoFactorSetupResponse {
+    secret: string;
+    qrCodeUrl: string;
+    registrationToken: string;
+    message: string;
+}
+
+export interface RegistrationResponse {
+    id?: number; // Only present if registration completed immediately
+    username: string;
+    message: string;
+    twoFactorSetup?: TwoFactorSetupResponse; // Present if 2FA enabled
+    nextStep?: string;
+    backupCodes?: string[]; // Present after 2FA verification
+    warning?: string;
+}
+
+// Add interface for login 2FA challenge
+export interface Login2FAChallenge {
+    requires2FA: true;
+    method: 'totp';
+    message: string;
 }
 
 // For profile updates
