@@ -140,7 +140,11 @@ export function tournamentRoomView(
 		content: content,
 		titleBarControls: {
 		close: true,
-		onClose: () => router.navigateToDesktop()
+		onClose: () => {
+			router.navigateToDesktop()
+			if (wsHandler)
+					wsHandler.disconnect();
+		}
 		},
 	});
 
