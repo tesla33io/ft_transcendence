@@ -197,11 +197,36 @@ export default async function tournamentRoutes(app: FastifyInstance) {
                 participantUsernames
             );
             
+            app.log.info(`Blockchain transaction hash received: ${txHash} for tournament ${id}`);
+            
             // 6. Update database with blockchain transaction hash
             const finalMatch = matches.find(m => m.tournamentWon === true);
-            if (finalMatch) {
-                finalMatch.blockchainTxHash = txHash;
-                await app.em.persistAndFlush(finalMatch);
+            
+            if (!finalMatch) {
+                app.log.warn(`Final match not found for tournament ${id}. Matches found: ${matches.length}`);
+                app.log.warn(`Matches: ${JSON.stringify(matches.map(m => ({ id: m.id, tournamentId: m.tournamentId, tournamentWon: m.tournamentWon })))}`);
+                return reply.code(500).send({ 
+                    error: 'Final match not found',
+                    details: 'Could not find the winning match to update with blockchain hash'
+                });
+            }
+            
+            app.log.info(`Found final match: id=${finalMatch.id}, tournamentId=${finalMatch.tournamentId}, tournamentWon=${finalMatch.tournamentWon}`);
+            
+            // Refresh the entity to ensure it's managed
+            await app.em.refresh(finalMatch);
+            
+            finalMatch.blockchainTxHash = txHash;
+            await app.em.persistAndFlush(finalMatch);
+            
+            app.log.info(`Successfully saved blockchainTxHash ${txHash} to match ${finalMatch.id}`);
+            
+            // Verify it was saved
+            await app.em.refresh(finalMatch);
+            if (finalMatch.blockchainTxHash !== txHash) {
+                app.log.error(`Failed to save blockchainTxHash! Expected: ${txHash}, Got: ${finalMatch.blockchainTxHash}`);
+            } else {
+                app.log.info(`Verified blockchainTxHash saved correctly: ${finalMatch.blockchainTxHash}`);
             }
             
             return reply.send({
