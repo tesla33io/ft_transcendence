@@ -25,7 +25,7 @@ export class GameService{
 		this.gameEngine.onGameStatusUpdate = (game: Game) => {
 				this.webSocketServer.sendGameState(game)
 		}
-		this.gameEngine.declareWinner = (game: Game, playerId: string) => {
+		this.gameEngine.declareWinner = async (game: Game, playerId: string) => {
 			this.webSocketServer.winnerAnnounce(game, playerId)
 			//place holder for sending match result to user management
 			if (this.gameMode === 'tournament'){
@@ -36,14 +36,22 @@ export class GameService{
 					//check if this is the final winner (after tournamentHandling updates status)
 					const tournament = this.gameEngine.getTournament(game.id)
 					const isFinalWinner = tournament?.status === 'finished' && tournament?.winner?.id === playerId
-					this.sendDataToUMS(game, playerId, tournament?.id, isFinalWinner)
+					// Wait for match history to be saved before posting hash
+					await this.sendDataToUMS(game, playerId, tournament?.id, isFinalWinner)
+					
+					// Only post hash after match history is saved
+					if (isFinalWinner && tournament) {
+						// Add a small delay to ensure database transaction is committed
+						await new Promise(resolve => setTimeout(resolve, 500))
+						this.postHash(tournament)
+					}
 				} else {
-					this.sendDataToUMS(game, playerId)
+					await this.sendDataToUMS(game, playerId)
 				}
 				
 			} else {
 				// For classic matches
-				this.sendDataToUMS(game, playerId)
+				await this.sendDataToUMS(game, playerId)
 			}
 		}
 

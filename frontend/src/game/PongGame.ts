@@ -249,7 +249,6 @@ export class PongGame {
         if (this.wsHandler) {
             this.wsHandler.setTournamentId(data.id);
         }
-        this.router.navigate("/tournamentroom");
         requestAnimationFrame(() => {
             tournamentRoomView(this.router, data, this.wsHandler!);
         });
