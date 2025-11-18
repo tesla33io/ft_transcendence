@@ -171,8 +171,12 @@ export class WebSocketHandler {
 
     // WebSocket connection management
     private connect(): void {
-        console.log(`Attempting to connect WebSocket with playerId: ${this.playerId}`);
-        this.ws = new WebSocket(`ws://${window.location.hostname}:3000/ws/${this.gameMode}?playerId=${this.playerId}`)
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;  // includes port if needed
+        const wsUrl = `${protocol}//${host}/ws/${this.gameMode}?playerId=${this.playerId}`;
+        
+        console.log(`[WebSocket] Connecting to: ${wsUrl}`);
+        this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => {
             console.log('WebSocket connected successfully');

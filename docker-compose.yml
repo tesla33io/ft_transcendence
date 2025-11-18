@@ -1,47 +1,43 @@
 services:
-  # ===== ADD THIS ENTIRE BLOCK (NEW SERVICE) =====
   traefik:
-    image: traefik:v2.10                    # ✅ Traefik Docker image
-    container_name: traefik                 # ✅ Container name
+    image: traefik:v2.10                   
+    container_name: ReverseProxy_traefik                 
     
     command:
       # Enable Docker provider (read container labels)
-      - --providers.docker=true                           # ✅ Use Docker as config source
-      - --providers.docker.exposedbydefault=false         # ✅ Don't expose all containers automatically
-      - --providers.docker.network=pong-network           # ✅ Which network to use
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=pong-network
       
       # HTTP entrypoint (port 80) - will redirect to HTTPS
-      - --entrypoints.web.address=:80                     # ✅ Listen on port 80
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure        # ✅ Redirect HTTP to HTTPS
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https        # ✅ Use HTTPS scheme
-      
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
       # HTTPS entrypoint (port 443)
-      - --entrypoints.websecure.address=:443              # ✅ Listen on port 443 (HTTPS)
-      - --entrypoints.websecure.http.tls=true             # ✅ Enable TLS/SSL
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.http.tls=true
       
-      # Dashboard (monitoring UI)
-      - --api.dashboard=true                              # ✅ Enable dashboard
-      - --api.insecure=true                               # ✅ Allow dashboard without auth (dev only!)
+      # Dashboard (monitoring UI) uncomment when needed 
+      # - --api.dashboard=true #Enable dashboard
+      # - --api.insecure=true # Allow dashboard without auth
       
       # Logging
-      - --log.level=INFO                                  # ✅ Log level
-      - --accesslog=true                                  # ✅ Enable access logs
+      - --log.level=INFO
+      - --accesslog=true
     
     ports:
-      - "80:80"       # ✅ Expose HTTP (will redirect to HTTPS)
-      - "443:443"     # ✅ Expose HTTPS (main entry point)
-      - "8080:8080"   # ✅ Expose dashboard (http://localhost:8080)
+      - "80:80"       # Expose HTTP (will redirect to HTTPS)
+      - "443:443"     # Expose HTTPS (main entry point)
+      - "8080:8080"   # Expose dashboard (http://localhost:8080)
     
     volumes:
       # Mount Docker socket so Traefik can read container info
-      - /var/run/docker.sock:/var/run/docker.sock:ro     # ✅ Read-only Docker socket
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     
     networks:
-      - pong-network  # ✅ Same network as other services
+      - pong-network
     
-    restart: unless-stopped  # ✅ Auto-restart if it crashes
-
-  # ===== END OF NEW TRAEFIK SERVICE =====
+    restart: unless-stopped
   frontend:
     build:
       context: ./frontend
@@ -57,13 +53,13 @@ services:
       - /app/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
     labels:
      # Enable Traefik for this container
-      - "traefik.enable=true"                                                    # ✅ Tell Traefik to route to this container
+      - "traefik.enable=true"
       
       # Router configuration (when to route here)
-      - "traefik.http.routers.frontend.rule=Host(`localhost`)"                  # ✅ Match domain "localhost"
-      - "traefik.http.routers.frontend.entrypoints=websecure"                   # ✅ Use HTTPS (port 443)
-      - "traefik.http.routers.frontend.priority=1"                              # ✅ Lowest priority (catch-all route)
-      - "traefik.http.routers.frontend.tls=true"                                # ✅ Enable TLS/SSL
+      - "traefik.http.routers.frontend.rule=Host(`localhost`)" 
+      - "traefik.http.routers.frontend.entrypoints=websecure" 
+      - "traefik.http.routers.frontend.priority=1" 
+      - "traefik.http.routers.frontend.tls=true" 
       
       # Service configuration (how to connect to this container)
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
@@ -88,36 +84,34 @@ services:
     volumes: #REMOVE FOR production
       - ./services/gateway-service:/gateway-service
       - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
-    # ===== ADD THIS ENTIRE LABELS BLOCK (NEW) =====
     labels:
-      - "traefik.enable=true"                                                    # ✅ Enable Traefik
+      - "traefik.enable=true"
       
       # API Router (for /api and /users paths)
-      - "traefik.http.routers.gateway-api.rule=Host(`localhost`) && (PathPrefix(`/api`) || PathPrefix(`/users`))"  # ✅ Match /api/* or /users/*
-      - "traefik.http.routers.gateway-api.entrypoints=websecure"                # ✅ Use HTTPS
-      - "traefik.http.routers.gateway-api.priority=10"                          # ✅ Higher priority than frontend
-      - "traefik.http.routers.gateway-api.tls=true"                             # ✅ Enable TLS
+      - "traefik.http.routers.gateway-api.rule=Host(`localhost`) && (PathPrefix(`/api`) || PathPrefix(`/users`))" 
+      - "traefik.http.routers.gateway-api.entrypoints=websecure" 
+      - "traefik.http.routers.gateway-api.priority=10"
+      - "traefik.http.routers.gateway-api.tls=true" 
       
       # WebSocket Router (for /ws paths)
-      - "traefik.http.routers.gateway-ws.rule=Host(`localhost`) && PathPrefix(`/ws`)"  # ✅ Match /ws/*
-      - "traefik.http.routers.gateway-ws.entrypoints=websecure"                 # ✅ Use HTTPS (auto-upgrades to WSS)
-      - "traefik.http.routers.gateway-ws.priority=20"                           # ✅ Highest priority
-      - "traefik.http.routers.gateway-ws.tls=true"                              # ✅ Enable TLS
+      - "traefik.http.routers.gateway-ws.rule=Host(`localhost`) && PathPrefix(`/ws`)" 
+      - "traefik.http.routers.gateway-ws.entrypoints=websecure"  
+      - "traefik.http.routers.gateway-ws.priority=20" 
+      - "traefik.http.routers.gateway-ws.tls=true" 
       
       # Service configuration (applies to both routers)
-      - "traefik.http.services.gateway.loadbalancer.server.port=3000"           # ✅ Internal container port
-    # ===== END OF LABELS =====
+      - "traefik.http.services.gateway.loadbalancer.server.port=3000" 
   game-service:
     build:
       context: ./services/game-service
       dockerfile: Dockerfile
     container_name: game-service
     expose:
-      - "5000"    # HTTP endpoint
-      - "5001"    # Another endpoint
-      - "5002"    # Another endpoint
-      - "5005"    # Classic WebSocket (if used)
-      - "5006"    # Tournament WebSocket (if used)
+      - "5000" 
+      - "5001" 
+      - "5002"
+      - "5005"  
+      - "5006"  
     env_file:
       - .env
     environment:
@@ -159,7 +153,6 @@ services:
       context: ./services/blockchain-service
       dockerfile: Dockerfile
     container_name: blockchain-service
-    # NO PORTS - this is a library service
     env_file:
       - .env
     networks:
@@ -169,7 +162,6 @@ services:
       - /blockchain-service/node_modules
     environment:
       - NODE_ENV=development
-      # No PORT needed
   ai-service:
     build:
       context: ./services/AI-service
