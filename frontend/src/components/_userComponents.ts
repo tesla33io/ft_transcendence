@@ -2,6 +2,7 @@
 
 import { UserService } from '../game/userService';
 import { createWindow } from '../components/_components';
+import { createAvatarDisplay } from "./_profilePageBuilder"
 import type { Friend } from '../game/userService';
 import type { 
     OneVOneStatistics, 
@@ -981,18 +982,20 @@ export class UserInfoComponent {
         this.container.innerHTML = '';
         this.container.className = 'sunken-panel bg-gray-300 p-3 flex flex-col';
         this.container.style.cssText = `
-        width: ${this.options.width}; 
-        height: ${this.options.height};
-        background-color: #e0e0e0;
-        padding: 12px;
-    `;
+            width: ${this.options.width}; 
+            height: ${this.options.height};
+            background-color: #e0e0e0;
+            padding: 12px;
+        `;
+
         // Avatar and name section
         const headerSection = document.createElement('div');
         headerSection.className = 'flex items-center gap-3 mb-3 pb-2 border-b border-gray-500';
 
-        const avatar = document.createElement('img');
-        avatar.src = this.profile.avatarUrl || '/images/default-avatar.png';
-        avatar.className = 'w-12 h-12 border-2 border-gray-500 rounded';
+        // ✅ Use the avatar display component (always shows from localStorage)
+        const avatarContainer = document.createElement('div');
+        const avatarDisplay = createAvatarDisplay('large'); // Shows avatar from localStorage
+        avatarContainer.appendChild(avatarDisplay);
 
         const nameSection = document.createElement('div');
         const onlineColor = this.profile.isOnline ? 'text-green-600' : 'text-gray-600';
@@ -1008,7 +1011,7 @@ export class UserInfoComponent {
             </div>
         `;
 
-        headerSection.appendChild(avatar);
+        headerSection.appendChild(avatarContainer);
         headerSection.appendChild(nameSection);
 
         // Bio section
