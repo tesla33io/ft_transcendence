@@ -129,8 +129,8 @@ services:
 
   user-service:
     build:
-      context: ./services/user-service
-      dockerfile: Dockerfile
+      context: ./services
+      dockerfile: user-service/Dockerfile
     container_name: user-service
     expose:
       - "8000"
@@ -138,7 +138,12 @@ services:
       - .env
     environment:
       - NODE_ENV=development
+      - USE_MOCK_BLOCKCHAIN=false  # Change to false to use real blockchain
       - MATCH_HISTORY_SERVICE_TOKEN=${MATCH_HISTORY_SERVICE_TOKEN}
+      # Blockchain environment variables
+      - AVALANCHE_RPC_URL=${AVALANCHE_RPC_URL:-https://api.avax-test.network/ext/bc/C/rpc}
+      - BLOCKCHAIN_PRIVATE_KEY=${BLOCKCHAIN_PRIVATE_KEY}
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
     depends_on:
       - blockchain-service
     networks:

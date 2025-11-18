@@ -4,7 +4,6 @@ import { User } from '../entities/User';
 import { ethers } from 'ethers';
 import { IBlockchainService, BlockchainError } from '../interfaces/blockchain';
 import { FromSchema } from 'json-schema-to-ts';
-import { mockBlockchainService } from '../services/mockBlockchainService';
 
 //Schema
 const finalizeParamsSchema = {
@@ -131,6 +130,141 @@ export function setBlockchainService(service: IBlockchainService) {
 }
 
 export default async function tournamentRoutes(app: FastifyInstance) {
+    
+    // Test route - register FIRST with error handling
+    try {
+        app.get('/test-route', async (req, reply) => {
+            return reply.send({ message: 'Route registration works!' });
+        });
+        console.log('✅ Test route registered');
+    } catch (error) {
+        console.error('❌ Error registering test route:', error);
+    }
+    
+    // GET /tournaments/blockchain/health - Check blockchain service health
+    try {
+        app.get('/blockchain/health', {
+            schema: {
+                tags: ['tournaments'],
+                summary: 'Check blockchain service health and connectivity',
+                description: 'Verifies that the blockchain service is properly configured and can connect to the network',
+                response: {
+                    200: {
+                        type: 'object',
+                        properties: {
+                            available: { type: 'boolean' },
+                            mode: { type: 'string', enum: ['real', 'mock'] },
+                            contractAddress: { type: 'string' },
+                            network: { type: 'string' },
+                            walletAddress: { type: 'string' },
+                            balance: { type: 'string' },
+                            message: { type: 'string' }
+                        },
+                        required: ['available', 'mode', 'message']
+                    },
+                    503: {
+                        type: 'object',
+                        properties: {
+                            available: { type: 'boolean' },
+                            mode: { type: 'string' },
+                            error: { type: 'string' },
+                            message: { type: 'string' }
+                        }
+                    }
+                }
+            }
+        }, async (request: FastifyRequest, reply: FastifyReply) => {
+            try {
+                if (!blockchainService) {
+                    return reply.code(503).send({
+                        available: false,
+                        mode: 'none',
+                        error: 'Blockchain service not initialized',
+                        message: 'Blockchain service is not available. Check server logs for initialization errors.'
+                    });
+                }
+
+                const isMock = process.env.USE_MOCK_BLOCKCHAIN === 'true';
+                
+                if (isMock) {
+                    return reply.send({
+                        available: true,
+                        mode: 'mock',
+                        contractAddress: 'N/A (mock mode)',
+                        network: 'N/A (mock mode)',
+                        walletAddress: 'N/A (mock mode)',
+                        balance: 'N/A (mock mode)',
+                        message: 'Blockchain service is running in MOCK mode. No real transactions will be recorded.'
+                    });
+                }
+
+                // For real blockchain, try to get wallet info
+                try {
+                    // Use the adapter's health check method
+                    const realService = blockchainService as any;
+                    
+                    // Check if the method exists
+                    if (!realService || typeof realService.getHealthInfo !== 'function') {
+                        app.log.error({ msg: 'getHealthInfo method not found on blockchain service' });
+                        return reply.code(503).send({
+                            available: false,
+                            mode: 'real',
+                            error: 'Health check method not available',
+                            message: 'Blockchain service is initialized but health check method is not accessible. Check server logs.'
+                        });
+                    }
+                    
+                    const healthInfo = await realService.getHealthInfo();
+                    
+                    if (healthInfo) {
+                        // Get contract address from environment
+                        const contractAddress = process.env.CONTRACT_ADDRESS || 'Not configured';
+                        
+                        // Get network RPC URL
+                        const network = process.env.AVALANCHE_RPC_URL || 'Not configured';
+
+                        return reply.send({
+                            available: true,
+                            mode: 'real',
+                            contractAddress: contractAddress,
+                            network: network,
+                            walletAddress: healthInfo.walletAddress,
+                            balance: `${healthInfo.balance} AVAX`,
+                            message: 'Blockchain service is connected and ready. Transactions will be recorded on Avalanche Fuji testnet.'
+                        });
+                    } else {
+                        // Service exists but health info not available
+                        app.log.warn({ msg: 'Health info returned null - blockchain service may not be initialized' });
+                        return reply.code(503).send({
+                            available: false,
+                            mode: 'real',
+                            error: 'Health info not available',
+                            message: 'Blockchain service is initialized but health check failed. Check server logs for initialization errors.'
+                        });
+                    }
+                } catch (error) {
+                    app.log.error({ msg: 'Error checking blockchain health', error: String(error), stack: error instanceof Error ? error.stack : undefined });
+                    return reply.code(503).send({
+                        available: false,
+                        mode: 'real',
+                        error: String(error),
+                        message: 'Blockchain service failed health check. Verify your CONTRACT_ADDRESS, BLOCKCHAIN_PRIVATE_KEY, and AVALANCHE_RPC_URL in .env file.'
+                    });
+                }
+            } catch (error) {
+                app.log.error({ msg: 'Error in blockchain health check', error: String(error) });
+                return reply.code(500).send({
+                    available: false,
+                    mode: 'unknown',
+                    error: String(error),
+                    message: 'Internal error during health check'
+                });
+            }
+        });
+        console.log('✅ Blockchain health route registered');
+    } catch (error) {
+        console.error('❌ Error registering blockchain health route:', error);
+    }
     
     // POST /tournaments/:id/finalize - Finalize tournament and store on blockchain
     app.post<{
@@ -368,23 +502,34 @@ export default async function tournamentRoutes(app: FastifyInstance) {
           });
         }
 
-        // Get transaction status from mock blockchain service
-        let status: 'pending' | 'confirmed' = 'pending';
+        // Get transaction status - for real blockchain, we'll check if it's confirmed
+        let status: 'pending' | 'confirmed' = 'confirmed'; // Real blockchain transactions are confirmed when saved
         let createdAt: number | null = null;
         let confirmedAt: number | null = null;
 
-        try {
-          const tx = mockBlockchainService.getTransaction(finalMatch.blockchainTxHash);
-          if (tx) {
-            status = mockBlockchainService.getTransactionStatus(finalMatch.blockchainTxHash);
-            createdAt = tx.createdAt;
-            const CONFIRMATION_TIME = 3000;
-            confirmedAt = status === 'confirmed' ? tx.createdAt + CONFIRMATION_TIME : null;
-          }
-        } catch (error) {
-          // If transaction not found in mock service, still return the hash
-          // but with default status (this handles cases where mock service wasn't used)
-          app.log.warn(`Transaction ${finalMatch.blockchainTxHash} not found in mock service: ${error}`);
+        // For real blockchain, we can't easily check pending status without querying the network
+        // So we'll assume confirmed if the hash exists
+        if (finalMatch.blockchainTxHash) {
+            // Try to get tournament data from blockchain to verify it exists
+            try {
+                const blockchainData = await blockchainService?.getTournament(tournamentId);
+                if (blockchainData) {
+                    status = 'confirmed';
+                    createdAt = blockchainData.timestamp;
+                    confirmedAt = blockchainData.timestamp;
+                } else {
+                    // Transaction exists but not yet indexed - treat as pending
+                    status = 'pending';
+                    createdAt = finalMatch.playedAt?.getTime() || Date.now();
+                    confirmedAt = null;
+                }
+            } catch (error) {
+                // If we can't verify, assume pending
+                app.log.warn(`Could not verify transaction ${finalMatch.blockchainTxHash}: ${error}`);
+                status = 'pending';
+                createdAt = finalMatch.playedAt?.getTime() || Date.now();
+                confirmedAt = null;
+            }
         }
 
         return reply.send({

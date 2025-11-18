@@ -1,7 +1,6 @@
 {
     "name": "blockchain-service",
     "version": "1.0.0",
-    "type": "module",
     "main": "dist/blockchainService.js",
     "scripts": {
         "build": "tsc",
