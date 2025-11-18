@@ -55,6 +55,32 @@ echo -e "${GREEN} Generating JWT secret...${NC}"
 JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
 MATCH_HISTORY_SERVICE_TOKEN=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
 
+# Prompt for Blockchain configuration (optional)
+echo -e "${YELLOW} Configure blockchain service? (y/n)${NC}"
+echo -e "${YELLOW} Note: You'll need a wallet with testnet AVAX tokens${NC}"
+read -p "" -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${YELLOW} Enter your wallet private key (starts with 0x):${NC}"
+    read -p "Private Key: " BLOCKCHAIN_PRIVATE_KEY
+    BLOCKCHAIN_PRIVATE_KEY=${BLOCKCHAIN_PRIVATE_KEY:-your_private_key_here}
+    
+    echo -e "${YELLOW} Enter your deployed contract address (starts with 0x):${NC}"
+    read -p "Contract Address: " CONTRACT_ADDRESS
+    CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-your_contract_address_here}
+    
+    read -p "Avalanche RPC URL (default: https://api.avax-test.network/ext/bc/C/rpc): " AVALANCHE_RPC_URL
+    AVALANCHE_RPC_URL=${AVALANCHE_RPC_URL:-https://api.avax-test.network/ext/bc/C/rpc}
+    
+    USE_MOCK_BLOCKCHAIN="false"
+else
+    # Use placeholder values and enable mock
+    BLOCKCHAIN_PRIVATE_KEY="your_private_key_here"
+    CONTRACT_ADDRESS="your_contract_address_here"
+    AVALANCHE_RPC_URL="https://api.avax-test.network/ext/bc/C/rpc"
+    USE_MOCK_BLOCKCHAIN="true"
+fi
+
 # Create .env file
 cat > "$ENV_FILE" << EOF
 # ===== ENVIRONMENT =====
@@ -109,16 +135,26 @@ USER_SERVICE_PORT=8000
 GAME_SERVICE_PORT=5000
 AI_SERVICE_PORT=5100
 
-# ===== BLOCKCHAIN (Optional) =====
-# BLOCKCHAIN_API_KEY=your-api-key-here
+# ===== BLOCKCHAIN CONFIGURATION =====
+AVALANCHE_RPC_URL=$AVALANCHE_RPC_URL
+BLOCKCHAIN_PRIVATE_KEY=$BLOCKCHAIN_PRIVATE_KEY
+CONTRACT_ADDRESS=$CONTRACT_ADDRESS
+USE_MOCK_BLOCKCHAIN=$USE_MOCK_BLOCKCHAIN
 EOF
 
 echo -e "${GREEN} .env file created successfully${NC}"
 echo -e "${YELLOW}JWT_SECRET (first 32 chars): ${JWT_SECRET:0:32}...${NC}"
 echo -e "${YELLOW}MATCH_HISTORY_SERVICE_TOKEN (first 32 chars): ${MATCH_HISTORY_SERVICE_TOKEN:0:32}...${NC}"
-echo -e "${YELLOW}Docker socket: $DOCKER_SOCKET_PATH${NC}"
-echo -e "${YELLOW}Network access: localhost, $HOSTNAME, $LOCAL_IP${NC}"
-
+echo ""
+if [[ "$USE_MOCK_BLOCKCHAIN" == "false" ]]; then
+    echo -e "${GREEN}✅ Blockchain service configured (using real blockchain)${NC}"
+else
+    echo -e "${YELLOW}⚠️  Blockchain service using MOCK mode${NC}"
+    echo -e "${YELLOW}   To enable real blockchain, edit .env and set:${NC}"
+    echo -e "${YELLOW}   USE_MOCK_BLOCKCHAIN=false${NC}"
+    echo -e "${YELLOW}   BLOCKCHAIN_PRIVATE_KEY=your_private_key${NC}"
+    echo -e "${YELLOW}   CONTRACT_ADDRESS=your_contract_address${NC}"
+fi
 echo ""
 echo -e "${GREEN} Setup complete! You can now run:${NC}"
 echo -e "   make up    - Start services"
