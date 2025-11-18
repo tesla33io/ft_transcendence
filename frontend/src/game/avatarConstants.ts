@@ -1,54 +1,75 @@
-import agent from "../views/images/avatars/msagent.png"
-import book_user from "../views/images/avatars/book_user.png"
-import rabit from "../views/images/avatars/rabit.png"
-
-// ===========================
-// AVATAR CONFIGURATION
-// ===========================
-
-export type AvatarId = 'agent' | 'book_user' | 'rabit';
-
-export interface AvatarPreset {
-    id: AvatarId;
+export interface Avatar {
+    id: string;
     name: string;
-    src: string;
+    imagePath: string;
+    description?: string;
 }
 
-
-export const AVATAR_PRESETS: readonly AvatarPreset[] = [
-    { id: 'agent', name: 'Agent', src: agent },
-    { id: 'book_user', name: 'User', src: book_user },
-    { id: 'rabit', name: 'Rabbit', src: rabit }
-] as const;
-
-
-export const DEFAULT_AVATAR_ID: AvatarId = 'agent';
-
-export const AVATAR_MAP: Record<AvatarId, string> = {
-    'agent': agent,
-    'book_user': book_user,
-    'rabit': rabit
-};
-
-/**
- * Resolve avatar ID to image source
- * @param avatarId - Avatar ID from backend (e.g., "agent", "book_user", "rabit")
- * @returns Image source path
- */
-export function resolveAvatar(avatarId: string | null | undefined): string {
-    if (!avatarId) return AVATAR_MAP[DEFAULT_AVATAR_ID];
-    
-    // Check if it's a valid preset ID
-    if (avatarId in AVATAR_MAP) {
-        return AVATAR_MAP[avatarId as AvatarId];
+export const AVAILABLE_AVATARS: Avatar[] = [
+    {
+        id: 'msagent',
+        name: 'MS Agent',
+        imagePath: '/src/views/images/avatars/msagent.png',
+        description: 'Classic Microsoft Agent'
+    },
+    {
+        id: 'book_user',
+        name: 'Book User',
+        imagePath: '/src/views/images/avatars/book_user.png',
+        description: 'Bookworm character'
+    },
+    {
+        id: 'rabbit',
+        name: 'Rabbit',
+        imagePath: '/src/views/images/avatars/rabit.png',
+        description: 'Cute rabbit avatar'
     }
-    
-    // If it's already a full URL/path (legacy data), return as-is
-    if (avatarId.startsWith('http') || avatarId.startsWith('/') || avatarId.startsWith('data:')) {
-        return avatarId;
+];
+
+export const DEFAULT_AVATAR: Avatar = AVAILABLE_AVATARS[0]; // MS Agent as default
+
+export class AvatarService {
+    private static STORAGE_KEY = 'selectedAvatar';
+
+    /**
+     * Save selected avatar to localStorage
+     */
+    static saveSelectedAvatar(avatarId: string): void {
+        localStorage.setItem(this.STORAGE_KEY, avatarId);
     }
-    
-    // Fallback to default
-    console.warn(`Unknown avatar ID: ${avatarId}, using default`);
-    return AVATAR_MAP[DEFAULT_AVATAR_ID];
+
+    /**
+     * Get currently selected avatar from localStorage
+     */
+    static getSelectedAvatar(): Avatar {
+        const savedAvatarId = localStorage.getItem(this.STORAGE_KEY);
+        
+        if (savedAvatarId) {
+            const avatar = AVAILABLE_AVATARS.find(a => a.id === savedAvatarId);
+            if (avatar) return avatar;
+        }
+        
+        return DEFAULT_AVATAR;
+    }
+
+    /**
+     * Get avatar by ID, fallback to default
+     */
+    static getAvatarById(id: string): Avatar {
+        return AVAILABLE_AVATARS.find(a => a.id === id) || DEFAULT_AVATAR;
+    }
+
+    /**
+     * Get all available avatars
+     */
+    static getAllAvatars(): Avatar[] {
+        return [...AVAILABLE_AVATARS];
+    }
+
+    /**
+     * Clear saved avatar (reset to default)
+     */
+    static clearSelectedAvatar(): void {
+        localStorage.removeItem(this.STORAGE_KEY);
+    }
 }

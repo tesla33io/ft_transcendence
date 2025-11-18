@@ -10,7 +10,6 @@ export {
     StaticDesktopBackground
 } from './_components';
 
-export type { TaskbarOptions } from './_components';
 
 // ============================================
 // GAME PAGE COMPONENTS
@@ -38,7 +37,6 @@ export type { FriendsComponentOptions } from './_userComponents';
 // Friend Request Windows
 export { 
     createSendFriendRequestWindow,
-    createIncomingRequestsWindow 
 } from './_userComponents';
 
 // Friends Actions Component

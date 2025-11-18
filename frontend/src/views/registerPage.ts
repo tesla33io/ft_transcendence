@@ -3,8 +3,10 @@ import { createWindow } from "../components/_components";
 import { createTaskbar } from "../components/_components";
 import { UserService } from "../game/userService";
 import type { RegisterRequest, RegistrationResponse } from "../types";
-import { AVATAR_PRESETS, DEFAULT_AVATAR_ID } from "../game/avatarConstants"; 
+import { createAvatarSelector } from "../components/_profilePageBuilder";
+import { AvatarService } from "../game/avatarConstants";
 import { ApiService } from "../game/apiService";
+
 // ----------------------------
 // Registration Page View
 // ----------------------------
@@ -15,7 +17,7 @@ export function registerView(router: Router) {
     const content = document.createElement("div");
 
     // ----------------------------
-    // Registration form 
+    // Registration form with avatar selector
     // ----------------------------
     content.innerHTML = `
         <p></p>
@@ -44,90 +46,25 @@ export function registerView(router: Router) {
                 <label for="2factor_no">No</label>
             </div>
         </div>
+
+        <!-- Avatar selector will be inserted here -->
+        <div id="avatar-selector-container" style="margin: 15px 0;"></div>
     `;
 
-    // ----------------------------
-    // Avatar selection section (SIMPLIFIED)
-    // ----------------------------
-    const avatarSection = document.createElement("div");
-    avatarSection.innerHTML = `<label>Choose an Avatar</label>`;
-    avatarSection.style.cssText = `
-        margin-top: 10px;
-        width: 240px;
-        text-align: center;
-    `;
-
-    const avatarContainer = document.createElement("div");
-    avatarContainer.style.cssText = `
-        display: flex;
-        gap: 12px;
-        margin-top: 8px;
-        justify-content: center;
-        flex-wrap: wrap;
-    `; 
-
-    const avatarInput = document.createElement("input");
-    avatarInput.type = "hidden";
-    avatarInput.id = "avatar";
-    avatarInput.value = DEFAULT_AVATAR_ID; 
-
-    AVATAR_PRESETS.forEach((avatar) => {
-        const avatarWrapper = document.createElement("div");
-        avatarWrapper.style.cssText = `
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-        `;
-
-        const img = document.createElement("img");
-        img.src = avatar.src;
-        img.width = 50; 
-        img.height = 50;
-        img.style.cssText = `
-            border: 3px solid transparent;
-            border-radius: 4px;
-            transition: border-color 0.2s;
-        `;
-        img.classList.add("avatar-option");
-        img.dataset.avatarId = avatar.id;
-
-        if (avatar.id === DEFAULT_AVATAR_ID) {
-            img.style.borderColor = "#0000ff";
-            img.classList.add("selected");
-        }
-
-        const label = document.createElement("span");
-        label.textContent = avatar.name;
-        label.style.cssText = `
-            font-size: 10px;
-            color: #333;
-        `;
-
-        avatarWrapper.addEventListener("click", () => {
-            // Remove old selection
-            avatarContainer.querySelectorAll(".avatar-option").forEach(a => {
-                (a as HTMLElement).style.borderColor = "transparent";
-                a.classList.remove("selected");
-            });
-            
-            // Add new selection
-            img.style.borderColor = "#0000ff";
-            img.classList.add("selected");
-            avatarInput.value = avatar.id;
-        });
-
-        avatarWrapper.appendChild(img);
-        avatarWrapper.appendChild(label);
-        avatarContainer.appendChild(avatarWrapper);
+    // Create avatar selector component for localStorage mode
+    const avatarSelector = createAvatarSelector({
+        showSaveButton: false, // Don't show save button - we'll save during registration
+        containerStyle: `
+            padding: 10px;
+            background-color: #e0e0e0;
+            border: 1px inset #c0c0c0;
+            margin: 10px 0;
+        `
     });
 
-    avatarSection.appendChild(avatarContainer);
-    avatarSection.appendChild(avatarInput);
-
-    // Append avatar section
-    content.appendChild(avatarSection);
+    // Add avatar selector to the container
+    const avatarContainer = content.querySelector('#avatar-selector-container')!;
+    avatarContainer.appendChild(avatarSelector.getElement());
 
     // ----------------------------
     // Error and Loading messages
@@ -166,12 +103,12 @@ export function registerView(router: Router) {
     buttonContainer.appendChild(cancelBtn);
     content.appendChild(buttonContainer);
 
-    // Create window
+    // Create window with increased height to accommodate avatar selector
     const simpleWindow = createWindow({
         title: "Register New Account",
         width: "280px",
-        height: "400px",
-        initialPosition: {x: 500 , y: 200},
+        height: "500px", // Increased height for avatar selector
+        initialPosition: {x: 450 , y: 200},
         content: content,
         titleBarControls: {
             help: true,
@@ -205,7 +142,11 @@ export function registerView(router: Router) {
         const password = (content.querySelector<HTMLInputElement>("#password")!).value;
         const repeatPassword = (content.querySelector<HTMLInputElement>("#repeat_password")!).value;
         const twoFactor = (content.querySelector<HTMLInputElement>('input[name="twofactor"]:checked')!)?.value === "yes";
-        const avatarId = (content.querySelector<HTMLInputElement>("#avatar")!).value; // ✅ Get avatar ID
+        
+        // Get selected avatar from component, or use currently saved one
+        const selectedAvatarId = avatarSelector.getSelectedAvatarId();
+        const currentAvatarId = AvatarService.getSelectedAvatar().id;
+        const avatarId = selectedAvatarId || currentAvatarId;
 
         return { username, password, repeatPassword, twoFactor, avatarId };
     }
@@ -235,6 +176,11 @@ export function registerView(router: Router) {
         showLoading();
 
         try {
+            // Save selected avatar to localStorage (if one was selected)
+            if (avatarSelector.getSelectedAvatarId()) {
+                AvatarService.saveSelectedAvatar(avatarSelector.getSelectedAvatarId()!);
+            }
+            
             const registerData: RegisterRequest = {
                 username: data.username,
                 password: data.password,
@@ -242,7 +188,7 @@ export function registerView(router: Router) {
                 enable2FA: data.twoFactor
             };
 
-            console.log(" Sending registration request:", {
+            console.log("Sending registration request:", {
                 username: registerData.username,
                 enable2FA: registerData.enable2FA,
                 avatarId: registerData.avatarUrl
@@ -276,10 +222,9 @@ export function registerView(router: Router) {
         
         // Replace window content with 2FA verification form
         content.innerHTML = `
-            <h2 style="margin-top: 0; text-align: center;">Complete 2FA Setup</h2>
-            <p style="text-align: center;">Scan this QR code with your authenticator app:</p>
+			 <h2 style="color: #1e40af; font-size: 22px; text-align: center; margin: 0 0 15px 0; font-weight: bold;"> Two-factor authentication </h2>
             <div style="text-align: center; margin: 20px 0;">
-                <img src="${setup.qrCodeUrl}" alt="QR Code" style="max-width: 200px; border: 1px solid #ccc;" />
+                <img src="${setup.qrCodeUrl}" alt="QR Code" style="max-width: 200px; border: 1px solid #ccc;display: block; margin:0 auto;" />
             </div>
             <p style="font-size: 12px; color: #666; text-align: center;">${setup.message}</p>
             <div class="field-row-stacked" style="width: 100%; margin-top: 15px;">
@@ -303,7 +248,6 @@ export function registerView(router: Router) {
                 e.preventDefault();
                 e.stopPropagation();
                 
-                // Use getElementById instead of querySelector for IDs starting with numbers
                 const codeInput = document.getElementById('2fa-code') as HTMLInputElement;
                 const errorDiv = document.getElementById('2fa-error') as HTMLDivElement;
                 const loadingDiv = document.getElementById('2fa-loading') as HTMLDivElement;
