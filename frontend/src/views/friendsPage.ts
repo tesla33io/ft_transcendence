@@ -55,7 +55,6 @@ export function friendsView(router: Router) {
         onRefreshFriends: () => {
             friendsComponent.refresh();
         },
-        // ✅ Pass the profile opening function
         onViewProfile: openFriendProfile
     });
 

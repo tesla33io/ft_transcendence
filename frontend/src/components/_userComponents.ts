@@ -3,6 +3,7 @@
 import { UserService } from '../game/userService';
 import { createWindow } from '../components/_components';
 import { createAvatarDisplay } from "./_profilePageBuilder"
+import { AvatarService } from '../game/avatarConstants';
 import type { Friend } from '../game/userService';
 import type { 
     OneVOneStatistics, 
@@ -156,21 +157,21 @@ export class FriendsComponent {
                 const lastOnline = isOnline ? 'Now' : 
                     (friend.lastOnlineAt ? formatTimeAgo(friend.lastOnlineAt) : 'Unknown');
                 
-                row.innerHTML = `
-                    <td style="padding: 4px 6px; border-bottom: 1px solid #f0f0f0;">
-                        <div style="display: flex; align-items: center; gap: 4px;">
-                            <img src="${friend.avatarUrl || '/images/default-avatar.png'}" 
-                                 width="16" height="16" style="border-radius: 2px;">
-                            <span>${friend.username}</span>
-                        </div>
-                    </td>
-                    <td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center;">
-                        ${statusIcon}
-                    </td>
-                    <td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center; font-size: 10px;">
-                        ${lastOnline}
-                    </td>
-                `;
+				row.innerHTML = `
+					<td style="padding: 4px 6px; border-bottom: 1px solid #f0f0f0;">
+						<div style="display: flex; align-items: center; gap: 4px;">
+							<img src="${friend.avatarUrl || AvatarService.getSelectedAvatar().imagePath}" 
+								width="16" height="16" style="border-radius: 2px;">
+							<span>${friend.username}</span>
+						</div>
+					</td>
+					<td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center;">
+						${statusIcon}
+					</td>
+					<td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center; font-size: 10px;">
+						${lastOnline}
+					</td>
+				`;
                 tbody.appendChild(row);
             });
         }
@@ -377,7 +378,7 @@ export class SimpleFriendsActionsComponent {
             
             friendInfo.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <img src="${this.selectedFriend.avatarUrl || '/images/default-avatar.png'}" 
+                   <img src="${this.selectedFriend.avatarUrl || AvatarService.getSelectedAvatar().imagePath}" 
                          width="24" height="24" style="border-radius: 2px;">
                     <div style="flex: 1;">
                         <div style="font-weight: bold; font-size: 12px;">
