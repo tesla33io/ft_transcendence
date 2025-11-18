@@ -97,16 +97,6 @@ export class UserService {
     // In-memory role cache (not localStorage for security)
     private static roleCache: { role: string; timestamp: number } | null = null;
     private static CACHE_DURATION = 60000; // 1 minute
-
-    // ===== HELPER METHODS =====
-    
-    /**
-     * Safely convert string role to UserRole enum
-     * Defaults to USER if invalid role received
-     */
-    
-
-    // ===== AUTHENTICATION (SENDERS) ====
     // Send login request
     static async login(credentials: LoginRequest): Promise<AuthResponse | Login2FAChallenge> {
     const response = await ApiService.post<{
@@ -120,14 +110,14 @@ export class UserService {
         method?: 'totp';
     }>('/users/auth/login', credentials);
     
-    console.log('🔵 [LOGIN] Full response:', response);
-    console.log('🔵 [LOGIN] requires2FA:', response.requires2FA);
-    console.log('🔵 [LOGIN] message:', response.message);
+    //console.log('[LOGIN] Full response:', response);
+    //console.log('[LOGIN] requires2FA:', response.requires2FA);
+    //console.log('[LOGIN] message:', response.message);
     
     // Check if 2FA is required - check both requires2FA flag and message content
     if (response.requires2FA === true || 
         (response.message && response.message.toLowerCase().includes('authenticator'))) {
-        console.log('🔵 [LOGIN] 2FA required, returning challenge');
+        //console.log('🔵 [LOGIN] 2FA required, returning challenge');
         return {
             requires2FA: true,
             method: response.method || 'totp',
@@ -136,14 +126,14 @@ export class UserService {
     }
     
     // Normal login successful
-    console.log('✅ [LOGIN] Login successful!');
-    console.log('✅ [LOGIN] User ID:', response.id);
-    console.log('✅ [LOGIN] Username:', response.username);
-    console.log('✅ [LOGIN] Access Token:', response.accessToken?.substring(0, 20) + '...');
+    //console.log('[LOGIN] Login successful!');
+    //console.log('[LOGIN] User ID:', response.id);
+    //console.log('[LOGIN] Username:', response.username);
+    //console.log('[LOGIN] Access Token:', response.accessToken?.substring(0, 20) + '...');
     
     // Validate response has required fields
     if (!response.id || !response.username) {
-        console.error('❌ [LOGIN] Login response missing required fields:', response);
+        //console.error('[LOGIN] Login response missing required fields:', response);
         throw new Error('Invalid login response: missing user information');
     }
     
@@ -178,7 +168,7 @@ export class UserService {
 			enable2FA: userData.enable2FA || false 
 		});
 		
-		console.log('Registration response:', response);
+		//console.log('Registration response:', response);
 		
 		// If 2FA is required, return the setup response (user not created yet)
 		if (response.twoFactorSetup) {
@@ -186,8 +176,8 @@ export class UserService {
 		}
 		
 		// Normal registration completed (no 2FA)
-		console.log('Registration successful!');
-		console.log('User ID:', response.id);
+		//console.log('Registration successful!');
+		//console.log('User ID:', response.id);
 		
 		// Store tokens and user data (if tokens exist - they might not for 2FA flow)
 		if ('accessToken' in response && response.accessToken) {
@@ -220,9 +210,9 @@ export class UserService {
 			code
 		});
 		
-		console.log('2FA verification successful!');
-		console.log('User ID:', response.id);
-		console.log('Backup codes:', response.backupCodes);
+		//console.log('2FA verification successful!');
+		//console.log('User ID:', response.id);
+		//console.log('Backup codes:', response.backupCodes);
 		
 		// User is now created and session is set via cookie
 		// We still need to get the access token - but since session is set, 
@@ -252,7 +242,7 @@ export class UserService {
         refreshToken: string;
     }> {
         try {
-            //console.log('[UserService] Refreshing token...');
+            ////console.log('[UserService] Refreshing token...');
 
             const response = await fetch('/api/v1/auth/refresh', {
                 method: 'POST',
@@ -265,9 +255,9 @@ export class UserService {
 
             if (!response.ok) {
                 if (response.status === 401) {
-					console.log('[UserService] No valid refresh token (user not logged in)');
+					//console.log('[UserService] No valid refresh token (user not logged in)');
 				} else {
-					console.warn(`[UserService] Token refresh failed: ${response.status}`);
+					//console.warn(`[UserService] Token refresh failed: ${response.status}`);
 				}
             	throw new Error(`Token refresh failed: ${response.status}`);
             }
@@ -295,9 +285,9 @@ export class UserService {
         try {
             // Call logout endpoint to invalidate tokens
             await ApiService.post<void>('/api/v1/auth/logout', {});
-            console.log('Logged out successfully');
+            //console.log('Logged out successfully');
         } catch (error) {
-            console.error('Logout error (clearing local data anyway):', error);
+            //console.error('Logout error (clearing local data anyway):', error);
         } finally {
             // Clear local storage
             this.clearUserData()
@@ -315,11 +305,11 @@ export class UserService {
      */
     static async getMe(): Promise<{id: number; username: string; role: string}> {
         try {
-            console.log('[UserService] Fetching current user info...');
+            //console.log('[UserService] Fetching current user info...');
             
             const userInfo = await ApiService.get<{id: number; username: string; role: string}>('/api/v1/auth/me');
             
-            console.log('User info fetched:', userInfo);
+            //console.log('User info fetched:', userInfo);
             
             // Cache role IN MEMORY with timestamp (not localStorage)
             this.roleCache = {
@@ -330,7 +320,7 @@ export class UserService {
             return userInfo;
             
         } catch (error) {
-            console.error('Failed to fetch user info:', error);
+            //console.error('Failed to fetch user info:', error);
             throw new Error(`Failed to get user info: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }
@@ -340,12 +330,12 @@ export class UserService {
 	 */
 	static async getCurrentUser(): Promise<PublicUser> {
 		try {
-			console.log('[UserService] Fetching current user info...');
+			//console.log('[UserService] Fetching current user info...');
 			
 			// Call the /users/me endpoint which should return full user data
 			const response = await ApiService.get<any>('/users/me');
 			
-			console.log('[UserService] Raw response from /users/me:', response);
+			//console.log('[UserService] Raw response from /users/me:', response);
 			
 			// Map backend response to PublicUser interface
 			const publicUser: PublicUser = {
@@ -358,7 +348,7 @@ export class UserService {
 				lastLogin: response.lastLogin || response.last_login || new Date().toISOString()
 			};
 			
-			console.log('[UserService] Mapped to PublicUser:', publicUser);
+			//console.log('[UserService] Mapped to PublicUser:', publicUser);
 			
 			// Cache role IN MEMORY with timestamp (not localStorage)
 			this.roleCache = {
@@ -372,7 +362,7 @@ export class UserService {
 			return publicUser;
 			
 		} catch (error) {
-			console.error('[UserService] Failed to fetch user info:', error);
+			//console.error('[UserService] Failed to fetch user info:', error);
 			throw new Error(`Failed to get user info: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		}
 	}
@@ -385,17 +375,17 @@ export class UserService {
         try {
             // Check if cache is valid (less than 1 minute old)
             if (this.roleCache && (Date.now() - this.roleCache.timestamp) < this.CACHE_DURATION) {
-                console.log('[UserService] Using cached role (fresh)');
+                //console.log('[UserService] Using cached role (fresh)');
                 return this.roleCache.role;
             }
 
             // Cache expired or doesn't exist - fetch fresh
-            console.log('[UserService] Cache expired, fetching fresh role...');
+            //console.log('[UserService] Cache expired, fetching fresh role...');
             const userInfo = await this.getMe();
             return userInfo.role;
             
         } catch (error) {
-            console.error('Failed to get role:', error);
+            //console.error('Failed to get role:', error);
             return null;
         }
     }
@@ -424,7 +414,7 @@ export class UserService {
             // Call PATCH endpoint
             const response = await ApiService.patch<any>('/users/me', updates);
             
-            console.log('Profile updated successfully:', response);
+            //console.log('Profile updated successfully:', response);
             
             // Map response to PublicUser
             const user: PublicUser = {
@@ -443,7 +433,7 @@ export class UserService {
             return user;
             
         } catch (error) {
-            console.error('Failed to update profile:', error);
+            //console.error('Failed to update profile:', error);
             throw error;
         }
     }
@@ -461,11 +451,11 @@ export class UserService {
 			const response = await ApiService.get<{ friends: Friend[] }>('/users/friends');
 			const friends = response.friends || [];
 			
-			console.log('[UserService] Friends fetched successfully:', friends);
-			console.log(`[UserService] Total friends: ${friends.length}`);
+			//console.log('[UserService] Friends fetched successfully:', friends);
+			//console.log(`[UserService] Total friends: ${friends.length}`);
 			return friends;
 		} catch (error) {
-			console.error('[UserService] Failed to fetch friends:', error);
+			//console.error('[UserService] Failed to fetch friends:', error);
 			throw new Error('Failed to load Friends');
 		}
 	}
@@ -534,7 +524,7 @@ export class UserService {
         // Clear in-memory cache
         this.roleCache = null;
         
-        console.log('User data and role cache cleared');
+        //console.log('User data and role cache cleared');
     }
 
     // ===== PROFILE & STATISTICS API METHODS =====
@@ -542,7 +532,7 @@ export class UserService {
     // Get user profile
     static async getUserProfile(userId?: number): Promise<UserProfile> {
         try {
-            console.log('[UserService] Fetching user profile...');
+            //console.log('[UserService] Fetching user profile...');
             
             // Determine endpoint
             const endpoint = '/users/me'//= userId ? `/users/${userId}` : '/users/me';
@@ -550,7 +540,7 @@ export class UserService {
             // Call the real endpoint through gateway
             const response = await ApiService.get<any>(endpoint);
             
-            console.log('Profile fetched successfully:', response);
+            //console.log('Profile fetched successfully:', response);
             
             // Map backend response to UserProfile interface
             const profile: UserProfile = {
@@ -567,7 +557,7 @@ export class UserService {
             return profile;
             
         } catch (error) {
-            console.error('Failed to fetch profile:', error);
+            //console.error('Failed to fetch profile:', error);
             throw new Error("Failed to get user Profile")
 			
         }
@@ -576,38 +566,35 @@ export class UserService {
    // Get 1v1 statistics
 static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
     try {
-        console.log('[UserService] Fetching 1v1 statistics...');
-        
+
         // Determine endpoint
-        const endpoint = userId ? `/users/${userId}` : '/users/me';
+        //const endpoint = userId ? `/users/${userId}` : '/users/me';
         
         // Call the real endpoint
-        const response = await ApiService.get<any>(endpoint);
-        
-        console.log(' 1v1 Statistics fetched:', response.stats);
-        
-        // Map backend response to OneVOneStatistics interface
-        const totalGames = response.stats?.totalGames || 0;
-        const wins = response.stats?.wins || 0;
+        //const response = await ApiService.get<any>(endpoint);
+        // Generate realistic mock data
+        const gamesWon = Math.floor(Math.random() * 50) + 10;
+        const gamesLost = Math.floor(Math.random() * 40) + 5;
+        const totalGames = gamesWon + gamesLost;
+        const winPercentage = Math.round((gamesWon / totalGames) * 100);
         
         const stats: OneVOneStatistics = {
-            userId: response.id,
-            userName: response.username,
-            gamesWon: wins,
-            gamesLost: response.stats?.losses || 0,
-            winPercentage: totalGames > 0 
-                ? Math.round((wins / totalGames) * 100) 
-                : 0,
-            currentWinStreak: response.stats?.currentWinStreak || 0,
-            longestWinStreak: response.stats?.bestWinStreak || 0,
-            currentRating: response.stats?.currentRating || 1000,
-            peakRating: response.stats?.highestRating || 1000
+            userId: userId || 1,
+            userName: userId ? `Player_${userId}` : "CurrentUser",
+            gamesWon,
+            gamesLost,
+            winPercentage,
+            currentWinStreak: Math.floor(Math.random() * 21) - 10, // -10 to +10 streak
+            longestWinStreak: Math.floor(Math.random() * 15) + 5,
+            currentRating: 1000 + Math.floor(Math.random() * 1000), // 1000-2000
+            peakRating: 1200 + Math.floor(Math.random() * 800) // 1200-2000
         };
         
-        return stats;
+        //console.log('[UserService] Mock 1v1 statistics generated:', stats);
         
+        return stats;
     } catch (error) {
-        console.error('Failed to fetch 1v1 statistics:', error);
+        //console.error('Failed to fetch 1v1 statistics:', error);
         throw new Error(`Failed to load 1v1 statistics: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 }
@@ -667,57 +654,76 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
         return mockStats;
     }
 
-
-    // Get match history
-	// Get match history
+		// Get match history
 	static async getMatchHistory(userId?: number, limit: number = 20): Promise<MatchHistoryEntry[]> {
 		try {
-			console.log('[UserService] Fetching match history...');
+			//console.log('[UserService] Fetching match history...');
 			
-			// Build endpoint
-			// If userId provided, fetch that user's history (public view)
-			// Otherwise fetch current user's history
-			const endpoint = userId ? `/match-history/${userId}` : '/users/me';
-			console.log(`[UserService] Calling endpoint: ${endpoint}`);
+			// TODO: Uncomment when backend is ready
+			// const endpoint = userId ? `/match-history/${userId}` : '/users/me';
+			// const response = await ApiService.get<any>(endpoint);
 			
-			// Call the real endpoint through gateway
-			const response = await ApiService.get<any>(endpoint);
+			// Generate 15 mock match history entries
+			const matches: MatchHistoryEntry[] = [];
+			const matchCount = Math.min(limit, 15); // Use limit but cap at 15
 			
-			console.log('[UserService] Raw match history response:', response);
+			// Array of realistic opponent names
+			const opponentNames = [
+				'Mock_MArtin', 'Fake_Master', 'DeffentlyArealPlayer', 'Siri',
+				'Alexa', 'FastFingers', 'BallBouncer', 'ArcadeKing',
+				'RetroGamer', 'SpeedyPaddle', 'PongWizard', 'TableWarrior',
+				'PixelPong', 'ClassicGamer', 'BounceBack', 'PaddleNinja',
+				'GameAce', 'PongChampion', 'DigitalPaddle', 'RetroMaster'
+			];
 			
-			// Backend might return array directly or wrapped in object
-			const matchesData = Array.isArray(response) ? response : response.matches || response.data || [];
-			
-			// Map backend response to MatchHistoryEntry interface
-			const matches: MatchHistoryEntry[] = matchesData.map((match: any) => ({
-				matchId: match.matchId || match.id,
-				opponentId: match.opponentId || match.opponent_id,
-				opponentName: match.opponentName || match.opponent_name || 'Unknown',
-				isWin: match.isWin || match.is_win || match.result === 'win',
-				userScore: match.userScore || match.user_score || 0,
-				opponentScore: match.opponentScore || match.opponent_score || 0,
-				date: match.date || match.played_at || match.created_at || new Date().toISOString(),
-				opponentElo: match.opponentElo || match.opponent_elo || 1000,
-				eloGained: match.eloGained || match.elo_gained || match.elo_change || 0,
-				matchDuration: match.matchDuration || match.duration || match.match_duration
-			}));
-			
-			console.log(`[UserService] Mapped ${matches.length} match history entries`);
+			for (let i = 0; i < matchCount; i++) {
+				const isWin = Math.random() > 0.4; // 60% win rate
+				const userScore = isWin ? 3 : Math.floor(Math.random() * 3); // If win, user gets 3, else 0-2
+				const opponentScore = isWin ? Math.floor(Math.random() * 3) : 3; // If win, opponent gets 0-2, else 3
+				
+				// Generate date in the last 30 days
+				const daysAgo = Math.floor(Math.random() * 30);
+				const hoursAgo = Math.floor(Math.random() * 24);
+				const minutesAgo = Math.floor(Math.random() * 60);
+				const matchDate = new Date();
+				matchDate.setDate(matchDate.getDate() - daysAgo);
+				matchDate.setHours(matchDate.getHours() - hoursAgo);
+				matchDate.setMinutes(matchDate.getMinutes() - minutesAgo);
+				
+				// ELO calculations
+				const opponentElo = 800 + Math.floor(Math.random() * 800); // 800-1600 range
+				const eloChange = isWin 
+					? Math.floor(Math.random() * 25) + 10  // Win: +10 to +35
+					: -(Math.floor(Math.random() * 20) + 5); // Loss: -5 to -25
+				
+				// Match duration in seconds (3-15 minutes)
+				const matchDuration = Math.floor(Math.random() * 720) + 180; // 180-900 seconds
+				
+				const match: MatchHistoryEntry = {
+					matchId: 1000 + i,
+					opponentId: Math.floor(Math.random() * 9000) + 1000, // Random opponent ID
+					opponentName: opponentNames[Math.floor(Math.random() * opponentNames.length)],
+					isWin,
+					userScore,
+					opponentScore,
+					date: matchDate.toISOString(),
+					opponentElo,
+					eloGained: eloChange,
+					matchDuration
+				};
+				
+				matches.push(match);
+			}
 			
 			// Sort by date (newest first)
 			matches.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 			
+			//console.log(`[UserService] Generated ${matches.length} mock match history entries`);
+			
 			return matches;
 			
 		} catch (error) {
-			console.error('[UserService] Failed to fetch match history:', error);
-			
-			// If endpoint doesn't exist yet, return empty array instead of crashing
-			if (error instanceof Error && error.message.includes('404')) {
-				console.warn('[UserService] Match history endpoint not implemented yet, returning empty array');
-				return [];
-			}
-			
+			//console.error('[UserService] Failed to fetch match history:', error);
 			throw new Error(`Failed to load match history: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		}
 	}
@@ -736,7 +742,7 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
             case 'user':
                 return UserRole.USER;
             default:
-                console.warn(`Unknown role "${role}", defaulting to USER`);
+                //console.warn(`Unknown role "${role}", defaulting to USER`);
                 return UserRole.USER;
         }
     }

@@ -15,7 +15,7 @@ if(!JWT_SECRET){
 server.register(require('@fastify/cookie'))
 
 server.register(rateLimit, {
-    max: 100,
+    max: 250,
     timeWindow: '1 minute',
     keyGenerator: (req: FastifyRequest) => req.ip
 })

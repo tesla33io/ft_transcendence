@@ -166,13 +166,17 @@ export function createMyProfilePage(router: Router) {
     });
 }
 
+// ... existing code ...
+
 export function createFriendProfilePage(userId: number, router: Router) {
+    // Use mock data for friend profiles
     return createCompleteProfilePage({
         userId,
         router,
-        title: "👥 Friend Profile"
+        title: "👥 Friend Profile",
     });
 }
+
 
 import {DEFAULT_AVATAR} from '../game/avatarConstants';
 
