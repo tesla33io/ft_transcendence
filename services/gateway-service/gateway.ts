@@ -7,15 +7,15 @@ const PORT = 3000
 
 const JWT_SECRET = process.env.JWT_SECRET
 if(!JWT_SECRET){
-    console.error('FATAL: JWT_SECRET environment variable is not set!');
-    console.error('Run: make setup');
+    //console.error('FATAL: JWT_SECRET environment variable is not set!');
+    //console.error('Run: make setup');
     process.exit(1);
 }
 
 server.register(require('@fastify/cookie'))
 
 server.register(rateLimit, {
-    max: 20,
+    max: 100,
     timeWindow: '1 minute',
     keyGenerator: (req: FastifyRequest) => req.ip
 })
@@ -41,7 +41,7 @@ let guestIdCounter = -1;
 // ===== WAIT FOR PLUGINS TO LOAD =====
 server.after(async () => {
     jwtHelper = new JWTHelper(server)
-    console.log('jwt helper init')
+    //console.log('jwt helper init')
 })
 
 server.get("/test/status", async (req, reply) => {
@@ -54,7 +54,7 @@ server.get("/test/status", async (req, reply) => {
 // ===== GUEST JWT ENDPOINT =====
 server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
     try {
-        console.log('[GATEWAY] Guest login request');
+        //console.log('[GATEWAY] Guest login request');
 
         // Generate unique guest ID (negative integer)
         const guestId = guestIdCounter;
@@ -69,7 +69,7 @@ server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
             'guest'                // role: "guest"
         );
 
-        console.log(`[GATEWAY] Guest tokens created: ID=${guestId}, Username=${guestUsername}`);
+        //console.log(`[GATEWAY] Guest tokens created: ID=${guestId}, Username=${guestUsername}`);
 
         // Set refresh token in httpOnly cookie
         reply.setCookie('refreshToken', refreshToken, {
@@ -80,7 +80,7 @@ server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
             path: '/'
         });
 
-        console.log('[GATEWAY] Guest refresh token set in httpOnly cookie');
+        //console.log('[GATEWAY] Guest refresh token set in httpOnly cookie');
 
         // Return tokens to frontend
         return reply.status(200).send({
@@ -93,7 +93,7 @@ server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
         });
 
     } catch (error) {
-        console.error('[GATEWAY] Error creating guest session:', error);
+        //console.error('[GATEWAY] Error creating guest session:', error);
         return reply.status(500).send({
             error: 'Failed to create guest session',
             code: 'GUEST_SESSION_FAILED'
@@ -104,7 +104,7 @@ server.post('/api/v1/auth/guest', async (request: AuthRequest, reply: any) => {
 //me end point
 server.get('/api/v1/auth/me', async (request: AuthRequest, reply: any) => {
     try {
-        console.log('[GATEWAY] /me endpoint called');
+        //console.log('[GATEWAY] /me endpoint called');
 
         // Verify JWT
         await jwtHelper.requireJWT()(request, reply);
@@ -116,7 +116,7 @@ server.get('/api/v1/auth/me', async (request: AuthRequest, reply: any) => {
             });
         }
 
-        console.log(`[GATEWAY] /me: Returning user info for ${request.user.username}`);
+        //console.log(`[GATEWAY] /me: Returning user info for ${request.user.username}`);
 
         return reply.status(200).send({
             id: request.user.id,
@@ -125,7 +125,7 @@ server.get('/api/v1/auth/me', async (request: AuthRequest, reply: any) => {
         });
 
     } catch (error) {
-        console.error('[GATEWAY] Error in /me endpoint:', error);
+        //console.error('[GATEWAY] Error in /me endpoint:', error);
         return reply.status(401).send({
             error: 'Unauthorized',
             code: 'AUTH_FAILED'
@@ -136,21 +136,21 @@ server.get('/api/v1/auth/me', async (request: AuthRequest, reply: any) => {
 // ===== LOGOUT ENDPOINT =====
 server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
     try {
-        console.log('[GATEWAY] Logout endpoint called');
+        //console.log('[GATEWAY] Logout endpoint called');
 
         // Step 1: Verify JWT (optional - don't fail if invalid)
         try {
             await jwtHelper.requireJWT()(request, reply);
             if (request.user) {
-                console.log(`[GATEWAY] User ${request.user.username} (ID: ${request.user.id}) logging out`);
+                //console.log(`[GATEWAY] User ${request.user.username} (ID: ${request.user.id}) logging out`);
             }
         } catch (jwtError) {
-            console.log('[GATEWAY] Invalid/expired JWT during logout (continuing anyway)');
+            //console.log('[GATEWAY] Invalid/expired JWT during logout (continuing anyway)');
         }
 
         // Step 2: Try to destroy session in user-service (FAIL SILENTLY)
         try {
-            console.log('[GATEWAY] Attempting to destroy session in user-service...');
+            //console.log('[GATEWAY] Attempting to destroy session in user-service...');
 
             const userServiceResponse = await fetch('http://user-service:8000/users/auth/logout', {
                 method: 'POST',
@@ -165,17 +165,17 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
             });
 
             if (userServiceResponse.ok) {
-                console.log('[GATEWAY] User-service session destroyed successfully');
+                //console.log('[GATEWAY] User-service session destroyed successfully');
             } else {
                 const status = userServiceResponse.status;
                 const text = await userServiceResponse.text().catch(() => 'No response body');
-                console.log(`[GATEWAY] User-service logout failed (${status}): ${text}`);
-                console.log('[GATEWAY] Continuing with JWT logout anyway...');
+                //console.log(`[GATEWAY] User-service logout failed (${status}): ${text}`);
+                //console.log('[GATEWAY] Continuing with JWT logout anyway...');
             }
 
         } catch (fetchError) {
-            console.error('[GATEWAY] Failed to reach user-service:', fetchError);
-            console.log('[GATEWAY] Continuing with JWT logout anyway...');
+            //console.error('[GATEWAY] Failed to reach user-service:', fetchError);
+            //console.log('[GATEWAY] Continuing with JWT logout anyway...');
         }
 
         // Step 3: ALWAYS clear refresh token cookie (JWT logout)
@@ -186,7 +186,7 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
             path: '/'
         });
 
-        console.log('[GATEWAY] Refresh token cookie cleared');
+        //console.log('[GATEWAY] Refresh token cookie cleared');
 
         //  Step 4: ALWAYS return success (logout is "best effort")
         return reply.status(200).send({
@@ -195,7 +195,7 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
         });
 
     } catch (error) {
-        console.error('[GATEWAY] Unexpected error in logout endpoint:', error);
+        //console.error('[GATEWAY] Unexpected error in logout endpoint:', error);
 
         // Even on catastrophic error, try to clear cookies
         try {
@@ -205,9 +205,9 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
                 sameSite: 'lax',
                 path: '/'
             });
-            console.log('[GATEWAY] Refresh token cookie cleared (fallback)');
+            //console.log('[GATEWAY] Refresh token cookie cleared (fallback)');
         } catch (cookieError) {
-            console.error('[GATEWAY] Failed to clear cookie:', cookieError);
+            //console.error('[GATEWAY] Failed to clear cookie:', cookieError);
         }
 
         //Still return 200 (logout should always succeed from user perspective)
@@ -225,13 +225,13 @@ server.post('/api/v1/auth/logout', async (request: AuthRequest, reply: any) => {
 // ===== REFRESH TOKEN ENDPOINT =====
 server.post('/api/v1/auth/refresh', async (request: AuthRequest, reply: any) => {
     try {
-        console.log('[GATEWAY] /refresh endpoint called');
+        //console.log('[GATEWAY] /refresh endpoint called');
 
         // Get refresh token from cookie (cast to any because AuthRequest doesn't include cookies)
         const refreshToken = (request as any).cookies?.refreshToken;
 
         if (!refreshToken) {
-            console.error('[GATEWAY] No refresh token in cookies');
+            //console.error('[GATEWAY] No refresh token in cookies');
             return reply.status(401).send({
                 error: 'Unauthorized',
                 code: 'NO_REFRESH_TOKEN',
@@ -242,7 +242,7 @@ server.post('/api/v1/auth/refresh', async (request: AuthRequest, reply: any) => 
         // Verify refresh token
         try {
             const decoded = jwtHelper.verifyRefreshToken(refreshToken);
-            console.log(` [GATEWAY] Refresh token valid for user: ${decoded.username}`);
+            //console.log(` [GATEWAY] Refresh token valid for user: ${decoded.username}`);
 
             // Create new tokens
             const { accessToken, refreshToken: newRefreshToken } = jwtHelper.createTokens(
@@ -260,7 +260,7 @@ server.post('/api/v1/auth/refresh', async (request: AuthRequest, reply: any) => 
                 path: '/'
             });
 
-            console.log(`[GATEWAY] New tokens created for user: ${decoded.username}`);
+            //console.log(`[GATEWAY] New tokens created for user: ${decoded.username}`);
 
             return reply.status(200).send({
                 accessToken: accessToken,
@@ -269,7 +269,7 @@ server.post('/api/v1/auth/refresh', async (request: AuthRequest, reply: any) => 
             });
 
         } catch (error) {
-            console.error('[GATEWAY] Refresh token verification failed:', error);
+            //console.error('[GATEWAY] Refresh token verification failed:', error);
             return reply.status(401).send({
                 error: 'Unauthorized',
                 code: 'INVALID_REFRESH_TOKEN',
@@ -278,7 +278,7 @@ server.post('/api/v1/auth/refresh', async (request: AuthRequest, reply: any) => 
         }
 
     } catch (error) {
-        console.error('[GATEWAY] Error in /refresh endpoint:', error);
+        //console.error('[GATEWAY] Error in /refresh endpoint:', error);
         return reply.status(500).send({
             error: 'Server error',
             code: 'REFRESH_FAILED'
@@ -293,23 +293,23 @@ server.addHook('onRequest', async (request: AuthRequest, reply) => {
         return; // Skip - not a game route
     }
 
-    console.log(`[GATEWAY] Game route request: ${request.method} ${request.url}`);
+    //console.log(`[GATEWAY] Game route request: ${request.method} ${request.url}`);
 
     // Determine which middleware to apply based on endpoint
     if (request.url.includes('/bot-classic') ||
         request.url.includes('/join-classic')) {
         // Bot and Classic require 'user' role (not guest)
-        console.log(`[GATEWAY] Enforcing ROLE check for: ${request.url}`);
+        //console.log(`[GATEWAY] Enforcing ROLE check for: ${request.url}`);
         await jwtHelper.requireRole(['user'])(request, reply);
 
     } else if (request.url.includes('/join-tournament')) {
         // Tournament just needs valid JWT (any role: user or guest)
-        console.log(`[GATEWAY] Enforcing JWT check for tournament: ${request.url}`);
+        //console.log(`[GATEWAY] Enforcing JWT check for tournament: ${request.url}`);
         await jwtHelper.requireJWT()(request, reply);
 
     } else {
         // All other /api/v1/game/* routes need JWT
-        console.log(`[GATEWAY] Enforcing JWT check for: ${request.url}`);
+        //console.log(`[GATEWAY] Enforcing JWT check for: ${request.url}`);
         await jwtHelper.requireJWT()(request, reply);
     }
 });
@@ -376,7 +376,7 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
             (request.url.includes('/users/auth/register') ||
              request.url.includes('/users/auth/login'))) {
 
-            console.log('[GATEWAY] Intercepting auth response with onSend hook');
+            //console.log('[GATEWAY] Intercepting auth response with onSend hook');
 
             let bodyString = payload;
 
@@ -400,14 +400,14 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
                 body = JSON.parse(bodyString);
             }
 
-            console.log('[GATEWAY] Response from user-service:', body);
+            //console.log('[GATEWAY] Response from user-service:', body);
 
             const userId = body.id;
             const username = body.username;
             const role = body.role || 'user';
 
             if (!userId || !username) {
-                console.warn('[GATEWAY] Missing user info in response:', body);
+                //console.warn('[GATEWAY] Missing user info in response:', body);
                 return JSON.stringify(body);
             }
 
@@ -418,7 +418,7 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
                 role
             );
 
-            console.log(`[GATEWAY] JWT tokens created for user: ${username}`);
+            //console.log(`[GATEWAY] JWT tokens created for user: ${username}`);
 
             // Set refresh token in httpOnly cookie
             reply.setCookie('refreshToken', refreshToken, {
@@ -429,18 +429,18 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
                 path: '/'
             });
 
-            console.log('[GATEWAY] Refresh token set in httpOnly cookie');
+            //console.log('[GATEWAY] Refresh token set in httpOnly cookie');
 
             // Add tokens to response
             body.accessToken = accessToken;
             body.refreshToken = refreshToken;
 
-            console.log('[GATEWAY] Sending response with JWT tokens to frontend');
+            //console.log('[GATEWAY] Sending response with JWT tokens to frontend');
 
             return JSON.stringify(body);
         }
     } catch (error) {
-        console.error('[GATEWAY] Error in onSend hook:', error);
+        //console.error('[GATEWAY] Error in onSend hook:', error);
     }
 
     return payload;
@@ -449,7 +449,7 @@ server.addHook('onSend', async (request: any, reply: any, payload: any) => {
 const start = async() =>{
     try{
         await server.listen({port:PORT, host:'0.0.0.0'})
-        console.log(`🚀 Gateway server started on port ${PORT}`)
+        //console.log(`🚀 Gateway server started on port ${PORT}`)
     }
     catch (error){
         server.log.error(error)
