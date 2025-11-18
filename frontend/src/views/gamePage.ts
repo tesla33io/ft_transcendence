@@ -174,10 +174,11 @@ export function gameView(router: Router, wsHandler: WebSocketHandler, gameMode?:
 		});
 		if (gameMode === 'tournament' && isWin) {
 			hideGameWindowCloseButton();
-           const waitingText = document.createElement("p");
-            waitingText.textContent = "Waiting for other players to finish...";
-            waitingText.className = "text-xs text-center text-gray-600 mt-2";
-            resultContent.appendChild(waitingText);
+			showGameResult
+			const waitingText = document.createElement("p");
+			waitingText.textContent = "Waiting for other players to finish...";
+			waitingText.className = "text-xs text-center text-gray-600 mt-2";
+			resultContent.appendChild(waitingText);
         } else {
 
 			 const backToMenuBtn = document.createElement("button");
@@ -190,6 +191,7 @@ export function gameView(router: Router, wsHandler: WebSocketHandler, gameMode?:
         }
 		// Add high z-index with Tailwind
 		resultWindow.style.zIndex = "50000";
+		gameWindow.remove()
 		root.appendChild(resultWindow);
 	};
 
