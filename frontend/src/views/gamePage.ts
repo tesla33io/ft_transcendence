@@ -89,6 +89,21 @@ export function gameView(router: Router, wsHandler: WebSocketHandler, gameMode?:
 
 	root.appendChild(gameWindow);
 
+	// Helper functions to control game window close button
+	const hideGameWindowCloseButton = () => {
+		const closeButton = gameWindow.querySelector('.title-bar-controls button') as HTMLElement;
+		if (closeButton) {
+			closeButton.style.display = 'none';
+		}
+	};
+
+	const showGameWindowCloseButton = () => {
+		const closeButton = gameWindow.querySelector('.title-bar-controls button') as HTMLElement;
+		if (closeButton) {
+			closeButton.style.display = '';
+		}
+	};
+
 		// Create the taskbar
 		const { taskbar } = createTaskbar({
 			clock: true,
@@ -104,6 +119,9 @@ export function gameView(router: Router, wsHandler: WebSocketHandler, gameMode?:
 	let resultWindow: HTMLElement | null = null;
 
 	const showGameResult = (isWin: boolean, finalScore: string) => {
+		// Hide the game window close button
+		hideGameWindowCloseButton();
+
 		// Create result content
 		const resultContent = document.createElement("div");
 		resultContent.className = "window-body flex flex-col items-center justify-center p-3"; // Reduced padding
@@ -126,28 +144,14 @@ export function gameView(router: Router, wsHandler: WebSocketHandler, gameMode?:
 		const opponentText = document.createElement("p");
 		opponentText.textContent = `against ${opponentName}`; // Shorter "vs" instead of "against"
 		opponentText.className = "text-xs text-center mb-3 text-gray-600"; // Smaller text
-		
-        
+
+
 
 		// Add elements to content
 		resultContent.appendChild(resultText);
 		resultContent.appendChild(resultScore);
 		resultContent.appendChild(opponentText);
-		if (gameMode === 'tournament' && isWin) {
-           const waitingText = document.createElement("p");
-            waitingText.textContent = "Waiting for other players to finish...";
-            waitingText.className = "text-xs text-center text-gray-600 mt-2";
-            resultContent.appendChild(waitingText);
-        } else {
-            
-			 const backToMenuBtn = document.createElement("button");
-            backToMenuBtn.textContent = "Menu";
-            backToMenuBtn.className = "button px-2 py-1 text-xs";
-            backToMenuBtn.addEventListener("click", () => {
-                router.navigate("/desktop");
-            });
-            resultContent.appendChild(backToMenuBtn);
-        }
+
 
 		// Create result window (slightly bigger)
 		resultWindow = createWindow({
@@ -163,12 +167,31 @@ export function gameView(router: Router, wsHandler: WebSocketHandler, gameMode?:
 						resultWindow.remove();
 						resultWindow = null;
 					}
+					// Show the game window close button again when result window is closed
+					showGameWindowCloseButton();
 				}
 			}
 		});
+		if (gameMode === 'tournament' && isWin) {
+			hideGameWindowCloseButton();
+			showGameResult
+			const waitingText = document.createElement("p");
+			waitingText.textContent = "Waiting for other players to finish...";
+			waitingText.className = "text-xs text-center text-gray-600 mt-2";
+			resultContent.appendChild(waitingText);
+        } else {
 
+			 const backToMenuBtn = document.createElement("button");
+            backToMenuBtn.textContent = "Menu";
+            backToMenuBtn.className = "button px-2 py-1 text-xs";
+            backToMenuBtn.addEventListener("click", () => {
+                router.navigate("/desktop");
+            });
+            resultContent.appendChild(backToMenuBtn);
+        }
 		// Add high z-index with Tailwind
 		resultWindow.style.zIndex = "50000";
+		gameWindow.remove()
 		root.appendChild(resultWindow);
 	};
 
@@ -177,6 +200,8 @@ export function gameView(router: Router, wsHandler: WebSocketHandler, gameMode?:
 			resultWindow.remove();
 			resultWindow = null;
 		}
+		// Show the game window close button again
+		showGameWindowCloseButton();
 	};
 
 	return {

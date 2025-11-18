@@ -87,6 +87,7 @@ export class GameService{
 	private tournamentHandling(game: Game, playerId: string){
 		if (this.gameEngine instanceof TournamentPong){
 			this.gameEngine.bracketWinner(game.id, playerId)
+			this.webSocketServer.winnerAnnounce(game, playerId)
 			const tournament = this.gameEngine.getTournament(game.id)
 			const nextRoundGames = this.gameEngine.pairTheWinners(game.id)
 

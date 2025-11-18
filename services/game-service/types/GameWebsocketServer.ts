@@ -166,7 +166,7 @@ export class GameWebSocketServer{
 
 	public sendGameState(gameState: Game){
 
-		let player1State = {
+		const player1State = {
 			type: 'game_state',
 			status: 'playing',
 			player: {
