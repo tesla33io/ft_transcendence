@@ -23,7 +23,7 @@ import { localModeSelectionView } from './views/localGameModeSelection.ts'
 // This allows the backend to distinguish between:
 // - Active session (another browser open) → block login
 // - Stale session (window closed, no heartbeat) → allow re-login
-
+/*
 let heartbeatInterval: number | null = null;
 
 function startHeartbeat() {
@@ -38,7 +38,7 @@ function startHeartbeat() {
             
             if (sessionId) {
                 // Send heartbeat to keep session alive
-                await fetch('http://localhost:3000/users/auth/heartbeat', {
+                await fetch('/users/auth/heartbeat', {
                     method: 'POST',
                     credentials: 'include', // Include cookies
                     headers: {
@@ -75,6 +75,8 @@ export function disableHeartbeat() {
     stopHeartbeat();
 }
 
+*/
+
 document.addEventListener("DOMContentLoaded", async () => {
     const router = new Router("app");
 
@@ -107,7 +109,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const isAuthenticated = await AuthService.checkAuth(router);
     if (isAuthenticated) {
         // Start heartbeat for authenticated users
-        startHeartbeat();  // ADD THIS LINE
+        //startHeartbeat();  // ADD THIS LINE
         
         //user is on login/register page, redirect to their desktop
         // But allow staying on '/' (root) even when authenticated

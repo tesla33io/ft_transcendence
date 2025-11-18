@@ -194,11 +194,11 @@ export function loginView(router: Router) {
                 twoFactorCode: twoFactorInput.value.trim() || undefined // Include 2FA code if entered
             };
 
-            console.log('login request:', {
+            /*console.log('login request:', {
                 ...credentials,
                 password: '***',
                 twoFactorCode: credentials.twoFactorCode ? '***' : undefined
-            });
+            });*/
 
             // Call UserService login method
             const response = await UserService.login(credentials);
@@ -216,10 +216,10 @@ export function loginView(router: Router) {
 
             // Normal login successful
             const authResponse = response as AuthResponse;
-            console.log('Login successful!', {
+            /*console.log('Login successful!', {
                 user: authResponse.user,
                 token: authResponse.token ? 'Token received' : 'No token',
-            });
+            });*/
 
             // Reset 2FA field for next login
             twoFactorField.style.display = "none";
@@ -228,21 +228,21 @@ export function loginView(router: Router) {
 
             //test me endpoint
             try {
-                console.log('📍 Calling /me endpoint to verify user...');
+                //console.log('Calling /me endpoint to verify user...');
                 const meData = await UserService.getMe();
-                console.log('✅ /me endpoint verified:', {
+                /*console.log('/me endpoint verified:', {
                     id: meData.id,
                     username: meData.username,
                     role: meData.role
-                });
+                });*/
             } catch (meError) {
-                console.error('⚠️ /me endpoint failed:', meError);
+                //console.error('/me endpoint failed:', meError);
             }
 
             router.navigate("/desktop");
 
         } catch (error: any) {
-            console.error('Login failed:', error);
+            //console.error('Login failed:', error);
             hideLoading();
             
             // If we have pending credentials and error is about 2FA, show the field
@@ -264,9 +264,9 @@ export function loginView(router: Router) {
         showLoading("Creating guest session...");
 
         try {
-            console.log('🎮 Guest login request');
+            //console.log('Guest login request');
 
-            const response = await fetch(`http://${window.location.hostname}:3000/api/v1/auth/guest`, {
+            const response = await fetch(`/api/v1/auth/guest`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -281,12 +281,12 @@ export function loginView(router: Router) {
 
             const data = await response.json();
 
-            console.log('✅ Guest session created!', {
+            /*console.log('Guest session created!', {
                 id: data.id,
                 username: data.username,
                 role: data.role,
                 token: data.accessToken ? 'Token received' : 'No token'
-            });
+            });*/
 
             // Store guest token and info
             localStorage.setItem('authToken', data.accessToken);
@@ -297,7 +297,7 @@ export function loginView(router: Router) {
             router.navigate("/guest");
 
         } catch (error) {
-            console.error('❌ Guest login failed:', error);
+            //console.error('Guest login failed:', error);
             hideLoading();
             showError(error instanceof Error ? error.message : 'Failed to create guest session. Please try again.');
         }

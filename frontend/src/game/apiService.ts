@@ -1,5 +1,5 @@
 export class ApiService {
-    static readonly BASE_URL = `http://${window.location.hostname}:3000`
+    static readonly BASE_URL = ``
 
     private static getAuthHeaders(): Record<string, string> {
         const token = localStorage.getItem('authToken');
