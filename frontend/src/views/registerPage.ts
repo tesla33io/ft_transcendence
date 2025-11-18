@@ -107,8 +107,8 @@ export function registerView(router: Router) {
     const simpleWindow = createWindow({
         title: "Register New Account",
         width: "280px",
-        height: "550px", // Increased height for avatar selector
-        initialPosition: {x: 500 , y: 200},
+        height: "500px", // Increased height for avatar selector
+        initialPosition: {x: 450 , y: 200},
         content: content,
         titleBarControls: {
             help: true,
@@ -222,10 +222,9 @@ export function registerView(router: Router) {
         
         // Replace window content with 2FA verification form
         content.innerHTML = `
-            <h2 style="margin-top: 0; text-align: center;">Complete 2FA Setup</h2>
-            <p style="text-align: center;">Scan this QR code with your authenticator app:</p>
+			 <h2 style="color: #1e40af; font-size: 22px; text-align: center; margin: 0 0 15px 0; font-weight: bold;"> Two-factor authentication </h2>
             <div style="text-align: center; margin: 20px 0;">
-                <img src="${setup.qrCodeUrl}" alt="QR Code" style="max-width: 200px; border: 1px solid #ccc;" />
+                <img src="${setup.qrCodeUrl}" alt="QR Code" style="max-width: 200px; border: 1px solid #ccc;display: block; margin:0 auto;" />
             </div>
             <p style="font-size: 12px; color: #666; text-align: center;">${setup.message}</p>
             <div class="field-row-stacked" style="width: 100%; margin-top: 15px;">
