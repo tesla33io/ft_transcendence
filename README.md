@@ -1,5 +1,14 @@
 # ft_transcendence - Microservices Architecture
 
+to run 
+https://localhost:8443/
+https://ip:8443/
+
+
+
+
+
+
 A comprehensive microservices-based gaming platform built with Node.js, TypeScript, and Docker.
 
 ## 🏗️ Project Structure
