@@ -81,9 +81,9 @@ services:
       timeout: 30s
       retries: 5
       start_period: 10s
-    volumes: #REMOVE FOR production
-      - ./services/gateway-service:/gateway-service
-      - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
+    # volumes: #REMOVE FOR production
+    #   - ./services/gateway-service:/gateway-service
+    #   - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
     labels:
       - "traefik.enable=true"
       # API Router - accept all host variants
