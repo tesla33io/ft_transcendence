@@ -335,7 +335,7 @@ export default async function tournamentRoutes(app: FastifyInstance) {
             const guestParticipantIds: number[] = [];
             
             // Separate registered users from guests
-            participantIds.forEach(id => {
+            participantIds.forEach((id: number) => {
                 if (id < 0) {
                     guestParticipantIds.push(id);
                 } else {
