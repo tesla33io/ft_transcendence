@@ -13,7 +13,7 @@ http:
 
     # Gateway API endpoints
     gateway-api:
-      rule: "(Host(`localhost`) || Host(`c4a14c10.42berlin.de`) || Host(`10.15.14.10`)) && (PathPrefix(`/api`) || PathPrefix(`/users`))"
+      rule: "(Host(`localhost`) || Host(`c4a14c10.42berlin.de`) || Host(`10.15.14.10`)) && (PathPrefix(`/api`) || PathPrefix(`/users`) || PathPrefix(`/tournaments`))"
       entryPoints: [websecure]
       service: gateway-service
       priority: 10
