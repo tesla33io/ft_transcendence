@@ -116,16 +116,26 @@ fi
 echo -e "${GREEN}⚙️  Generating Traefik dynamic configuration...${NC}"
 mkdir -p traefik/dynamic
 
-if [ -f "./traefik/dynamic/services.yml.template" ]; then
+
+if [ -f "traefik/dynamic/services.yml.template" ]; then
     sed -e "s/__LOCAL_HOSTNAME__/$HOSTNAME/g" \
         -e "s/__LOCAL_IP__/$LOCAL_IP/g" \
-        ./traefik/dynamic/services.yml.template > ./traefik/dynamic/services.yml
-    echo -e "${GREEN}✓ Traefik dynamic config generated${NC}"
+        traefik/dynamic/services.yml.template > traefik/dynamic/services.yml
+    
+    # Verify it was created
+    if [ -f "traefik/dynamic/services.yml" ]; then
+        echo -e "${GREEN}✓ Traefik dynamic config generated${NC}"
+        # Show a sample to confirm substitution worked
+        echo -e "${GREEN}  Sample rule:${NC}"
+        grep "rule:" traefik/dynamic/services.yml | head -1
+    else
+        echo -e "${RED}✗ Failed to generate services.yml${NC}"
+        exit 1
+    fi
 else
     echo -e "${YELLOW}⚠ Template file not found: traefik/dynamic/services.yml.template${NC}"
     echo -e "${YELLOW}  Using existing services.yml if present${NC}"
 fi
-
 
 
 echo -e "${GREEN} .env file created successfully${NC}"
