@@ -12,6 +12,8 @@ export class Router {
   private routes: Map<string, RouteConfig> = new Map();
   private root: HTMLElement;
   private currentPath: string = '';
+  // Optional dispose function returned by the current view (called when navigating away)
+  private currentViewDispose: (() => void) | null = null;
 
   constructor(rootId: string) {
     // find the DOM element that will hold views (e.g. <div id="app"></div>)
@@ -120,10 +122,34 @@ export class Router {
     }
     this.currentPath = path;
 
-    // clear the root content before mounting the new view
-    this.root.innerHTML = "";
+    // If the current view exposed a dispose function, call it before unmounting
+    try {
+      if (this.currentViewDispose) {
+        try { this.currentViewDispose(); } catch (err) { console.warn('Error during view dispose:', err); }
+      }
+    } finally {
+      // clear the root content before mounting the new view
+      this.root.innerHTML = "";
+    }
+
     // call the handler which is expected to render into the root (or append)
-    finalConfig.handler();
+    // If the handler returns an object with a dispose() method (or a dispose function), store it
+    try {
+      const result = finalConfig.handler();
+      // support async handlers that return a promise resolving to an object
+      const resolved = result instanceof Promise ? await result : result;
+      if (resolved && typeof resolved.dispose === 'function') {
+        this.currentViewDispose = resolved.dispose.bind(resolved);
+      } else if (typeof resolved === 'function') {
+        // handler may return a raw dispose function
+        this.currentViewDispose = resolved as () => void;
+      } else {
+        this.currentViewDispose = null;
+      }
+    } catch (err) {
+      console.error('Error while mounting view:', err);
+      this.currentViewDispose = null;
+    }
   }
 
   // internal: find the route for the current location and call its handler
