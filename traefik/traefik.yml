@@ -36,3 +36,6 @@ accessLog: {}
 api:
   dashboard: true
   insecure: true  # Only for dev!
+
+ping:
+  entryPoint: "traefik"
