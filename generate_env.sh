@@ -44,14 +44,14 @@ while true; do
         echo -e "${YELLOW} Enter your wallet private key (starts with 0x):${NC}"
         read -p "Private Key: " BLOCKCHAIN_PRIVATE_KEY
         BLOCKCHAIN_PRIVATE_KEY=${BLOCKCHAIN_PRIVATE_KEY:-your_private_key_here}
-        
+
         echo -e "${YELLOW} Enter your deployed contract address (starts with 0x):${NC}"
         read -p "Contract Address: " CONTRACT_ADDRESS
         CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-your_contract_address_here}
-        
+
         read -p "Avalanche RPC URL (default: https://api.avax-test.network/ext/bc/C/rpc): " AVALANCHE_RPC_URL
         AVALANCHE_RPC_URL=${AVALANCHE_RPC_URL:-https://api.avax-test.network/ext/bc/C/rpc}
-        
+
         USE_MOCK_BLOCKCHAIN="false"
         break
     elif [[ $RESPONSE =~ ^[Nn]$ ]]; then
@@ -69,7 +69,7 @@ done
 # Create .env file
 cat > "$ENV_FILE" << EOF
 # ===== ENVIRONMENT =====
-NODE_ENV=development
+NODE_ENV=production
 
 # ===== NETWORK CONFIGURATION =====
 # Auto-detected network information for this system
@@ -133,7 +133,7 @@ mkdir -p traefik/certs
 
 if [ ! -f "traefik/certs/cert.pem" ] || [ ! -f "traefik/certs/key.pem" ]; then
     echo -e "${GREEN}🔐 Generating self-signed TLS certificate...${NC}"
-    
+
     openssl req -x509 -newkey rsa:4096 -nodes \
         -keyout traefik/certs/key.pem \
         -out traefik/certs/cert.pem \
@@ -141,7 +141,7 @@ if [ ! -f "traefik/certs/cert.pem" ] || [ ! -f "traefik/certs/key.pem" ]; then
         -subj "/CN=$HOSTNAME" \
         -addext "subjectAltName=DNS:localhost,DNS:$HOSTNAME,IP:$LOCAL_IP,IP:127.0.0.1" \
         2>/dev/null
-    
+
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ TLS certificate created${NC}"
     else
@@ -161,7 +161,7 @@ if [ -f "traefik/dynamic/services.yml.template" ]; then
     sed -e "s/__LOCAL_HOSTNAME__/$HOSTNAME/g" \
         -e "s/__LOCAL_IP__/$LOCAL_IP/g" \
         traefik/dynamic/services.yml.template > traefik/dynamic/services.yml
-    
+
     # Verify it was created
     if [ -f "traefik/dynamic/services.yml" ]; then
         echo -e "${GREEN}✓ Traefik dynamic config generated${NC}"

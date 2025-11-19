@@ -47,8 +47,8 @@ services:
       dockerfile: Dockerfile
     container_name: gateway-service
     environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - JWT_SECRET=${JWT_SECRET:-}
+      - NODE_ENV=${NODE_ENV:-production}
+      - JWT_SECRET=${JWT_SECRET}
     expose:
       - "3000"
     networks:
