@@ -152,25 +152,51 @@ export function tournamentRoomView(
 		`;
 		content.appendChild(blockchainInfo);
 
-		// Fetch blockchain hash
-		UserService.getTournamentBlockchainHash(tournamentIdInt)
-			.then((hashData) => {
-				const hashDiv = document.getElementById("blockchain-hash");
-				if (hashDiv) {
-					hashDiv.innerHTML = `
-						<strong>TX Hash:</strong> ${hashData.blockchainTxHash}<br>
-						<strong>Status:</strong> ${hashData.status}
-					`;
-					hashDiv.style.color = hashData.status === 'confirmed' ? '# green' : '#orange';
+		// Fetch blockchain hash with retry logic that accounts for 5-10 second blockchain processing
+		const fetchBlockchainHash = async (retries = 10, initialDelay = 2000) => {
+			for (let i = 0; i < retries; i++) {
+				try {
+					const hashData = await UserService.getTournamentBlockchainHash(tournamentIdInt);
+					const hashDiv = document.getElementById("blockchain-hash");
+					if (hashDiv) {
+						hashDiv.innerHTML = `
+							<strong>TX Hash:</strong> <a href="https://testnet.snowtrace.io/tx/${hashData.blockchainTxHash}" target="_blank" style="color: #0066cc; text-decoration: underline;">${hashData.blockchainTxHash}</a><br>
+							<strong>Status:</strong> ${hashData.status}
+						`;
+						hashDiv.style.color = hashData.status === 'confirmed' ? '#00aa00' : '#ff8800';
+					}
+					return; // Success, exit retry loop
+				} catch (error: any) {
+					const hashDiv = document.getElementById("blockchain-hash");
+					if (hashDiv) {
+						if (i === retries - 1) {
+							// Last attempt failed
+							hashDiv.textContent = `Error: ${error.message || 'Failed to load hash after multiple attempts'}`;
+							hashDiv.style.color = 'red';
+						} else {
+							// Still retrying - show progress
+							const elapsed = Math.round((i + 1) * initialDelay / 1000);
+							hashDiv.textContent = `Waiting for blockchain transaction... (${elapsed}s elapsed, attempt ${i + 1}/${retries})`;
+							hashDiv.style.color = '#666';
+						}
+					}
+					
+					// Exponential backoff: longer delays for 404 errors (tournament still finalizing)
+					// For 404: 2s, 3s, 4s, 5s... (covers up to ~20 seconds)
+					// For other errors: 2s, 2s, 2s... (covers up to ~20 seconds)
+					if (i < retries - 1) {
+						let waitTime = initialDelay;
+						if (error.status === 404) {
+							// Exponential backoff for 404: 2s, 3s, 4s, 5s...
+							waitTime = initialDelay + (i * 1000);
+						}
+						await new Promise(resolve => setTimeout(resolve, waitTime));
+					}
 				}
-			})
-			.catch((error) => {
-				const hashDiv = document.getElementById("blockchain-hash");
-				if (hashDiv) {
-					hashDiv.textContent = `Error: ${error.message || 'Failed to load hash'}`;
-					hashDiv.style.color = 'red';
-				}
-			});
+			}
+		};
+		
+		fetchBlockchainHash();
 
 		const backButton = document.createElement("button");
 		backButton.textContent = "Back to Menu";

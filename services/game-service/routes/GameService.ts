@@ -120,7 +120,8 @@ export class GameService{
 				if (tournament?.status === 'finished'){
 					console.log(`Tournament ${tournament.id} completed`)
 					this.webSocketServer.notifyTournamentComplete(tournament)
-					this.postHash(tournament)
+					// Note: postHash is called from declareWinner after match history is saved
+					// No need to call it here to avoid duplicate calls and race conditions
 				}
 			}
 		}
