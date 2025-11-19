@@ -48,9 +48,9 @@ services:
       - "5173"
     networks:
       - pong-network
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
+    # volumes:
+      # - ./frontend:/app
+      # - /app/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
     labels:
      # Enable Traefik for this container
       - "traefik.enable=true"
