@@ -153,6 +153,31 @@ CONTRACT_ADDRESS=$CONTRACT_ADDRESS
 USE_MOCK_BLOCKCHAIN=$USE_MOCK_BLOCKCHAIN
 EOF
 
+# Generate Traefik certificates if they don't exist
+echo -e "${GREEN}⚙️  Checking Traefik TLS certificates...${NC}"
+mkdir -p traefik/certs
+
+if [ ! -f "traefik/certs/cert.pem" ] || [ ! -f "traefik/certs/key.pem" ]; then
+    echo -e "${GREEN}🔐 Generating self-signed TLS certificate...${NC}"
+    
+    openssl req -x509 -newkey rsa:4096 -nodes \
+        -keyout traefik/certs/key.pem \
+        -out traefik/certs/cert.pem \
+        -days 365 \
+        -subj "/CN=$HOSTNAME" \
+        -addext "subjectAltName=DNS:localhost,DNS:$HOSTNAME,IP:$LOCAL_IP,IP:127.0.0.1" \
+        2>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ TLS certificate created${NC}"
+    else
+        echo -e "${RED}✗ Failed to create certificate${NC}"
+        exit 1
+    fi
+else
+    echo -e "${GREEN}✓ TLS certificates already exist${NC}"
+fi
+
 echo -e "${GREEN} .env file created successfully${NC}"
 echo -e "${YELLOW}JWT_SECRET (first 32 chars): ${JWT_SECRET:0:32}...${NC}"
 echo -e "${YELLOW}MATCH_HISTORY_SERVICE_TOKEN (first 32 chars): ${MATCH_HISTORY_SERVICE_TOKEN:0:32}...${NC}"
