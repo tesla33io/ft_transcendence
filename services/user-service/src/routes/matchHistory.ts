@@ -1,7 +1,7 @@
 import '../types/fastify';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { MatchHistory, MatchResult as MatchResultEnum } from '../entities/MatchHistory';
-import { User, UserRole } from '../entities/User';
+import { User, UserRole, OnlineStatus } from '../entities/User';
 import { UserStatistics } from '../entities/UserStatistics';
 
 type MatchResultValue = typeof MatchResultEnum[keyof typeof MatchResultEnum];
@@ -371,6 +371,68 @@ async function resolveOpponent(app: FastifyInstance, opponentId: number, errors:
 	return opponent;
 }
 
+/**
+ * Coerce integer (allows negative for guests)
+ */
+function coerceInt(value: unknown, field: string, errors: string[]): number | undefined {
+    const parsed = typeof value === 'string' ? Number(value) : value;
+    if (typeof parsed !== 'number' || !Number.isFinite(parsed)) {
+        errors.push(`Field ${field} must be an integer`);
+        return undefined;
+    }
+    if (!Number.isInteger(parsed)) {
+        errors.push(`Field ${field} must be an integer`);
+        return undefined;
+    }
+    return parsed;
+}
+
+/**
+ * Get or create a guest User entity for negative IDs
+ * Guest users are temporary and only exist for match history purposes
+ */
+async function getOrCreateGuestUser(
+    app: FastifyInstance, 
+    guestId: number, 
+    errors: string[]
+): Promise<User | null> {
+    if (guestId >= 0) {
+        errors.push('getOrCreateGuestUser should only be called for negative IDs');
+        return null;
+    }
+
+    // Generate a unique username for the guest
+    const guestUsername = `guest-${Math.abs(guestId)}`;
+
+    // Check if guest user already exists (might have been created in a previous match)
+    let guestUser = await app.em.findOne(User, { 
+        username: guestUsername,
+        role: UserRole.GUEST 
+    });
+
+	if (!guestUser) {
+        // Create a new guest user entity
+        guestUser = new User();
+        guestUser.id = guestId; // Use negative ID directly
+        guestUser.username = guestUsername;
+        guestUser.passwordHash = ''; // Guests don't have passwords
+        guestUser.role = UserRole.GUEST;
+        guestUser.onlineStatus = OnlineStatus.OFFLINE;
+        
+        try {
+            app.em.persist(guestUser);
+            await app.em.flush();
+            app.log.info({ msg: 'Created guest user', guestId, username: guestUsername });
+        } catch (error) {
+            app.log.error({ msg: 'Failed to create guest user', guestId, error: String(error) });
+            errors.push(`Failed to create guest user: ${String(error)}`);
+            return null;
+        }
+    }
+
+    return guestUser;
+}
+
 export default async function matchHistoryRoutes(app: FastifyInstance) {
 	app.get<{ Params: MatchHistoryParams }>('/:userId', {
 		preHandler: attachSessionUser(app),
@@ -478,8 +540,8 @@ export default async function matchHistoryRoutes(app: FastifyInstance) {
 			}
 		});
 
-		const userId = coercePositiveInt(request.body.userId, 'userId', errors);
-		const opponentId = coercePositiveInt(request.body.opponentId, 'opponentId', errors);
+		const userId = coerceInt(request.body.userId, 'userId', errors);
+		const opponentId = coerceInt(request.body.opponentId, 'opponentId', errors);
 		if (userId && opponentId && userId === opponentId) {
 			errors.push('Field opponentId must reference a different user than userId');
 		}
@@ -537,17 +599,42 @@ export default async function matchHistoryRoutes(app: FastifyInstance) {
 			if (!requester) return;
 		}
 
-		const user = await app.em.findOne(User, { id: userId });
-		if (!user) return reply.code(404).send({ error: 'User not found' });
+		let user: User | null;
+		let opponent: User | null;
 
-		if (!isService && requester && requester.id !== user.id && requester.role !== UserRole.ADMIN) {
-			return reply.code(403).send({ error: 'Forbidden' });
+		// Handle user (can be registered or guest)
+		if (userId! < 0) {
+			// Guest user
+			const guestErrors: string[] = [];
+			user = await getOrCreateGuestUser(app, userId!, guestErrors);
+			if (!user) {
+				return reply.code(400).send({ error: 'Validation failed', details: guestErrors });
+			}
+		} else {
+			// Registered user
+			user = await app.em.findOne(User, { id: userId });
+			if (!user) return reply.code(404).send({ error: 'User not found' });
+
+			if (!isService && requester && requester.id !== user.id && requester.role !== UserRole.ADMIN) {
+				return reply.code(403).send({ error: 'Forbidden' });
+			}
 		}
 
-		const opponentErrors: string[] = [];
-		const opponent = await resolveOpponent(app, opponentId, opponentErrors);
-		if (!opponent) {
-			return reply.code(404).send({ error: 'Validation failed', details: opponentErrors });
+		// Handle opponent (can be registered or guest)
+		if (opponentId! < 0) {
+			// Guest user
+			const guestErrors: string[] = [];
+			opponent = await getOrCreateGuestUser(app, opponentId!, guestErrors);
+			if (!opponent) {
+				return reply.code(400).send({ error: 'Validation failed', details: guestErrors });
+			}
+		} else {
+			// Registered user
+			const opponentErrors: string[] = [];
+			opponent = await resolveOpponent(app, opponentId!, opponentErrors);
+			if (!opponent) {
+				return reply.code(404).send({ error: 'Validation failed', details: opponentErrors });
+			}
 		}
 
 		const durationSeconds =

@@ -297,17 +297,81 @@ export default async function tournamentRoutes(app: FastifyInstance) {
                 return reply.code(404).send({ error: 'Tournament not found' });
             }
             
-            // 2. Find winner
-            const winner = await app.em.findOne(User, { id: winnerId });
-            if (!winner) {
-                return reply.code(404).send({ error: 'Winner not found' });
+            // 2. Find winner - handle both registered users and guests
+            let winnerUsername: string;
+            let winner: User | null = null;
+            
+            // Check if winner is a guest (negative ID)
+            if (winnerId < 0) {
+                // Guest user - get username from match history
+                const winnerMatch = matches.find(m => 
+                    (m.user?.id === winnerId && m.result === 'win') || 
+                    (m.opponent?.id === winnerId && m.result === 'loss')
+                );
+                
+                if (winnerMatch) {
+                    // Get username from the match record
+                    if (winnerMatch.user?.id === winnerId) {
+                        winnerUsername = winnerMatch.user?.username || `guest-${Math.abs(winnerId)}`;
+                    } else {
+                        winnerUsername = winnerMatch.opponent?.username || `guest-${Math.abs(winnerId)}`;
+                    }
+                } else {
+                    // Fallback: use guest pattern
+                    winnerUsername = `guest-${Math.abs(winnerId)}`;
+                }
+            } else {
+                // Registered user - look up in database
+                winner = await app.em.findOne(User, { id: winnerId });
+                if (!winner) {
+                    return reply.code(404).send({ error: 'Winner not found' });
+                }
+                winnerUsername = winner.username;
             }
             
-            // 3. Get participant usernames
-            const participants = await app.em.find(User, { 
-                id: { $in: participantIds } 
+            // 3. Get participant usernames - handle both registered users and guests
+            const participantUsernames: string[] = [];
+            const registeredParticipantIds: number[] = [];
+            const guestParticipantIds: number[] = [];
+            
+            // Separate registered users from guests
+            participantIds.forEach(id => {
+                if (id < 0) {
+                    guestParticipantIds.push(id);
+                } else {
+                    registeredParticipantIds.push(id);
+                }
             });
-            const participantUsernames = participants.map(p => p.username);
+            
+            // Get registered user usernames from database
+            if (registeredParticipantIds.length > 0) {
+                const registeredParticipants = await app.em.find(User, { 
+                    id: { $in: registeredParticipantIds } 
+                });
+                registeredParticipants.forEach(p => {
+                    participantUsernames.push(p.username);
+                });
+            }
+            
+            // Get guest usernames from match history
+            if (guestParticipantIds.length > 0) {
+                guestParticipantIds.forEach(guestId => {
+                    // Find a match involving this guest
+                    const guestMatch = matches.find(m => 
+                        m.user?.id === guestId || m.opponent?.id === guestId
+                    );
+                    
+                    if (guestMatch) {
+                        const guestUsername = guestMatch.user?.id === guestId 
+                            ? (guestMatch.user?.username || `guest-${Math.abs(guestId)}`)
+                            : (guestMatch.opponent?.username || `guest-${Math.abs(guestId)}`);
+                        participantUsernames.push(guestUsername);
+                    } else {
+                        // Fallback: use guest pattern
+                        participantUsernames.push(`guest-${Math.abs(guestId)}`);
+                    }
+                });
+            }
             
             // 4. Generate a wallet address for winner (or use existing)
             // For simplicity, we'll use a deterministic address based on user ID
@@ -326,7 +390,7 @@ export default async function tournamentRoutes(app: FastifyInstance) {
             const txHash = await blockchainService.recordTournament(
                 parseInt(id),
                 winnerAddress,
-                winner.username,
+                winnerUsername,
                 finalScore,
                 participantUsernames
             );
@@ -396,7 +460,7 @@ export default async function tournamentRoutes(app: FastifyInstance) {
             return reply.send({
                 success: true,
                 tournamentId: id,
-                winner: winner.username,
+                winner: winnerUsername,
                 finalScore: finalScore,
                 blockchainTxHash: txHash,
                 message: 'Tournament finalized and recorded on blockchain'
