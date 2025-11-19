@@ -58,28 +58,39 @@ MATCH_HISTORY_SERVICE_TOKEN=$(node -e "console.log(require('crypto').randomBytes
 # Prompt for Blockchain configuration (optional)
 echo -e "${YELLOW} Configure blockchain service? (y/n)${NC}"
 echo -e "${YELLOW} Note: You'll need a wallet with testnet AVAX tokens${NC}"
-read -p "" -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo -e "${YELLOW} Enter your wallet private key (starts with 0x):${NC}"
-    read -p "Private Key: " BLOCKCHAIN_PRIVATE_KEY
-    BLOCKCHAIN_PRIVATE_KEY=${BLOCKCHAIN_PRIVATE_KEY:-your_private_key_here}
-    
-    echo -e "${YELLOW} Enter your deployed contract address (starts with 0x):${NC}"
-    read -p "Contract Address: " CONTRACT_ADDRESS
-    CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-your_contract_address_here}
-    
-    read -p "Avalanche RPC URL (default: https://api.avax-test.network/ext/bc/C/rpc): " AVALANCHE_RPC_URL
-    AVALANCHE_RPC_URL=${AVALANCHE_RPC_URL:-https://api.avax-test.network/ext/bc/C/rpc}
-    
-    USE_MOCK_BLOCKCHAIN="false"
-else
-    # Use placeholder values and enable mock
-    BLOCKCHAIN_PRIVATE_KEY="your_private_key_here"
-    CONTRACT_ADDRESS="your_contract_address_here"
-    AVALANCHE_RPC_URL="https://api.avax-test.network/ext/bc/C/rpc"
-    USE_MOCK_BLOCKCHAIN="true"
-fi
+
+# loop until user enters y or n
+while true; do
+    # read single char, allow enter to be treated as empty
+    read -r -n 1 -p "" RESPONSE
+    echo
+    # normalize empty input
+    RESPONSE=${RESPONSE:-}
+    if [[ $RESPONSE =~ ^[Yy]$ ]]; then
+        echo -e "${YELLOW} Enter your wallet private key (starts with 0x):${NC}"
+        read -p "Private Key: " BLOCKCHAIN_PRIVATE_KEY
+        BLOCKCHAIN_PRIVATE_KEY=${BLOCKCHAIN_PRIVATE_KEY:-your_private_key_here}
+        
+        echo -e "${YELLOW} Enter your deployed contract address (starts with 0x):${NC}"
+        read -p "Contract Address: " CONTRACT_ADDRESS
+        CONTRACT_ADDRESS=${CONTRACT_ADDRESS:-your_contract_address_here}
+        
+        read -p "Avalanche RPC URL (default: https://api.avax-test.network/ext/bc/C/rpc): " AVALANCHE_RPC_URL
+        AVALANCHE_RPC_URL=${AVALANCHE_RPC_URL:-https://api.avax-test.network/ext/bc/C/rpc}
+        
+        USE_MOCK_BLOCKCHAIN="false"
+        break
+    elif [[ $RESPONSE =~ ^[Nn]$ ]]; then
+        # Use placeholder values and enable mock
+        BLOCKCHAIN_PRIVATE_KEY="your_private_key_here"
+        CONTRACT_ADDRESS="your_contract_address_here"
+        AVALANCHE_RPC_URL="https://api.avax-test.network/ext/bc/C/rpc"
+        USE_MOCK_BLOCKCHAIN="true"
+        break
+    else
+        echo -e "${RED}Invalid input. Please enter 'y' or 'n'.${NC}"
+    fi
+done
 
 # Create .env file
 cat > "$ENV_FILE" << EOF
