@@ -12,4 +12,4 @@ RUN npm run build
 
 EXPOSE 5000 5001 5005 5006
 
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "start"]
