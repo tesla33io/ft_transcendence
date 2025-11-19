@@ -116,20 +116,26 @@ export class Renderer {
 
         this.ctx.fillStyle = 'white';
         for (const b of extraBalls) {
-            this.ctx.beginPath();
-            this.ctx.arc(b.x, b.y, GAME_CONFIG.BALL.RADIUS, 0, Math.PI * 2);
-            this.ctx.fill();
+            // Draw extra balls as small centered rectangles to match classic style
+            const size = GAME_CONFIG.BALL.RADIUS * 1; // keep same apparent size (radius used previously)
+            this.ctx.fillRect(
+                b.x - (size / 2),
+                b.y - (size / 2),
+                size,
+                size
+            );
         }
     }
     private drawBall(ball: Ball): void {
         this.ctx.fillStyle = 'white';
-         const size = 10; // Use radius * 2 as square size
-		this.ctx.fillRect(
-			ball.x - (size / 2),  // Center horizontally
-			ball.y - (size / 2),  // Center vertically
-			size,                 // Width
-			size                  // Height
-		);
-		}
+        // Draw the main ball as a small centered rectangle (classic style)
+        const size = GAME_CONFIG.BALL.RADIUS * 1; // keep same apparent size
+        this.ctx.fillRect(
+            ball.x - (size / 2),
+            ball.y - (size / 2),
+            size,
+            size
+        );
+    }
 
 }

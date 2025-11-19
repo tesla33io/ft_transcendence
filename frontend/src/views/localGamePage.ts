@@ -64,6 +64,29 @@ export function localGameView(router: Router, mode: string = GAME_MODES.CLASSIC)
         resourcesBar.appendChild(player2Resources);
         gameContainer.appendChild(resourcesBar);
     }
+    // Resource display for Multi-ball mode (shows speed/grow uses)
+    else if (mode === GAME_MODES.MULTIBALL) {
+        const resourcesBar = document.createElement('div');
+        resourcesBar.style.display = 'flex';
+        resourcesBar.style.justifyContent = 'space-between';
+        resourcesBar.style.width = `${GAME_CONFIG.CANVAS.WIDTH}px`;
+        resourcesBar.style.marginBottom = '8px';
+
+        const player1Resources = document.createElement('div');
+        player1Resources.id = 'player1-abilities';
+        player1Resources.style.fontWeight = 'bold';
+        // Initial counts match LocalPongGame defaults (3 uses each)
+        player1Resources.textContent = `Speed (A): 3 | Grow (D): 3`;
+
+        const player2Resources = document.createElement('div');
+        player2Resources.id = 'player2-abilities';
+        player2Resources.style.fontWeight = 'bold';
+        player2Resources.textContent = `Speed (→): 3 | Grow (←): 3`;
+
+        resourcesBar.appendChild(player1Resources);
+        resourcesBar.appendChild(player2Resources);
+        gameContainer.appendChild(resourcesBar);
+    }
 
     const canvas = document.createElement("canvas");
     canvas.id = "local-pong-canvas";
@@ -90,7 +113,7 @@ export function localGameView(router: Router, mode: string = GAME_MODES.CLASSIC)
     const gameWindow = createWindow({
         title: `Local Pong - ${modeName}`,
         width: "920px",
-        height: "650px",
+        height: "700px",
         content: content,
         titleBarControls: {
             close: true,
