@@ -334,15 +334,45 @@ export default async function tournamentRoutes(app: FastifyInstance) {
             app.log.info(`Blockchain transaction hash received: ${txHash} for tournament ${id}`);
             
             // 6. Update database with blockchain transaction hash
-            const finalMatch = matches.find(m => m.tournamentWon === true);
+            // First try to find in the matches we already fetched
+            let finalMatch = matches.find(m => m.tournamentWon === true);
             
+            // If not found, query directly from database (handles race condition where match was just saved)
             if (!finalMatch) {
-                app.log.warn(`Final match not found for tournament ${id}. Matches found: ${matches.length}`);
+                app.log.warn(`Final match not found in initial query for tournament ${id}. Matches found: ${matches.length}`);
                 app.log.warn(`Matches: ${JSON.stringify(matches.map(m => ({ id: m.id, tournamentId: m.tournamentId, tournamentWon: m.tournamentWon })))}`);
-                return reply.code(500).send({ 
-                    error: 'Final match not found',
-                    details: 'Could not find the winning match to update with blockchain hash'
-                });
+                
+                // Retry: Query directly for the final match with a small delay to allow DB commit
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                // Query directly for the match with tournamentWon = true
+                const foundMatch = await app.em.findOne(MatchHistory, {
+                    tournamentId: parseInt(id),
+                    tournamentWon: true,
+                }, { populate: ['user', 'opponent'] });
+                
+                finalMatch = foundMatch || undefined;
+                
+                if (!finalMatch) {
+                    // Last attempt: query all matches again and find the winner's match
+                    const allMatches = await app.em.find(MatchHistory, {
+                        tournamentId: parseInt(id),
+                    }, { populate: ['user', 'opponent'] });
+                    
+                    app.log.warn(`Retry query found ${allMatches.length} matches for tournament ${id}`);
+                    app.log.warn(`All matches: ${JSON.stringify(allMatches.map(m => ({ id: m.id, userId: m.user?.id, opponentId: m.opponent?.id, tournamentId: m.tournamentId, tournamentWon: m.tournamentWon })))}`);
+                    
+                    // Try to find match where the winner won
+                    finalMatch = allMatches.find(m => m.user?.id === winnerId && m.result === 'win' && m.tournamentId === parseInt(id));
+                    
+                    if (!finalMatch) {
+                        app.log.error(`Final match not found after retries for tournament ${id}. Winner ID: ${winnerId}`);
+                        return reply.code(500).send({ 
+                            error: 'Final match not found',
+                            details: 'Could not find the winning match to update with blockchain hash. The match may not have been saved yet.'
+                        });
+                    }
+                }
             }
             
             app.log.info(`Found final match: id=${finalMatch.id}, tournamentId=${finalMatch.tournamentId}, tournamentWon=${finalMatch.tournamentWon}`);

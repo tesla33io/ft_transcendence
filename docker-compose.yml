@@ -56,7 +56,7 @@ services:
       - "traefik.enable=true"
       
       # Router configuration (when to route here)
-      - "traefik.http.routers.frontend.rule=Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)" 
+      - "traefik.http.routers.frontend.rule=(Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)) && !PathPrefix(`/api`) && !PathPrefix(`/users`) && !PathPrefix(`/tournaments`) && !PathPrefix(`/ws`) && !PathPrefix(`/docs`)"
       - "traefik.http.routers.frontend.entrypoints=websecure" 
       - "traefik.http.routers.frontend.priority=1" 
       - "traefik.http.routers.frontend.tls=true" 
@@ -87,16 +87,18 @@ services:
     labels:
       - "traefik.enable=true"
       # API Router - accept all host variants
-      - "traefik.http.routers.gateway-api.rule=(Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)) && (PathPrefix(`/api`) || PathPrefix(`/users`))" 
+      - "traefik.http.routers.gateway-api.rule=Host(`localhost`) && (PathPrefix(`/api`) || PathPrefix(`/users`) || PathPrefix(`/tournaments`) || PathPrefix(`/docs`))" 
       - "traefik.http.routers.gateway-api.entrypoints=websecure" 
       - "traefik.http.routers.gateway-api.priority=10"
-      - "traefik.http.routers.gateway-api.tls=true" 
+      - "traefik.http.routers.gateway-api.tls=true"
+      - "traefik.http.routers.gateway-api.service=gateway"
       
       # WebSocket Router - accept all host variants
       - "traefik.http.routers.gateway-ws.rule=(Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)) && PathPrefix(`/ws`)" 
       - "traefik.http.routers.gateway-ws.entrypoints=websecure"  
       - "traefik.http.routers.gateway-ws.priority=20" 
       - "traefik.http.routers.gateway-ws.tls=true" 
+      - "traefik.http.routers.gateway-ws.service=gateway"
       
       # Service configuration (applies to both routers)
       - "traefik.http.services.gateway.loadbalancer.server.port=${GATEWAY_PORT}" 
