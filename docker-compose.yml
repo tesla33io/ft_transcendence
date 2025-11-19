@@ -48,9 +48,6 @@ services:
       - "5173"
     networks:
       - pong-network
-    # volumes:
-      # - ./frontend:/app
-      # - /app/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
     labels:
      # Enable Traefik for this container
       - "traefik.enable=true"
@@ -81,9 +78,6 @@ services:
       timeout: 30s
       retries: 5
       start_period: 10s
-    # volumes: #REMOVE FOR production
-    #   - ./services/gateway-service:/gateway-service
-    #   - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
     labels:
       - "traefik.enable=true"
       # API Router - accept all host variants
@@ -124,9 +118,6 @@ services:
       timeout: 30s
       retries: 5
       start_period: 10s
-    # volumes: #REMOVE FOR production
-    #   - ./services/game-service:/game-service
-    #   - /app/node_modules
 
   user-service:
     build:
@@ -145,8 +136,7 @@ services:
     networks:
       - pong-network
     volumes:
-    #   #- /user-service/node_modules # anonymous volume keeps Linux-built binaries
-      - user-service-db:/user-service/data #KEEP!!!
+      - user-service-db:/user-service/data
 
   blockchain-service:
     build:
@@ -157,9 +147,6 @@ services:
       - .env
     networks:
       - pong-network
-    # volumes:
-    #   - ./services/blockchain-service:/blockchain-service
-    #   - /blockchain-service/node_modules
     environment:
       - NODE_ENV=development
   ai-service:
