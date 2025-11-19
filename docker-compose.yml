@@ -14,16 +14,15 @@ services:
       - ./traefik/dynamic:/etc/traefik/dynamic:ro
         # TLS certificates (self-signed for dev)
       - ./traefik/certs:/etc/traefik/certs:ro
-    
+    depends_on:
+      - frontend
+
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 10s
       timeout: 5s
       retries: 3
       start_period: 5s
-    
-    depends_on:
-      - frontend
     networks:
       - pong-network
 
@@ -36,9 +35,12 @@ services:
     expose:
       - "5173"
     depends_on:
-      - gateway-service
+      gateway-service:
+        condition: service_healthy
+
     networks:
       - pong-network
+
   gateway-service:
     build:
       context: ./services/gateway-service
