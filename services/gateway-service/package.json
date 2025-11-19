@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon gateway.ts",
     "build": "tsc",
-    "start": "ts-node gateway.ts"
+    "start": "node dist/gateway.js"
   },
   "keywords": [],
   "author": "",

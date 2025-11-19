@@ -4,6 +4,7 @@
     "type": "module",
     "main": "dist/blockchainService.js",
     "scripts": {
+        "start": "node dist/blockchainService.js",
         "build": "tsc",
         "dev": "tsx watch src/blockchainService.ts"
     },
