@@ -565,7 +565,7 @@ export class LocalPongGame {
         const homeButton = document.createElement('button');
         homeButton.textContent = 'Return Home';
         homeButton.className = 'px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded-md font-bold';
-        homeButton.onclick = () => this.router.navigate('/desktop');
+        homeButton.onclick = () => this.router.navigateToDesktop();
 
         buttonContainer.append(playAgainButton, selectionButton, homeButton);
         overlay.append(winnerText, subText, buttonContainer);
