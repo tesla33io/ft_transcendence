@@ -2,6 +2,23 @@ import { Router } from "../router";
 import { createWindow } from "../components/_components";
 import { WebSocketHandler } from "../game/websocketHandler";
 import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
+import { UserService } from "../game/userService";
+
+// Helper function to convert tournament string ID to integer (same as backend)
+function convertTournamentIdToInt(tournamentId: string): number {
+    // If it's already numeric, use it
+    if (/^\d+$/.test(tournamentId)) {
+        return parseInt(tournamentId);
+    }
+    // Otherwise, create a hash from the string
+    let hash = 0;
+    for (let i = 0; i < tournamentId.length; i++) {
+        const char = tournamentId.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+}
 
 export function tournamentRoomView(
 	router: Router,
@@ -119,6 +136,68 @@ export function tournamentRoomView(
 
 		content.appendChild(readyButton);
 	} else {
+		// Tournament finished - show blockchain info
+		const tournamentIdInt = convertTournamentIdToInt(tournamentData.id);
+		
+		// Create info section for blockchain hash
+		const blockchainInfo = document.createElement("div");
+		blockchainInfo.style.cssText = "position: absolute; bottom: 20px; left: 20px; padding: 10px; background: #f0f0f0; border: 1px solid #ccc; border-radius: 4px;";
+		blockchainInfo.innerHTML = `
+			<div style="font-size: 12px; margin-bottom: 5px;">
+				<strong>Tournament ID:</strong> ${tournamentIdInt}
+			</div>
+			<div id="blockchain-hash" style="font-size: 11px; color: #666;">
+				Loading blockchain hash...
+			</div>
+		`;
+		content.appendChild(blockchainInfo);
+
+		// Fetch blockchain hash with retry logic that accounts for 5-10 second blockchain processing
+		const fetchBlockchainHash = async (retries = 10, initialDelay = 2000) => {
+			for (let i = 0; i < retries; i++) {
+				try {
+					const hashData = await UserService.getTournamentBlockchainHash(tournamentIdInt);
+					const hashDiv = document.getElementById("blockchain-hash");
+					if (hashDiv) {
+						hashDiv.innerHTML = `
+							<strong>TX Hash:</strong> <a href="https://testnet.snowtrace.io/tx/${hashData.blockchainTxHash}" target="_blank" style="color: #0066cc; text-decoration: underline;">${hashData.blockchainTxHash}</a><br>
+							<strong>Status:</strong> ${hashData.status}
+						`;
+						hashDiv.style.color = hashData.status === 'confirmed' ? '#00aa00' : '#ff8800';
+					}
+					return; // Success, exit retry loop
+				} catch (error: any) {
+					const hashDiv = document.getElementById("blockchain-hash");
+					if (hashDiv) {
+						if (i === retries - 1) {
+							// Last attempt failed
+							hashDiv.textContent = `Error: ${error.message || 'Failed to load hash after multiple attempts'}`;
+							hashDiv.style.color = 'red';
+						} else {
+							// Still retrying - show progress
+							const elapsed = Math.round((i + 1) * initialDelay / 1000);
+							hashDiv.textContent = `Waiting for blockchain transaction... (${elapsed}s elapsed, attempt ${i + 1}/${retries})`;
+							hashDiv.style.color = '#666';
+						}
+					}
+					
+					// Exponential backoff: longer delays for 404 errors (tournament still finalizing)
+					// For 404: 2s, 3s, 4s, 5s... (covers up to ~20 seconds)
+					// For other errors: 2s, 2s, 2s... (covers up to ~20 seconds)
+					if (i < retries - 1) {
+						let waitTime = initialDelay;
+						if (error.status === 404) {
+							// Exponential backoff for 404: 2s, 3s, 4s, 5s...
+							waitTime = initialDelay + (i * 1000);
+						}
+						await new Promise(resolve => setTimeout(resolve, waitTime));
+					}
+				}
+			}
+		};
+		
+		fetchBlockchainHash();
+
 		const backButton = document.createElement("button");
 		backButton.textContent = "Back to Menu";
 		backButton.className = "button";

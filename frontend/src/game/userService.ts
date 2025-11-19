@@ -654,7 +654,20 @@ static async getOneVOneStatistics(userId?: number): Promise<OneVOneStatistics> {
         return mockStats;
     }
 
-		// Get match history
+    static async getTournamentBlockchainHash(tournamentId: number): Promise<{
+        tournamentId: number;
+        blockchainTxHash: string;
+        status: 'pending' | 'confirmed';
+        createdAt: number | null;
+        confirmedAt: number | null;
+        message: string;
+    }> {
+        return ApiService.get(`/tournaments/${tournamentId}/blockchain-tx-hash`);
+    }
+
+
+    // Get match history
+	// Get match history
 	static async getMatchHistory(userId?: number, limit: number = 20): Promise<MatchHistoryEntry[]> {
 		try {
 			//console.log('[UserService] Fetching match history...');
