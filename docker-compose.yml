@@ -145,8 +145,8 @@ services:
     networks:
       - pong-network
     volumes:
-      #- /user-service/node_modules # anonymous volume keeps Linux-built binaries
-      - user-service-db:/user-service/data
+    #   #- /user-service/node_modules # anonymous volume keeps Linux-built binaries
+      - user-service-db:/user-service/data #KEEP!!!
 
   blockchain-service:
     build:
