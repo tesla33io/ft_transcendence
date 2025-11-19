@@ -40,7 +40,8 @@ export class ApiService {
             // Check content type to ensure we're getting JSON
             const contentType = response.headers.get('content-type');
             const isJson = contentType && contentType.includes('application/json');
-            
+            //console.log("respone ok ", response.ok )
+			//console.log("RESPONSE",response)
             if (!response.ok) {
                 const text = await response.text();
                 let details: any;
@@ -48,6 +49,10 @@ export class ApiService {
                 if (isJson) {
                     try { details = text ? JSON.parse(text) : null; } catch (_) {}
                 }
+				else{
+					let jason = JSON.stringify(text)
+					try { details = text ? JSON.parse(jason) : null; } catch (_) {}
+				}
                 const message = details?.error ?? details?.message ?? (isJson ? text : 'Server returned non-JSON response');
                 const error: any = new Error(`API Error ${response.status}: ${message}`);
                 error.status = response.status;
@@ -57,6 +62,7 @@ export class ApiService {
 
             // If response is not JSON, throw an error
             if (!isJson) {
+
                 const text = await response.text();
                 const error: any = new Error(`API Error: Expected JSON but got ${contentType || 'unknown content type'}`);
                 error.status = response.status;

@@ -11,31 +11,6 @@ ENV_EXAMPLE=".env.example"
 
 echo -e "${GREEN}Setting up environment...${NC}"
 
-# Check if .env already exists
-if [ -f "$ENV_FILE" ]; then
-    echo -e "${YELLOW} .env file already exists${NC}"
-    read -p "Do you want to regenerate JWT_SECRET? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${GREEN} Keeping existing .env file${NC}"
-        exit 0
-    fi
-fi
-
-# Detect Docker socket path based on OS and Docker mode
-DOCKER_SOCKET_PATH="/var/run/docker.sock"
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    # Check if running in rootless mode (common on 42 school PCs)
-    if [ -S "/run/user/$(id -u)/docker.sock" ]; then
-        DOCKER_SOCKET_PATH="/run/user/$(id -u)/docker.sock"
-        echo -e "${YELLOW} Detected rootless Docker on Linux${NC}"
-    else
-        echo -e "${YELLOW} Detected standard Docker on Linux${NC}"
-    fi
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo -e "${YELLOW} Detected macOS${NC}"
-fi
-
 # Auto-detect network information
 HOSTNAME=$(hostname)
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -46,7 +21,6 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
     LOCAL_IP=$(ifconfig | grep -E "inet.*broadcast" | awk '{print $2}' | head -n1)
 fi
 
-echo -e "${GREEN} Docker socket: $DOCKER_SOCKET_PATH${NC}"
 echo -e "${GREEN} Hostname: $HOSTNAME${NC}"
 echo -e "${GREEN} Local IP: $LOCAL_IP${NC}"
 
@@ -152,6 +126,57 @@ BLOCKCHAIN_PRIVATE_KEY=$BLOCKCHAIN_PRIVATE_KEY
 CONTRACT_ADDRESS=$CONTRACT_ADDRESS
 USE_MOCK_BLOCKCHAIN=$USE_MOCK_BLOCKCHAIN
 EOF
+
+#for treafik
+echo -e "${GREEN}⚙️  Checking Traefik TLS certificates...${NC}"
+mkdir -p traefik/certs
+
+if [ ! -f "traefik/certs/cert.pem" ] || [ ! -f "traefik/certs/key.pem" ]; then
+    echo -e "${GREEN}🔐 Generating self-signed TLS certificate...${NC}"
+    
+    openssl req -x509 -newkey rsa:4096 -nodes \
+        -keyout traefik/certs/key.pem \
+        -out traefik/certs/cert.pem \
+        -days 365 \
+        -subj "/CN=$HOSTNAME" \
+        -addext "subjectAltName=DNS:localhost,DNS:$HOSTNAME,IP:$LOCAL_IP,IP:127.0.0.1" \
+        2>/dev/null
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ TLS certificate created${NC}"
+    else
+        echo -e "${RED}✗ Failed to create certificate${NC}"
+        exit 1
+    fi
+else
+    echo -e "${GREEN}✓ TLS certificates already exist${NC}"
+fi
+
+# Generate Traefik dynamic config from template
+echo -e "${GREEN}⚙️  Generating Traefik dynamic configuration...${NC}"
+mkdir -p traefik/dynamic
+
+
+if [ -f "traefik/dynamic/services.yml.template" ]; then
+    sed -e "s/__LOCAL_HOSTNAME__/$HOSTNAME/g" \
+        -e "s/__LOCAL_IP__/$LOCAL_IP/g" \
+        traefik/dynamic/services.yml.template > traefik/dynamic/services.yml
+    
+    # Verify it was created
+    if [ -f "traefik/dynamic/services.yml" ]; then
+        echo -e "${GREEN}✓ Traefik dynamic config generated${NC}"
+        # Show a sample to confirm substitution worked
+        echo -e "${GREEN}  Sample rule:${NC}"
+        grep "rule:" traefik/dynamic/services.yml | head -1
+    else
+        echo -e "${RED}✗ Failed to generate services.yml${NC}"
+        exit 1
+    fi
+else
+    echo -e "${YELLOW}⚠ Template file not found: traefik/dynamic/services.yml.template${NC}"
+    echo -e "${YELLOW}  Using existing services.yml if present${NC}"
+fi
+
 
 echo -e "${GREEN} .env file created successfully${NC}"
 echo -e "${YELLOW}JWT_SECRET (first 32 chars): ${JWT_SECRET:0:32}...${NC}"

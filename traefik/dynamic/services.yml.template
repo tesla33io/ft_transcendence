@@ -1,0 +1,49 @@
+http:
+  # ============================================
+  # ROUTERS (when to route traffic)
+  # ============================================
+  routers:
+    # Frontend SPA
+    frontend:
+      rule: "Host(`localhost`) || Host(`__LOCAL_HOSTNAME__`) || Host(`__LOCAL_IP__`)"
+      entryPoints: [websecure]
+      service: frontend-service
+      priority: 1
+      tls: {}
+
+    # Gateway API endpoints
+    gateway-api:
+      rule: "(Host(`localhost`) || Host(`__LOCAL_HOSTNAME__`) || Host(`__LOCAL_IP__`)) && (PathPrefix(`/api`) || PathPrefix(`/users`) || PathPrefix(`/tournaments`))"
+      entryPoints: [websecure]
+      service: gateway-service
+      priority: 10
+      tls: {}
+
+    # Gateway WebSocket
+    gateway-ws:
+      rule: "(Host(`localhost`) || Host(`__LOCAL_HOSTNAME__`) || Host(`__LOCAL_IP__`)) && PathPrefix(`/ws`)"
+      entryPoints: [websecure]
+      service: gateway-service
+      priority: 20
+      tls: {}
+
+  # ============================================
+  # SERVICES (where to send traffic)
+  # ============================================
+  services:
+    frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://frontend:5173"
+        healthCheck:
+          path: /
+          interval: 30s
+          timeout: 5s
+
+    gateway-service:
+      loadBalancer:
+        servers:
+          - url: "http://gateway-service:3000"
+        healthCheck:
+          path: /test/status
+          interval: 30s

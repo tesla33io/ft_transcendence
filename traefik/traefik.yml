@@ -1,0 +1,41 @@
+# Entry points (ports Traefik listens on)
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+  
+  websecure:
+    address: ":443"
+    http:
+      tls: {}
+
+# Providers
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true  # Auto-reload on file changes
+
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/cert.pem
+        keyFile: /etc/traefik/certs/key.pem
+
+# Logging
+log:
+  level: INFO
+
+accessLog: {}
+
+# API/Dashboard (optional)
+api:
+  dashboard: true
+  insecure: true  # Only for dev!
+
+ping:
+  entryPoint: "traefik"
