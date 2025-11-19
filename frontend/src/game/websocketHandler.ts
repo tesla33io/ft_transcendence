@@ -202,7 +202,7 @@ export class WebSocketHandler {
         if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(message));
        } else {
-            console.error('WebSocket is not connected');
+            //console.error('WebSocket is not connected');
         }
     }
 
