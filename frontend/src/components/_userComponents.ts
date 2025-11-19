@@ -2,6 +2,8 @@
 
 import { UserService } from '../game/userService';
 import { createWindow } from '../components/_components';
+import { createAvatarDisplay } from "./_profilePageBuilder"
+import { AvatarService } from '../game/avatarConstants';
 import type { Friend } from '../game/userService';
 import type { 
     OneVOneStatistics, 
@@ -149,33 +151,27 @@ export class FriendsComponent {
             this.friends.forEach(friend => {
                 const row = document.createElement('tr');
                 row.style.cursor = 'pointer';
-                
-                // ✅ Use 'id' and handle null safely
                 row.dataset.userId = friend.id || '0';
-                
-                // ✅ Check onlineStatus (handle null)
                 const isOnline = friend.onlineStatus === 'online';
                 const statusIcon = isOnline ? '🟢' : '🔴';
-                
-                // ✅ Handle null lastOnlineAt
                 const lastOnline = isOnline ? 'Now' : 
                     (friend.lastOnlineAt ? formatTimeAgo(friend.lastOnlineAt) : 'Unknown');
                 
-                row.innerHTML = `
-                    <td style="padding: 4px 6px; border-bottom: 1px solid #f0f0f0;">
-                        <div style="display: flex; align-items: center; gap: 4px;">
-                            <img src="${friend.avatarUrl || '/images/default-avatar.png'}" 
-                                 width="16" height="16" style="border-radius: 2px;">
-                            <span>${friend.username}</span>
-                        </div>
-                    </td>
-                    <td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center;">
-                        ${statusIcon}
-                    </td>
-                    <td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center; font-size: 10px;">
-                        ${lastOnline}
-                    </td>
-                `;
+				row.innerHTML = `
+					<td style="padding: 4px 6px; border-bottom: 1px solid #f0f0f0;">
+						<div style="display: flex; align-items: center; gap: 4px;">
+							<img src="${friend.avatarUrl || AvatarService.getSelectedAvatar().imagePath}" 
+								width="16" height="16" style="border-radius: 2px;">
+							<span>${friend.username}</span>
+						</div>
+					</td>
+					<td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center;">
+						${statusIcon}
+					</td>
+					<td style="padding: 4px; border-bottom: 1px solid #f0f0f0; text-align: center; font-size: 10px;">
+						${lastOnline}
+					</td>
+				`;
                 tbody.appendChild(row);
             });
         }
@@ -280,114 +276,6 @@ export function createSendFriendRequestWindow(options: { onSend?: (username: str
     return window;
 }
 
-export function createIncomingRequestsWindow(options: { 
-    onAccept?: (username: string) => Promise<void>; 
-    onReject?: (username: string) => Promise<void>; 
-    onClose?: () => void 
-} = {}): HTMLElement {
-    const content = document.createElement('div');
-    content.style.cssText = `padding: 10px; display: flex; flex-direction: column; height: 100%;`;
-
-    const title = document.createElement('h4');
-    title.textContent = 'Incoming Friend Requests';
-    title.style.cssText = `margin: 0 0 10px 0; font-size: 13px; text-align: center; color: #000080;`;
-
-    const requestsContainer = document.createElement('div');
-    requestsContainer.className = 'sunken-panel';
-    requestsContainer.style.cssText = `
-        flex: 1; background-color: #ffffff; padding: 8px; overflow-y: auto; min-height: 200px;
-    `;
-    requestsContainer.textContent = '⏳ Loading requests...';
-
-    content.appendChild(title);
-    content.appendChild(requestsContainer);
-
-    const window = createWindow({
-        title: 'Friend Requests',
-        width: '400px',
-        height: '300px',
-        content,
-        titleBarControls: { close: true, onClose: () => { options.onClose?.(); window.remove(); } }
-    });
-
-    // Load requests
-    UserService.getFriendRequests().then(requests => {
-        if (requests.length === 0) {
-            requestsContainer.innerHTML = `
-                <div style="text-align: center; color: #666; font-size: 12px; padding: 30px;">
-                     No incoming friend requests
-                </div>
-            `;
-            return;
-        }
-
-        requestsContainer.innerHTML = '';
-        requests.forEach(request => {
-            const div = document.createElement('div');
-            div.className = 'sunken-panel';
-            div.style.cssText = `
-                margin-bottom: 10px; padding: 12px; background-color: #f0f0f0;
-                display: flex; align-items: center; justify-content: space-between; gap: 12px;
-            `;
-
-            div.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                    <img src="${request.avatarUrl || '/images/default-avatar.png'}" width="32" height="32" 
-                         style="border-radius: 3px; border: 1px solid #c0c0c0;">
-                    <div>
-                        <div style="font-weight: bold; font-size: 13px;">${request.userName}</div>
-                        <div style="font-size: 10px; color: #666;">Sent ${formatTimeAgo(request.requestSendDate)}</div>
-                    </div>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <button class="accept-btn" style="padding: 4px 12px; font-size: 11px; background-color: #90EE90; border: 1px solid #228B22;">✓ Accept</button>
-                    <button class="reject-btn" style="padding: 4px 12px; font-size: 11px; background-color: #FFB6C1; border: 1px solid #DC143C;">✗ Decline</button>
-                </div>
-            `;
-
-            const acceptBtn = div.querySelector('.accept-btn') as HTMLButtonElement;
-            const rejectBtn = div.querySelector('.reject-btn') as HTMLButtonElement;
-
-            acceptBtn.onclick = async () => {
-                acceptBtn.disabled = rejectBtn.disabled = true;
-                acceptBtn.textContent = 'Accepting...';
-                try {
-                    await (options.onAccept ? options.onAccept(request.userName) : UserService.acceptFriendRequest(request.userName));
-                    div.innerHTML = `<div style="text-align: center; padding: 15px; color: #006600;">✅ ${request.userName} added to friends!</div>`;
-                    setTimeout(() => div.remove(), 2000);
-                } catch (error) {
-                    acceptBtn.textContent = 'Failed';
-                    setTimeout(() => {
-                        acceptBtn.textContent = '✓ Accept';
-                        acceptBtn.disabled = rejectBtn.disabled = false;
-                    }, 2000);
-                }
-            };
-
-            rejectBtn.onclick = async () => {
-                acceptBtn.disabled = rejectBtn.disabled = true;
-                rejectBtn.textContent = 'Declining...';
-                try {
-                    await (options.onReject ? options.onReject(request.userName) : UserService.rejectFriendRequest(request.userName));
-                    div.innerHTML = `<div style="text-align: center; padding: 15px; color: #cc0000;">❌ Request from ${request.userName} declined</div>`;
-                    setTimeout(() => div.remove(), 2000);
-                } catch (error) {
-                    rejectBtn.textContent = ' Failed';
-                    setTimeout(() => {
-                        rejectBtn.textContent = 'Decline';
-                        acceptBtn.disabled = rejectBtn.disabled = false;
-                    }, 2000);
-                }
-            };
-
-            requestsContainer.appendChild(div);
-        });
-    }).catch(() => {
-        requestsContainer.innerHTML = `<div style="text-align: center; color: #cc0000; font-size: 11px; padding: 20px;">❌ Failed to load friend requests</div>`;
-    });
-
-    return window;
-}
 
 // ===========================
 // FRIENDS ACTIONS COMPONENT
@@ -490,7 +378,7 @@ export class SimpleFriendsActionsComponent {
             
             friendInfo.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <img src="${this.selectedFriend.avatarUrl || '/images/default-avatar.png'}" 
+                   <img src="${this.selectedFriend.avatarUrl || AvatarService.getSelectedAvatar().imagePath}" 
                          width="24" height="24" style="border-radius: 2px;">
                     <div style="flex: 1;">
                         <div style="font-weight: bold; font-size: 12px;">
@@ -981,18 +869,20 @@ export class UserInfoComponent {
         this.container.innerHTML = '';
         this.container.className = 'sunken-panel bg-gray-300 p-3 flex flex-col';
         this.container.style.cssText = `
-        width: ${this.options.width}; 
-        height: ${this.options.height};
-        background-color: #e0e0e0;
-        padding: 12px;
-    `;
+            width: ${this.options.width}; 
+            height: ${this.options.height};
+            background-color: #e0e0e0;
+            padding: 12px;
+        `;
+
         // Avatar and name section
         const headerSection = document.createElement('div');
         headerSection.className = 'flex items-center gap-3 mb-3 pb-2 border-b border-gray-500';
 
-        const avatar = document.createElement('img');
-        avatar.src = this.profile.avatarUrl || '/images/default-avatar.png';
-        avatar.className = 'w-12 h-12 border-2 border-gray-500 rounded';
+        // ✅ Use the avatar display component (always shows from localStorage)
+        const avatarContainer = document.createElement('div');
+        const avatarDisplay = createAvatarDisplay('large'); // Shows avatar from localStorage
+        avatarContainer.appendChild(avatarDisplay);
 
         const nameSection = document.createElement('div');
         const onlineColor = this.profile.isOnline ? 'text-green-600' : 'text-gray-600';
@@ -1008,7 +898,7 @@ export class UserInfoComponent {
             </div>
         `;
 
-        headerSection.appendChild(avatar);
+        headerSection.appendChild(avatarContainer);
         headerSection.appendChild(nameSection);
 
         // Bio section

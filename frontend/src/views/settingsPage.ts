@@ -3,10 +3,17 @@ import { createWindow } from '../components/_components';
 import { createTaskbar, createStaticDesktopBackground } from "../components/_components";
 import { UserService } from "../game/userService";
 import type { PublicUser, ProfileUpdateRequest } from "../types";
-import { AVATAR_PRESETS, DEFAULT_AVATAR_ID, resolveAvatar } from "../game/avatarConstants";
+import { createAvatarSelector } from "../components/_profilePageBuilder"
+import { AvatarService } from "../game/avatarConstants";
 
 // Global variables for cleanup
 let staticBackground: any = null;
+
+function resolveAvatar(avatarId: string | undefined): string {
+    // Always use localStorage avatar
+    const avatar = AvatarService.getSelectedAvatar();
+    return avatar.imagePath;
+}
 
 export async function settingsView(router: Router) {
     const app = document.getElementById('app');
@@ -340,153 +347,21 @@ function setupUsernameHandlers(section: HTMLElement, currentUser: PublicUser) {
 function createAvatarSection(currentUser: PublicUser): HTMLElement {
     const section = createPanel();
     
-    const avatarContent = document.createElement("div");
-    avatarContent.style.cssText = `
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        gap: 10px;
-    `;
-
-    const currentAvatarDiv = document.createElement("div");
-    currentAvatarDiv.style.cssText = `text-align: center;`;
-    currentAvatarDiv.innerHTML = `<label style="display: block; margin-bottom: 5px; font-size: 11px;">Current Avatar:</label>`;
-
-    const currentAvatar = document.createElement("img");
-    currentAvatar.id = "current_avatar_img";
-    currentAvatar.src = resolveAvatar(currentUser.avatarUrl);
-    currentAvatar.width = 50;
-    currentAvatar.height = 50;
-    currentAvatar.style.cssText = `
-        border: 2px solid #c0c0c0;
-        display: block;
-        margin: 0 auto;
-        border-radius: 4px;
-    `;
-    currentAvatarDiv.appendChild(currentAvatar);
-    avatarContent.appendChild(currentAvatarDiv);
-
-    const selectLabel = document.createElement("label");
-    selectLabel.textContent = "Select New Avatar:";
-    selectLabel.style.cssText = `
-        display: block;
-        text-align: center;
-        font-size: 11px;
-        margin-bottom: 5px;
-    `;
-    avatarContent.appendChild(selectLabel);
-
-    const avatarContainer = document.createElement("div");
-    avatarContainer.style.cssText = `
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        margin-bottom: 10px;
-    `;
-
-    const avatarInput = document.createElement("input");
-    avatarInput.type = "hidden";
-    avatarInput.id = "new_avatar_id";
-
-    AVATAR_PRESETS.forEach((avatar) => {
-        const avatarWrapper = document.createElement("div");
-        avatarWrapper.style.cssText = `
+    // ✅ Replace all the old avatar code with the new component
+    const avatarSelector = createAvatarSelector({
+        showSaveButton: true,
+        saveButtonText: 'Update Avatar',
+        containerStyle: `
+            flex: 1;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-        `;
-
-        const img = document.createElement("img");
-        img.src = avatar.src;
-        img.width = 45;
-        img.height = 45;
-        img.style.cssText = `
-            border: 3px solid transparent;
-            border-radius: 4px;
-            transition: border-color 0.2s;
-        `;
-        img.classList.add("avatar-option");
-        img.dataset.avatarId = avatar.id;
-
-        const label = document.createElement("span");
-        label.textContent = avatar.name;
-        label.style.cssText = `font-size: 9px; color: #333;`;
-
-        avatarWrapper.addEventListener("click", () => {
-            avatarContainer.querySelectorAll(".avatar-option").forEach(a => {
-                (a as HTMLElement).style.borderColor = "transparent";
-                a.classList.remove("selected");
-            });
-            
-            img.style.borderColor = "#0000ff";
-            img.classList.add("selected");
-            avatarInput.value = avatar.id;
-        });
-
-        avatarWrapper.appendChild(img);
-        avatarWrapper.appendChild(label);
-        avatarContainer.appendChild(avatarWrapper);
+            gap: 10px;
+        `
     });
 
-    avatarContent.appendChild(avatarContainer);
-    avatarContent.appendChild(avatarInput);
-    section.appendChild(avatarContent);
-
-    const saveBtn = document.createElement("button");
-    saveBtn.id = "save_avatar";
-    saveBtn.textContent = "Update Avatar";
-    saveBtn.style.cssText = `width: 100%;`;
-    section.appendChild(saveBtn);
-
-    setupAvatarHandlers(section, currentUser);
+    section.appendChild(avatarSelector.getElement());
+    
     return section;
-}
-
-function setupAvatarHandlers(section: HTMLElement, currentUser: PublicUser) {
-    const saveBtn = section.querySelector("#save_avatar") as HTMLButtonElement;
-    const avatarInput = section.querySelector("#new_avatar_id") as HTMLInputElement;
-    const currentAvatarImg = section.querySelector("#current_avatar_img") as HTMLImageElement;
-
-    saveBtn.addEventListener("click", async () => {
-        const selectedAvatarId = avatarInput.value;
-        
-        if (!selectedAvatarId) {
-            showStatus("Please select an avatar", true);
-            return;
-        }
-
-        setButtonLoading(saveBtn, true);
-        
-        try {
-            console.log('📤 [Settings] Updating avatar to:', selectedAvatarId);
-            
-            const updates: ProfileUpdateRequest = { 
-                avatarUrl: selectedAvatarId
-            };
-            
-            const updatedUser = await UserService.updateProfile(updates);
-            
-            console.log('Settings] Avatar updated successfully');
-            showStatus("Avatar updated successfully!");
-            
-            currentAvatarImg.src = resolveAvatar(updatedUser.avatarUrl);
-
-            avatarInput.value = "";
-            section.querySelectorAll(".avatar-option").forEach(a => {
-                (a as HTMLElement).style.borderColor = "transparent";
-                a.classList.remove("selected");
-            });
-            
-        } catch (error) {
-            console.error('[Settings] Failed to update avatar:', error);
-            showStatus("Failed to update avatar. Please try again.", true);
-        } finally {
-            setButtonLoading(saveBtn, false);
-        }
-    });
 }
 
 // ===== UTILITY FUNCTIONS =====

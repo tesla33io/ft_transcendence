@@ -3,7 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH, PADDLE_HEIGHT, PADDLE_WIDTH, PLAYER_OFFSET, GA
 import { Game, Player} from "../types/interfaces"
 
 export class ClassicPong extends GameEngine {
-	private readonly BALL_MAX_SPEED = 16
+	private readonly BALL_MAX_SPEED = 12
 	private readonly K = 2
 	private readonly GOAL_EDGE = 10
 
