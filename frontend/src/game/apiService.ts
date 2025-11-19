@@ -40,8 +40,8 @@ export class ApiService {
             // Check content type to ensure we're getting JSON
             const contentType = response.headers.get('content-type');
             const isJson = contentType && contentType.includes('application/json');
-            console.log("respone ok ", response.ok )
-			console.log("RESPONSE",response)
+            //console.log("respone ok ", response.ok )
+			//console.log("RESPONSE",response)
             if (!response.ok) {
                 const text = await response.text();
                 let details: any;
