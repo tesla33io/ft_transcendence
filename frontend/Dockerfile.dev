@@ -2,8 +2,8 @@
 FROM node:22.18
 
 WORKDIR /app
-# COPY package*.json ./
-COPY . .
+COPY package*.json .
+
 RUN npm install
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

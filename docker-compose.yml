@@ -1,14 +1,14 @@
 services:
   traefik:
-    image: traefik:v2.10                   
-    container_name: ReverseProxy_traefik                 
-    
+    image: traefik:v2.10
+    container_name: ReverseProxy_traefik
+
     command:
       # Enable Docker provider (read container labels)
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --providers.docker.network=pong-network
-      
+
       # HTTP entrypoint (port 80) - will redirect to HTTPS
       - --entrypoints.web.address=:80
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
@@ -16,51 +16,48 @@ services:
       # HTTPS entrypoint (port 443)
       - --entrypoints.websecure.address=:443
       - --entrypoints.websecure.http.tls=true
-      
-      # Dashboard (monitoring UI) uncomment when needed 
+
+      # Dashboard (monitoring UI) uncomment when needed
       # - --api.dashboard=true #Enable dashboard
       # - --api.insecure=true # Allow dashboard without auth
-      
+
       # Logging
       - --log.level=INFO
       - --accesslog=true
-    
+
     ports:
       - "${TRAEFIK_HTTP_PORT}:80"       # Expose HTTP (will redirect to HTTPS)
       - "${TRAEFIK_HTTPS_PORT}:443"     # Expose HTTPS (main entry point)
       - "${TRAEFIK_DASHBOARD_PORT}:8080"   # Expose dashboard (http://localhost:8080)
-    
+
     volumes:
       # Mount Docker socket so Traefik can read container info
       - ${DOCKER_SOCKET_PATH}:/var/run/docker.sock:ro
-    
+
     networks:
       - pong-network
-    
+
     restart: unless-stopped
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: frontend
-    
+
     expose:
       - "5173"
     networks:
       - pong-network
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
     labels:
      # Enable Traefik for this container
       - "traefik.enable=true"
-      
+
       # Router configuration (when to route here)
-      - "traefik.http.routers.frontend.rule=Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)" 
-      - "traefik.http.routers.frontend.entrypoints=websecure" 
-      - "traefik.http.routers.frontend.priority=1" 
-      - "traefik.http.routers.frontend.tls=true" 
-      
+      - "traefik.http.routers.frontend.rule=Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.routers.frontend.tls=true"
+
       # Service configuration (how to connect to this container)
       - "traefik.http.services.frontend.loadbalancer.server.port=5173"
   gateway-service:
@@ -81,36 +78,34 @@ services:
       timeout: 30s
       retries: 5
       start_period: 10s
-    volumes: #REMOVE FOR production
-      - ./services/gateway-service:/gateway-service
-      - /gateway-service/node_modules # Anonymous volume preserves container-built node_modules for hot-reload
     labels:
       - "traefik.enable=true"
       # API Router - accept all host variants
-      - "traefik.http.routers.gateway-api.rule=(Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)) && (PathPrefix(`/api`) || PathPrefix(`/users`))" 
-      - "traefik.http.routers.gateway-api.entrypoints=websecure" 
+      - "traefik.http.routers.gateway-api.rule=(Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)) && (PathPrefix(`/api`) || PathPrefix(`/users`))"
+      - "traefik.http.routers.gateway-api.entrypoints=websecure"
       - "traefik.http.routers.gateway-api.priority=10"
-      - "traefik.http.routers.gateway-api.tls=true" 
-      
+      - "traefik.http.routers.gateway-api.tls=true"
+
       # WebSocket Router - accept all host variants
-      - "traefik.http.routers.gateway-ws.rule=(Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)) && PathPrefix(`/ws`)" 
-      - "traefik.http.routers.gateway-ws.entrypoints=websecure"  
-      - "traefik.http.routers.gateway-ws.priority=20" 
-      - "traefik.http.routers.gateway-ws.tls=true" 
-      
+      - "traefik.http.routers.gateway-ws.rule=(Host(`localhost`) || Host(`${LOCAL_HOSTNAME}`) || Host(`${LOCAL_IP}`)) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.gateway-ws.entrypoints=websecure"
+      - "traefik.http.routers.gateway-ws.priority=20"
+      - "traefik.http.routers.gateway-ws.tls=true"
+
       # Service configuration (applies to both routers)
-      - "traefik.http.services.gateway.loadbalancer.server.port=${GATEWAY_PORT}" 
+      - "traefik.http.services.gateway.loadbalancer.server.port=${GATEWAY_PORT}"
+
   game-service:
     build:
       context: ./services/game-service
       dockerfile: Dockerfile
     container_name: game-service
     expose:
-      - "5000" 
-      - "5001" 
+      - "5000"
+      - "5001"
       - "5002"
-      - "5005"  
-      - "5006"  
+      - "5005"
+      - "5006"
     env_file:
       - .env
     environment:
@@ -123,9 +118,6 @@ services:
       timeout: 30s
       retries: 5
       start_period: 10s
-    volumes: #REMOVE FOR production
-      - ./services/game-service:/game-service
-      - /app/node_modules
 
   user-service:
     build:
@@ -144,7 +136,6 @@ services:
     networks:
       - pong-network
     volumes:
-      #- /user-service/node_modules # anonymous volume keeps Linux-built binaries
       - user-service-db:/user-service/data
 
   blockchain-service:
@@ -156,9 +147,6 @@ services:
       - .env
     networks:
       - pong-network
-    volumes:
-      - ./services/blockchain-service:/blockchain-service
-      - /blockchain-service/node_modules
     environment:
       - NODE_ENV=development
   ai-service:
