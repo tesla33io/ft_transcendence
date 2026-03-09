@@ -44,117 +44,70 @@ import { GAME_MODES } from './types.ts'
 
 // Send periodic heartbeat to keep session alive while browser is open
 
-// This allows the backend to distinguish between:
-
-// - Active session (another browser open) → block login
-
-// - Stale session (window closed, no heartbeat) → allow re-login
-
-/*
+// This solves a race condition where multiple browser windows for the same
+// user caused conflicting game states and duplicate score updates (#122).
+//
+// The backend distinguishes between:
+// - Active session (heartbeat received recently < 10s) → block new login
+// - Stale session (no heartbeat > 10s, window was closed) → allow re-login
+//
+// The login endpoint uses a DB transaction with PESSIMISTIC_WRITE lock to
+// prevent a second race condition when two login requests arrive simultaneously.
 
 let heartbeatInterval: number | null = null;
 
-
-
 function startHeartbeat() {
-
-    // Send heartbeat every 5 seconds
-
-    heartbeatInterval = window.setInterval(async () => {
-
-        try {
-
-            // Check if we have a session cookie
-
-            const sessionId = document.cookie
-
-                .split('; ')
-
-                .find(row => row.startsWith('sessionId='))
-
-                ?.split('=')[1];
-
-            
-
-            if (sessionId) {
-
-                // Send heartbeat to keep session alive
-
-                await fetch('/users/auth/heartbeat', {
-
-                    method: 'POST',
-
-                    credentials: 'include', // Include cookies
-
-                    headers: {
-
-                        'Content-Type': 'application/json'
-
-                    }
-
-                });
-
-            } else {
-
-                // No session cookie, stop heartbeat
-
-                stopHeartbeat();
-
-            }
-
-        } catch (error) {
-
-            console.error('[Heartbeat] Error:', error);
-
-        }
-
-    }, 5000); // Every 5 seconds
-
-    
-
-    console.log('[Heartbeat] Started');
-
-}
-
-
-
-function stopHeartbeat() {
-
     if (heartbeatInterval !== null) {
-
-        clearInterval(heartbeatInterval);
-
-        heartbeatInterval = null;
-
-        console.log('[Heartbeat] Stopped');
-
+        return; // Already running
     }
 
+    // Send heartbeat every 5 seconds
+    heartbeatInterval = window.setInterval(async () => {
+        try {
+            // Check if we have a session cookie
+            const sessionId = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('sessionId='))
+                ?.split('=')[1];
+
+            if (sessionId) {
+                // Send heartbeat to keep session alive
+                await fetch('/users/auth/heartbeat', {
+                    method: 'POST',
+                    credentials: 'include', // Include cookies
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } else {
+                // No session cookie, stop heartbeat
+                stopHeartbeat();
+            }
+        } catch (error) {
+            console.error('[Heartbeat] Error:', error);
+        }
+    }, 5000); // Every 5 seconds
+
+    console.log('[Heartbeat] Started');
 }
 
-
+function stopHeartbeat() {
+    if (heartbeatInterval !== null) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+        console.log('[Heartbeat] Stopped');
+    }
+}
 
 // Start heartbeat when authenticated
-
 export function enableHeartbeat() {
-
     startHeartbeat();
-
 }
-
-
 
 // Stop heartbeat on logout
-
 export function disableHeartbeat() {
-
     stopHeartbeat();
-
 }
-
-
-
-*/
 
 
 
@@ -234,7 +187,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         // Start heartbeat for authenticated users
 
-        //startHeartbeat();  // ADD THIS LINE
+        startHeartbeat();
 
         
 

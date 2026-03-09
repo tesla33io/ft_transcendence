@@ -325,7 +325,8 @@ server.addHook('onRequest', async (request: AuthRequest, reply) => {
         '/users/auth/login',
         '/users/auth/register',
         '/users/auth/refresh',
-        '/users/auth/2fa/verify-registration'  // Add this line
+        '/users/auth/2fa/verify-registration',
+        '/users/auth/heartbeat'  // Session heartbeat: backend validates sessionId cookie
     ];
 
     if (publicAuthRoutes.some(route => request.url.includes(route))) {
