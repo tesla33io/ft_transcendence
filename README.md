@@ -73,20 +73,16 @@ For each Match:
 
 For profilePage:
 userId, userName, AvatarUrl, BioText, isOnline, lastOnline, accountCreationDate,
-=======
+
 ## Overview
 The 42 Transcendence Project is a real-time, multiplayer online Pong game with
 user authentication, matchmaking and different game-modes.
 Built to showcase advanced full-stack development, it integrates WebSockets,
 a retro-looking front-end, and a scalable Node.js backend with SQLite3 and TypeScript.
 
-<<<<<<< HEAD
-
 ## License
 MIT
-=======
->>>>>>> user_management_merge
-//websocket messaging struckt 
+// websocket messaging struct
 {
 	"event": string ,//for example "error" or "gameUpadate" etc
 	"type": string ,//for example on game update "paddleMove" or "scoreUpdate" etc
